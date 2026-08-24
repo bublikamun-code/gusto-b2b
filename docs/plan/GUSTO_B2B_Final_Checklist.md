@@ -431,6 +431,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(infra): docker compose dev environment`.
 
 ### S05 [B] БД V1: baseline-миграция
+> ✅ Выполнено 2026-08-25 [B] — V1__baseline: 38 таблиц по Части 3 (FK, индексы, CHECK; citext/pg_trgm); V2__seed: админ (bcrypt из .env через плейсхолдеры Flyway), настройки серий/НДС/реквизитов. flyway-maven-plugin (`mvn flyway:migrate`), Testcontainers-тест схемы. Вьюхи склада — S18, pg_trgm-индекс по name — S13, sequence-нумерация — S20.
 - Flyway `V1__baseline.sql` по схеме из Части 3 (все таблицы, индексы, CHECK-ограничения).
 - Seed: роли, админ-пользователь (пароль в `.env`, bcrypt), настройки документов.
 - **Приёмка:** `mvn flyway:migrate` на чистой БД, интеграционный тест схемы.

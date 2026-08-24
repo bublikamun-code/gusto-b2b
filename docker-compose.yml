@@ -33,6 +33,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-gusto}
       SPRING_DATA_REDIS_HOST: redis
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gustomeat.by}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me}
     ports:
       - "8080:8080"
     depends_on:
