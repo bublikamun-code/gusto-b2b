@@ -1,0 +1,78 @@
+@use "../styles/tokens" as *;
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: $color-cream;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo {
+  display: inline-block;
+  font-family: $font-display;
+  font-size: 2rem;
+  color: $color-bordeaux;
+  margin-bottom: 0.5rem;
+}
+
+.auth-title {
+  font-family: $font-heading;
+  font-size: 1.5rem;
+  color: $color-graphite;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.auth-links {
+  text-align: center;
+  font-size: 0.875rem;
+  color: $color-graphite;
+
+  a {
+    color: $color-bordeaux;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.auth-hint {
+  font-size: 0.875rem;
+  color: $color-graphite;
+  text-align: center;
+}
+
+.auth-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  font-family: $font-body;
+  color: $color-graphite;
+  background: $color-cream;
+}

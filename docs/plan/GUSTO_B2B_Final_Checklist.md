@@ -475,6 +475,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(auth): rbac ownership and 2fa`.
 
 ### S10 [A] Страницы входа
+> ✅ Выполнено 2026-08-25 [A] — страницы login/2FA, запрос/сброс пароля; `AuthInit` (silent refresh по куке), `ProtectedRoute`, редиректы по ролям (admin→/admin, manager→/manager, клиент→/cabinet); API-клиент, Zustand-стор, валидация react-hook-form + zod; UI в бренд-стиле через UI-kit. Добавлены deps: zustand, @tanstack/react-query, react-hook-form, zod, @hookform/resolvers. lint+build зелёные; полный цикл входа вручную — после реализации S08 бэкендером.
 - Login, восстановление пароля, 2FA-ввод.
 - Защищённые роуты, редирект по роли (admin→/admin, manager→/manager, customer→/cabinet).
 - **Приёмка:** полный цикл входа вручную.
