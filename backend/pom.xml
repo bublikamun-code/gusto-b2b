@@ -18,6 +18,18 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Параметры для `mvn flyway:migrate` против локальной БД (docker compose).
+             Переопределение: -Dflyway.url=... -Dflyway.password=... -Dadmin.password=... -->
+        <flyway.url>jdbc:postgresql://localhost:5432/gusto</flyway.url>
+        <flyway.user>gusto</flyway.user>
+        <flyway.password>gusto-dev</flyway.password>
+        <admin.email>admin@gustomeat.by</admin.email>
+        <admin.password>change-me</admin.password>
+        <!-- Testcontainers 2.0.2+: совместимость с Docker ≥29 (daemon отклоняет API 1.32,
+             на который ходит shaded docker-java в tc 1.x). См. testcontainers-java#11235.
+             В 2.x модули переименованы: junit-jupiter → testcontainers-junit-jupiter,
+             postgresql → testcontainers-postgresql. -->
+        <testcontainers.version>2.0.2</testcontainers.version>
     </properties>
 
     <dependencies>
@@ -60,6 +72,21 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
@@ -71,6 +98,36 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- Приёмка S05: `mvn flyway:migrate` на чистой БД.
+                 В runtime миграции применяет Spring Flyway при старте приложения. -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <url>${flyway.url}</url>
+                    <user>${flyway.user}</user>
+                    <password>${flyway.password}</password>
+                    <locations>
+                        <location>filesystem:src/main/resources/db/migration</location>
+                    </locations>
+                    <placeholders>
+                        <admin_email>${admin.email}</admin_email>
+                        <admin_password>${admin.password}</admin_password>
+                    </placeholders>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-database-postgresql</artifactId>
+                        <version>${flyway.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
