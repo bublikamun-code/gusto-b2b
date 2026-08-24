@@ -1,0 +1,65 @@
+@use "../styles/tokens" as *;
+
+.main {
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.pageTitle {
+  font-family: $font-display;
+  font-size: 1.6rem;
+  color: $color-graphite;
+  margin: 0 0 0.25rem;
+}
+
+.pageNote {
+  font-family: $font-body;
+  color: rgba($color-graphite, 0.7);
+  margin: 0 0 2.5rem;
+}
+
+.section {
+  margin-bottom: 3rem;
+}
+
+.sectionTitle {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+  font-size: 1rem;
+  color: $color-bordeaux;
+  border-bottom: 1px solid rgba($color-graphite, 0.15);
+  padding-bottom: 0.4rem;
+  margin: 0 0 1.1rem;
+}
+
+.subTitle {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: rgba($color-graphite, 0.65);
+  margin: 1.2rem 0 0.7rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 1rem;
+}

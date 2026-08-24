@@ -436,6 +436,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(db): baseline migration V1`.
 
 ### S06 [A] Дизайн-система и UI-kit
+> ✅ Выполнено 2026-08-24 [A] — 11 компонентов (Button, Input, Textarea, Select, Table, Card, Badge, Modal, Toast+useToast, Pagination, Tabs), страница /ui-kit со всеми состояниями, роутер + 404. ESLint+Prettier первым коммитом; lint включён в CI; hot-reload volume для frontend. Приёмка: скриншот /ui-kit сверен с бренд-буком (цвета/шрифты/запреты соблюдены).
+
 - Компоненты: Button, Input, Select, Table, Card, Badge, Modal, Toast, Pagination, Tabs.
 - Строго по бренд-буку: без теней/градиентов, пропорции цветов.
 - Страница `/ui-kit` со всеми состояниями.

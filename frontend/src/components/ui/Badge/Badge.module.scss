@@ -1,0 +1,43 @@
+@use "../../../styles/tokens" as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+// «В наличии»
+.success {
+  background: $color-bordeaux;
+  color: $color-cream;
+}
+
+// «Под заказ», «ниже минимального остатка»
+.warning {
+  background: $color-yolk;
+  color: $color-graphite;
+}
+
+// «ХИТ», «НОВИНКА»
+.accent {
+  background: $color-graphite;
+  color: $color-cream;
+}
+
+.neutral {
+  background: rgba($color-graphite, 0.1);
+  color: $color-graphite;
+}
+
+.outline {
+  background: transparent;
+  color: $color-bordeaux;
+  border: 1px solid $color-bordeaux;
+}

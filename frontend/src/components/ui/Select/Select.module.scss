@@ -1,0 +1,61 @@
+@use "../../../styles/tokens" as *;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  color: $color-graphite;
+}
+
+.field {
+  position: relative;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  font-family: $font-body;
+  font-size: 0.95rem;
+  color: $color-graphite;
+  background: $color-card;
+  border: 1px solid $color-line;
+  border-radius: 2px;
+  padding: 0.6rem 2rem 0.6rem 0.8rem;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: $color-bordeaux;
+  }
+
+  &:disabled {
+    background: rgba($color-graphite, 0.06);
+    cursor: not-allowed;
+  }
+}
+
+.arrow {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $color-bordeaux;
+  pointer-events: none;
+}
+
+.invalid {
+  border-color: $color-bordeaux;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $color-bordeaux;
+}

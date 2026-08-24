@@ -1,0 +1,35 @@
+@use "../../../styles/tokens" as *;
+
+.stack {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 200;
+  max-width: 22rem;
+}
+
+.toast {
+  font-family: $font-body;
+  font-size: 0.9rem;
+  color: $color-graphite;
+  background: $color-card;
+  border-left: 4px solid $color-graphite;
+  border-radius: 2px;
+  padding: 0.75rem 1rem;
+}
+
+.success {
+  border-left-color: $color-bordeaux;
+}
+
+.error {
+  border-left-color: $color-bordeaux;
+  background: rgba($color-bordeaux, 0.12);
+}
+
+.info {
+  border-left-color: $color-yolk;
+}

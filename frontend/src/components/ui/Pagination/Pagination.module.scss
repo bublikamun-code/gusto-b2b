@@ -1,0 +1,53 @@
+@use "../../../styles/tokens" as *;
+
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.summary {
+  font-family: $font-body;
+  font-size: 0.85rem;
+  color: rgba($color-graphite, 0.65);
+}
+
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.page,
+.nav {
+  font-family: $font-heading;
+  font-size: 0.85rem;
+  min-width: 2.1rem;
+  padding: 0.35rem 0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: $color-graphite;
+  cursor: pointer;
+
+  &:hover:not(:disabled):not(.active) {
+    background: rgba($color-bordeaux, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.active {
+  background: $color-bordeaux;
+  color: $color-cream;
+}
+
+.dots {
+  color: rgba($color-graphite, 0.5);
+  padding: 0 0.2rem;
+}

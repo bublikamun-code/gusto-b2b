@@ -1,0 +1,30 @@
+@use "../../../styles/tokens" as *;
+
+.tabs {
+  display: inline-flex;
+  gap: 0;
+  border-bottom: 2px solid rgba($color-graphite, 0.15);
+}
+
+.tab {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: rgba($color-graphite, 0.6);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-graphite;
+  }
+}
+
+.active {
+  color: $color-bordeaux;
+  border-bottom-color: $color-bordeaux;
+}
