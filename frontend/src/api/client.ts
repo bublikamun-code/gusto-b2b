@@ -1,4 +1,4 @@
-import type { ApiEnvelope, ApiError } from "../types/auth";
+import type { ApiEnvelope, ApiError, ApiMeta } from "../types/auth";
 
 const API_BASE = "/api/v1";
 
@@ -7,7 +7,14 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   token?: string;
 }
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export interface ListResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  total: number;
+}
+
+async function apiRawRequest<T>(path: string, options: RequestOptions = {}): Promise<ApiEnvelope<T>> {
   const { token, body, ...rest } = options;
   const url = `${API_BASE}${path}`;
   const headers = new Headers(rest.headers);
@@ -35,5 +42,21 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     }) as ApiError;
   }
 
+  return envelope;
+}
+
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const envelope = await apiRawRequest<T>(path, options);
   return envelope.data as T;
+}
+
+export async function apiListRequest<T>(path: string, options: RequestOptions = {}): Promise<ListResponse<T>> {
+  const envelope = await apiRawRequest<T[]>(path, options);
+  const meta: ApiMeta = envelope.meta ?? {};
+  return {
+    items: (envelope.data ?? []) as T[],
+    page: meta.page ?? 0,
+    size: meta.size ?? 20,
+    total: meta.total ?? 0,
+  };
 }
