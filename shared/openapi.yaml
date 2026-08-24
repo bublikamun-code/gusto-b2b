@@ -1,0 +1,48 @@
+openapi: 3.1.0
+info:
+  title: GUSTO B2B API
+  version: 0.1.0
+  description: |
+    Контракт API B2B-портала «Густо». Заполняется по мере сессий (чек-лист, Часть 4).
+    Envelope всех ответов: {data, meta, error}. Каталог кодов ошибок error.code —
+    AUTH_*, STOCK_*, VALIDATION_* (расширяется, не переименовывается).
+servers:
+  - url: /api/v1
+paths:
+  /healthz:
+    get:
+      summary: Liveness-проба
+      responses:
+        "200":
+          description: Сервис жив
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+  /readyz:
+    get:
+      summary: Readiness-проба
+      responses:
+        "200":
+          description: Сервис готов принимать трафик
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+components:
+  schemas:
+    Envelope:
+      type: object
+      required: [data, meta, error]
+      properties:
+        data: {}
+        meta:
+          type: object
+          description: Пагинация page/size/total для списков
+        error:
+          type: object
+          nullable: true
+          properties:
+            code:
+              type: string
+              description: Код из каталога ошибок
+            message:
+              type: string

@@ -1,0 +1,17 @@
+# секреты
+.env
+*.local
+
+# java
+backend/target/
+backend/.mvn/
+
+# node
+frontend/node_modules/
+frontend/dist/
+
+# ide / os
+.idea/
+.vscode/
+.DS_Store
+*.log

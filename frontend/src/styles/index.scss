@@ -1,0 +1,70 @@
+@use "tokens" as *;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: $font-body;
+  line-height: $line-height-body;
+  color: $color-graphite;
+  background-color: $color-cream;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: $color-bordeaux;
+  color: $color-cream;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.logo {
+  font-family: $font-display;
+  font-size: 1.75rem;
+}
+
+.header__sub {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.card {
+  max-width: 40rem;
+  margin: 4rem auto;
+  padding: 2.5rem;
+  background-color: #fffdf7;
+  border-top: 4px solid $color-bordeaux;
+
+  h1 {
+    font-family: $font-heading;
+    text-transform: uppercase;
+    letter-spacing: 0.15rem;
+    margin-top: 0;
+  }
+}
+
+.card__note {
+  color: $color-bordeaux;
+}
+
+.footer {
+  margin-top: auto;
+  text-align: center;
+  padding: 1rem;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  font-size: 0.75rem;
+  color: $color-graphite;
+}

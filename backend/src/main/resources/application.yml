@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: gusto-b2b-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/gusto}
+    username: ${SPRING_DATASOURCE_USERNAME:gusto}
+    password: ${SPRING_DATASOURCE_PASSWORD:gusto}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
