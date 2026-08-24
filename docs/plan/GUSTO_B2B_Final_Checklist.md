@@ -1,6 +1,7 @@
 # GUSTO B2B — Финальный подробный план реализации (чек-лист)
 
-> Версия 1.2 · 2026-08-24
+> Версия 1.3 · 2026-08-24
+> v1.3 — команды «перед пушем» в Части 6 унифицированы с 6.3/AGENTS.md (`mvn -B verify`; убраны `./mvnw` — wrapper не используется по ADR — и `npm run test` — Vitest ещё не добавлен); зафиксировано: ветка по умолчанию на GitHub — `develop`; задачи S04 приведены к фактическим Makefile-командам.
 > v1.2 — добавлены: синхронизация локального окружения (6.1), правила асинхронной работы (6.2), ритуал AI-ассистента со сверкой файлов (6.3), хранение плана и отметка прогресса в репозитории (6.4); отмечен прогресс S01–S04.
 > v1.1 — закрыты пробелы перед стартом: таблицы корзины/outbox/подписок в схеме БД, механизм нумерации через sequences, rate limiting с S08, модель доступа к файлам, идемпотентность заказов, восстановление пароля, саморегистрация физлиц, частичная оплата счетов, зафиксированы бренд-токены и сайт-образец.
 > Предназначен для двух разработчиков (Dev A — frontend, Dev B — backend) + AI-ассистенты.
@@ -425,8 +426,8 @@ settings (key TEXT PK, value JSONB)
 
 - `docker-compose.yml`: postgres:16, redis:7, backend, frontend (dev-режим).
 - `.env.example` со всеми переменными.
-- Makefile: `make dev`, `make test`, `make build`.
-- **Приёмка:** `make dev` поднимает всё, frontend видит backend.
+- Makefile: `make up`, `make infra`, `make down`, `make clean`, `make logs`, `make psql`.
+- **Приёмка:** `make up` поднимает всё, frontend видит backend.
 - `GIT(STD)` — `feat(infra): docker compose dev environment`.
 
 ### S05 [B] БД V1: baseline-миграция
@@ -743,9 +744,10 @@ git checkout -b feature/<dev>-s<номер>-<кратко>   # пример: fea
 
 # 3. ...работа, локальные коммиты...
 
-# 4. Перед пушем
-./mvnw test            # backend
-npm run lint && npm run test && npm run build   # frontend
+# 4. Перед пушем (те же команды, что в 6.3 и AGENTS.md)
+mvn -B verify -f backend/pom.xml                                    # backend: unit + интеграционные
+npm --prefix frontend run lint && npm --prefix frontend run build   # frontend
+# `npm run test` добавляется сюда, когда в frontend появится Vitest
 
 # 5. Коммит и пуш
 git add -A
@@ -768,6 +770,7 @@ git branch -d feature/<dev>-s<номер>-<кратко>
 - **`shared/openapi.yaml`** обновляется в той же сессии, где меняется эндпоинт. После merge оба выполняют `npm run generate-api`.
 - **Конфликты** — обсуждение в PR, решение фиксируется в `docs/decisions.md`.
 - **Запрещено** коммитить в `develop`/`main` напрямую.
+- **Ветка по умолчанию на GitHub — `develop`**: новые PR автоматически целются в неё; `main` — стабильная, обновляется мержем из `develop`.
 
 ## 6.1. Синхронизация локального окружения (после чужого merge)
 
