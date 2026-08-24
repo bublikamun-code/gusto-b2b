@@ -1,0 +1,21 @@
+meta {
+  name: Refresh
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/api/v1/auth/refresh
+  body: none
+  auth: none
+}
+
+docs {
+  Refresh-токен читается из httpOnly-куки автоматически.
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setVar("accessToken", res.getBody().data.accessToken);
+  }
+}

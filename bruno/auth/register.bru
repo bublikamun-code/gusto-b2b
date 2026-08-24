@@ -1,0 +1,20 @@
+meta {
+  name: Register (физлицо)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{host}}/api/v1/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "client@example.by",
+    "phone": "+375291234567",
+    "password": "password123",
+    "fullName": "Иван Иванов"
+  }
+}

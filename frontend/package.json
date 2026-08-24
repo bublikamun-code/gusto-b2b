@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "generate-api": "openapi-typescript ../shared/openapi.yaml -o src/api/schema.d.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.3.3",
     "sass": "^1.78.0",
     "typescript": "^5.5.4",

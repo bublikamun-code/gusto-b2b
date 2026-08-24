@@ -447,6 +447,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): design system ui-kit`.
 
 ### S07 [AB] Bruno-коллекция + OpenAPI
+> ✅ Выполнено 2026-08-25 [A] — `shared/openapi.yaml` baseline: envelope, auth-группа (login/register/refresh/logout/me/2fa/password-reset), каталог кодов ошибок (`AUTH_*`, `STOCK_*`, `VALIDATION_*` + общие), пагинация `meta:{page,size,total}`, `Idempotency-Key`; Bruno-коллекция `health/` + `auth/` с переменными `host/email/password`; `npm run generate-api` (openapi-typescript) + `src/api/schema.d.ts` в `.gitignore` + шаг генерации в CI; проверено: build зелёный, health-запросы против живого backend OK.
 - `shared/openapi.yaml`: envelope, auth-эндпоинты.
 - Каталог кодов ошибок (`error.code`: AUTH_*, STOCK_*, VALIDATION_*...) и формат пагинации (`meta: page/size/total`) — фиксируются здесь и дальше только расширяются.
 - `bruno/` коллекция: auth login/refresh/me.

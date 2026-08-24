@@ -1,48 +1,441 @@
 openapi: 3.1.0
 info:
   title: GUSTO B2B API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    Контракт API B2B-портала «Густо». Заполняется по мере сессий (чек-лист, Часть 4).
-    Envelope всех ответов: {data, meta, error}. Каталог кодов ошибок error.code —
-    AUTH_*, STOCK_*, VALIDATION_* (расширяется, не переименовывается).
+    Контракт API B2B-портала «Густо». Заполняется по мере сессий (чек-лист, Часть 4):
+    каждая сессия, меняющая эндпоинт, обновляет этот файл в том же PR.
+
+    **Envelope.** Все ответы: `{data, meta, error}`. Успех — `data` заполнен, `error: null`.
+    Ошибка — `data: null`, `error: {code, message, details?}`.
+
+    **Каталог кодов ошибок** (`error.code`) фиксируется в `ErrorCode` и дальше только
+    расширяется — существующие коды не переименовываются и не меняют смысл.
+
+    **Пагинация** списков: query `page` (0-based, как в Spring Data), `size`;
+    ответ — `meta: {page, size, total}` (total — всего элементов).
+
+    **Аутентификация.** Access-токен (JWT, 15 мин) — заголовок `Authorization: Bearer`.
+    Refresh-токен (7 дней, rotation + reuse detection) — httpOnly-кука
+    `refresh_token` (Secure, SameSite=Strict), выдаётся при login/refresh,
+    используется только эндпоинтом `/auth/refresh` и инвалидируется `/auth/logout`.
+
+    **Идемпотентность.** Мутирующие `POST` (заказы, заявки) принимают заголовок
+    `Idempotency-Key` (см. `components.parameters.IdempotencyKey`): повтор с тем же
+    ключом в течение 24 ч возвращает тот же результат.
+
+    **Health-эндпоинты** `/healthz`, `/readyz` живут вне префикса `/api/v1`
+    (per-path `servers`).
 servers:
   - url: /api/v1
+tags:
+  - name: health
+  - name: auth
+
 paths:
   /healthz:
+    servers:
+      - url: /
     get:
+      tags: [health]
       summary: Liveness-проба
       responses:
         "200":
           description: Сервис жив
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Envelope" }
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          status: { type: string, example: UP }
+                          service: { type: string }
   /readyz:
+    servers:
+      - url: /
     get:
+      tags: [health]
       summary: Readiness-проба
       responses:
         "200":
           description: Сервис готов принимать трафик
           content:
             application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          status: { type: string, example: READY }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход (email + пароль, при включённой 2FA — ещё и totpCode)
+      description: |
+        При включённой 2FA без `totpCode` возвращает 401 `AUTH_2FA_REQUIRED` —
+        клиент показывает ввод кода и повторяет login с `totpCode`.
+        Rate limit: 5 попыток / 15 мин на IP+email → 429 `RATE_LIMITED`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Успешный вход; refresh-токен выставлен в httpOnly-куку
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Саморегистрация физлица (роль CUSTOMER_INDIVIDUAL)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Пользователь создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Обновление access-токена по refresh-куке (rotation)
+      description: |
+        Повтор уже использованного refresh-токена (reuse detection) ревокает всю
+        цепочку токенов пользователя → 401 `AUTH_REFRESH_REUSED`.
+      requestBody: { required: false }
+      responses:
+        "200":
+          description: Новая пара токенов; refresh — в httpOnly-куке
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Выход (ревокация refresh-токена, кука очищается)
+      requestBody: { required: false }
+      responses:
+        "200":
+          description: Refresh-токен ревокнут
+          content:
+            application/json:
               schema: { $ref: "#/components/schemas/Envelope" }
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Текущий пользователь
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Профиль
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/2fa/enable:
+    post:
+      tags: [auth]
+      summary: Начать включение 2FA (TOTP) — выдаёт секрет
+      security:
+        - bearerAuth: []
+      requestBody: { required: false }
+      responses:
+        "200":
+          description: Секрет для TOTP-приложения; 2FA активируется после /auth/2fa/verify
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TotpSetupResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/2fa/verify:
+    post:
+      tags: [auth]
+      summary: Подтвердить включение 2FA кодом из приложения
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TotpVerifyRequest" }
+      responses:
+        "200":
+          description: 2FA включена; recovery-коды показываются один раз
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TotpRecoveryResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/password-reset/request:
+    post:
+      tags: [auth]
+      summary: Запрос на восстановление пароля (одноразовый токен на 30 мин)
+      description: Всегда 200, даже если email не существует — не раскрываем базу.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PasswordResetRequest" }
+      responses:
+        "200":
+          description: Если email существует — письмо отправлено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      summary: Установка нового пароля по токену из письма
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PasswordResetConfirm" }
+      responses:
+        "200":
+          description: Пароль изменён; все refresh-токены ревокнуты
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access-токен из /auth/login или /auth/refresh (15 мин)
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Ключ идемпотентности (UUID), повтор с тем же ключом 24 ч → тот же результат
+      schema: { type: string, format: uuid }
+    PageParam:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+      description: Номер страницы, 0-based
+    SizeParam:
+      name: size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    Unauthorized:
+      description: Не аутентифицирован / неверные креды / истёкший токен
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            invalidCredentials:
+              value: { data: null, meta: { }, error: { code: AUTH_INVALID_CREDENTIALS, message: "Неверный email или пароль" } }
+    ValidationFailed:
+      description: Ошибка валидации полей запроса
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            invalidFields:
+              value: { data: null, meta: { }, error: { code: VALIDATION_FAILED, message: "Ошибка валидации", details: { "email": "некорректный email" } } }
+    Conflict:
+      description: Конфликт уникальности (email/УНП уже заняты)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            duplicate:
+              value: { data: null, meta: { }, error: { code: CONFLICT, message: "Пользователь с таким email уже существует" } }
+    RateLimited:
+      description: Превышен лимит запросов (5 попыток / 15 мин на IP+email для auth)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            limited:
+              value: { data: null, meta: { }, error: { code: RATE_LIMITED, message: "Слишком много попыток, повторите позже" } }
+
   schemas:
+    # ----- Envelope и пагинация -------------------------------------------------
     Envelope:
       type: object
       required: [data, meta, error]
       properties:
-        data: {}
+        data:
+          nullable: true
+          description: Полезная нагрузка; null при ошибке
         meta:
-          type: object
-          description: Пагинация page/size/total для списков
+          $ref: "#/components/schemas/Meta"
         error:
+          nullable: true
+          $ref: "#/components/schemas/Error"
+    Meta:
+      type: object
+      description: Для списков — пагинация; иначе пустой объект
+      properties:
+        page: { type: integer, minimum: 0 }
+        size: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0, description: "Всего элементов" }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+          description: Человекочитаемое сообщение (ru)
+        details:
           type: object
           nullable: true
-          properties:
-            code:
-              type: string
-              description: Код из каталога ошибок
-            message:
-              type: string
+          additionalProperties: true
+          description: "Опционально: поля формы → текст ошибки, и т.п."
+    ErrorEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { nullable: true, enum: [null] }
+            error:
+              $ref: "#/components/schemas/Error"
+
+    # Каталог кодов ошибок error.code. Только расширяется; не переименовывается.
+    ErrorCode:
+      type: string
+      enum:
+        # auth
+        - AUTH_INVALID_CREDENTIALS # неверный email/пароль
+        - AUTH_2FA_REQUIRED        # login без totpCode при включённой 2FA
+        - AUTH_2FA_INVALID         # неверный код TOTP
+        - AUTH_TOKEN_EXPIRED       # access-токен истёк
+        - AUTH_TOKEN_INVALID       # подпись/формат токена не валидны
+        - AUTH_REFRESH_REUSED      # повтор использованного refresh → ревок цепочки
+        - AUTH_RESET_TOKEN_INVALID # токен восстановления просрочен/неверен
+        # доступ
+        - ACCESS_DENIED            # 403 по роли/ownership
+        - NOT_FOUND                # 404 сущность не найдена
+        - CONFLICT                 # 409 конфликт уникальности
+        - RATE_LIMITED             # 429 превышен лимит
+        - IDEMPOTENCY_CONFLICT     # тот же ключ, другое тело запроса
+        # валидация
+        - VALIDATION_FAILED        # ошибки полей запроса
+        # склад
+        - STOCK_INSUFFICIENT       # недостаточно остатка для заказа/резерва
+        - STOCK_DOCUMENT_INVALID   # неверный переход статуса складского документа
+        # общие
+        - INTERNAL                 # непредвиденная ошибка сервера
+
+    # ----- Auth ------------------------------------------------------------------
+    Role:
+      type: string
+      enum: [ADMIN, ACCOUNTANT, MANAGER, CUSTOMER_LEGAL, CUSTOMER_INDIVIDUAL]
+    User:
+      type: object
+      required: [id, email, fullName, role, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        phone: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/Role" }
+        companyId: { type: string, format: uuid, nullable: true, description: "Заполнен у CUSTOMER_LEGAL" }
+        isActive: { type: boolean }
+        totpEnabled: { type: boolean }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        totpCode: { type: string, pattern: "^\\d{6}$", description: "Обязателен, если у пользователя включена 2FA" }
+    RegisterRequest:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email: { type: string, format: email }
+        phone: { type: string, nullable: true }
+        password: { type: string, format: password, minLength: 8 }
+        fullName: { type: string }
+    AccessToken:
+      type: object
+      required: [accessToken, expiresIn]
+      properties:
+        accessToken: { type: string, description: "JWT, 15 мин" }
+        expiresIn: { type: integer, description: "Секунд до истечения access-токена", example: 900 }
+    UserResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/User" }
+    TokenResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/AccessToken" }
+    LoginResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/AccessToken"
+                - properties:
+                    user: { $ref: "#/components/schemas/User" }
+    TotpSetupResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: object
+              required: [secret, otpauthUrl]
+              properties:
+                secret: { type: string, description: "Base32-секрет для ручного ввода" }
+                otpauthUrl: { type: string, description: "otpauth:// для QR-кода" }
+    TotpVerifyRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, pattern: "^\\d{6}$" }
+    TotpRecoveryResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: object
+              required: [recoveryCodes]
+              properties:
+                recoveryCodes:
+                  type: array
+                  items: { type: string }
+                  description: Показываются один раз
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+    PasswordResetConfirm:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token: { type: string }
+        newPassword: { type: string, format: password, minLength: 8 }

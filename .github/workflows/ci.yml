@@ -40,6 +40,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install
         run: npm ci --prefix frontend
+      - name: Generate API types
+        run: npm run generate-api --prefix frontend   # заодно валидирует shared/openapi.yaml
       - name: Lint
         run: npm run lint --prefix frontend
       - name: Build

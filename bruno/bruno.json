@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "gusto-b2b",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"]
+}
