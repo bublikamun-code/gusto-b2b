@@ -45,6 +45,9 @@ services:
     build: ./frontend
     environment:
       VITE_API_PROXY: http://backend:8080
+    volumes:
+      - ./frontend:/app          # hot reload: правки на хосте видны в контейнере
+      - /app/node_modules        # не затираем зависимости образа
     ports:
       - "5173:5173"
     depends_on:

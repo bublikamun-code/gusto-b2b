@@ -1,0 +1,86 @@
+@use "../../../styles/tokens" as *;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    opacity 0.15s;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  background: $color-bordeaux;
+  color: $color-cream;
+
+  &:hover:not(:disabled) {
+    background: $color-bordeaux-dark;
+  }
+}
+
+.secondary {
+  background: transparent;
+  color: $color-bordeaux;
+  border-color: $color-bordeaux;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-bordeaux, 0.08);
+  }
+}
+
+.accent {
+  background: $color-yolk;
+  color: $color-graphite;
+
+  &:hover:not(:disabled) {
+    background: $color-yolk-dark;
+  }
+}
+
+.sm {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.9rem;
+}
+
+.md {
+  font-size: 0.875rem;
+  padding: 0.65rem 1.4rem;
+}
+
+.lg {
+  font-size: 1rem;
+  padding: 0.85rem 1.8rem;
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: button-spin 0.7s linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

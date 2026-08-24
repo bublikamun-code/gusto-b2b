@@ -1,0 +1,62 @@
+@use "../../../styles/tokens" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba($color-graphite, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal {
+  background: $color-cream;
+  border-top: 4px solid $color-bordeaux;
+  border-radius: 2px;
+  width: 100%;
+  max-width: 34rem;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.5rem 0.6rem;
+}
+
+.title {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.05rem;
+  margin: 0;
+  color: $color-graphite;
+}
+
+.close {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  color: $color-bordeaux;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+}
+
+.body {
+  padding: 0.75rem 1.5rem 1.25rem;
+  overflow-y: auto;
+  font-family: $font-body;
+  color: $color-graphite;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.9rem 1.5rem 1.2rem;
+}

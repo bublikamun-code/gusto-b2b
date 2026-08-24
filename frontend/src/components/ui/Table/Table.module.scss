@@ -1,0 +1,48 @@
+@use "../../../styles/tokens" as *;
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-card;
+  border-radius: 2px;
+  overflow: hidden;
+  font-family: $font-body;
+  font-size: 0.9rem;
+  color: $color-graphite;
+
+  th {
+    font-family: $font-heading;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-align: left;
+    background: $color-bordeaux;
+    color: $color-cream;
+    padding: 0.7rem 0.9rem;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid rgba($color-graphite, 0.12);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: rgba($color-bordeaux, 0.04);
+  }
+
+  .state {
+    text-align: center;
+    color: rgba($color-graphite, 0.55);
+    padding: 1.5rem 0.9rem;
+  }
+}

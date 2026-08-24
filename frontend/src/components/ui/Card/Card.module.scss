@@ -1,0 +1,33 @@
+@use "../../../styles/tokens" as *;
+
+.card {
+  background: $color-card;
+  border-radius: 2px;
+  padding: 1.5rem;
+}
+
+.accent {
+  border-top: 4px solid $color-bordeaux;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.05rem;
+  margin: 0;
+  color: $color-graphite;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
