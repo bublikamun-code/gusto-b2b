@@ -18,3 +18,6 @@ frontend/dist/
 
 # typescript incremental build cache
 frontend/tsconfig.tsbuildinfo
+
+# сгенерированные типы API (npm run generate-api; источник истины — shared/openapi.yaml)
+frontend/src/api/schema.d.ts

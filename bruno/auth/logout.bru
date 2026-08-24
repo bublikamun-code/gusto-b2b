@@ -1,0 +1,17 @@
+meta {
+  name: Logout
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/api/v1/auth/logout
+  body: none
+  auth: none
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.deleteVar("accessToken");
+  }
+}
