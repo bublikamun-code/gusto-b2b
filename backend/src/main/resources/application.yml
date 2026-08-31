@@ -5,6 +5,10 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/gusto}
     username: ${SPRING_DATASOURCE_USERNAME:gusto}
     password: ${SPRING_DATASOURCE_PASSWORD:gusto}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,9 +22,25 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      cookie:
+        same-site: Strict
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-replace-with-64-random-characters-before-production}
+    issuer: gusto-b2b
+    access-ttl-minutes: 15
+    refresh-ttl-days: 7
+  security:
+    refresh-cookie-name: refresh_token
+    rate-limit:
+      attempts: 5
+      window-minutes: 15
