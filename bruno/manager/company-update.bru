@@ -1,0 +1,22 @@
+meta {
+  name: Update assigned company
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{host}}/api/v1/manager/companies/{{companyId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "contactEmail": "manager@gusto.by",
+    "contactPhone": "+375293333333"
+  }
+}

@@ -1,0 +1,14 @@
+meta {
+  name: Get company
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{host}}/api/v1/admin/companies/{{createdCompanyId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

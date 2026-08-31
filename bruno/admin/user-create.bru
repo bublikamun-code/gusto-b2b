@@ -1,0 +1,31 @@
+meta {
+  name: Create user
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/api/v1/admin/users
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "email": "{{newUserEmail}}",
+    "fullName": "{{newUserFullName}}",
+    "phone": "+375291234567",
+    "role": "{{newUserRole}}",
+    "companyId": "{{newUserCompanyId}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("createdUserId", res.getBody().data.id);
+  }
+}
