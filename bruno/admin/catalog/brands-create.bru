@@ -1,0 +1,28 @@
+meta {
+  name: Create brand
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{host}}/api/v1/admin/catalog/brands
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Бренд {{$timestamp}}",
+    "slug": "brand-{{$timestamp}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("createdBrandId", res.getBody().data.id);
+  }
+}

@@ -1,0 +1,14 @@
+meta {
+  name: List brands
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{host}}/api/v1/admin/catalog/brands
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Update category
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{host}}/api/v1/admin/catalog/categories/{{createdCategoryId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Категория обновлённая {{$timestamp}}",
+    "slug": "category-{{$timestamp}}",
+    "parentId": null,
+    "sort": 1,
+    "active": true
+  }
+}

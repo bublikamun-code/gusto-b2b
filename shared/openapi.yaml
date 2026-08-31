@@ -32,6 +32,7 @@ tags:
   - name: health
   - name: auth
   - name: admin
+  - name: catalog
   - name: manager
   - name: cabinet
 
@@ -480,6 +481,375 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /admin/catalog/categories:
+    get:
+      tags: [admin]
+      summary: Список всех категорий
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список категорий
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [admin]
+      summary: Создание категории
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryRequest" }
+      responses:
+        "201":
+          description: Категория создана
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/catalog/categories/tree:
+    get:
+      tags: [admin]
+      summary: Дерево активных категорий
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Дерево категорий
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryTreeResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/catalog/categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID категории
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка категории
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные категории
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактирование категории
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryRequest" }
+      responses:
+        "200":
+          description: Категория обновлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [admin]
+      summary: Удаление категории (только если нет дочерних)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Категория удалена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/catalog/brands:
+    get:
+      tags: [admin]
+      summary: Список брендов
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список брендов
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BrandListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [admin]
+      summary: Создание бренда
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BrandRequest" }
+      responses:
+        "201":
+          description: Бренд создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BrandResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/catalog/brands/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID бренда
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка бренда
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные бренда
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BrandResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактирование бренда
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BrandRequest" }
+      responses:
+        "200":
+          description: Бренд обновлен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BrandResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [admin]
+      summary: Удаление бренда
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Бренд удален
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/catalog/products:
+    get:
+      tags: [admin]
+      summary: Список товаров
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Поиск по части названия
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: brandId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Список товаров с пагинацией
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [admin]
+      summary: Создание товара
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductRequest" }
+      responses:
+        "201":
+          description: Товар создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/catalog/products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID товара
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка товара
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные товара
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактирование товара
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductRequest" }
+      responses:
+        "200":
+          description: Товар обновлен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [admin]
+      summary: Мягкое удаление товара
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Товар удален
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /catalog/categories:
+    get:
+      tags: [catalog]
+      summary: Дерево активных категорий
+      responses:
+        "200":
+          description: Дерево категорий
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryTreeResponse" }
+
+  /catalog/brands:
+    get:
+      tags: [catalog]
+      summary: Список брендов
+      responses:
+        "200":
+          description: Список брендов
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BrandListResponse" }
+
+  /catalog/products:
+    get:
+      tags: [catalog]
+      summary: Публичный каталог товаров
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Поиск по части названия
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: brandId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Список товаров с розничными ценами
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogProductListResponse" }
+
+  /catalog/products/{sku}:
+    parameters:
+      - name: sku
+        in: path
+        required: true
+        description: Артикул товара
+        schema: { type: string }
+    get:
+      tags: [catalog]
+      summary: Карточка товара
+      responses:
+        "200":
+          description: Данные товара с розничной ценой
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogProductResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /cabinet/company:
     get:
       tags: [cabinet]
@@ -841,3 +1211,149 @@ components:
       properties:
         token: { type: string }
         newPassword: { type: string, format: password, minLength: 8 }
+
+    # ----- Catalog --------------------------------------------------------------
+    Category:
+      type: object
+      required: [id, name, slug, sort, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 255 }
+        slug: { type: string, maxLength: 255, pattern: "^[a-z0-9-]+$" }
+        parentId: { type: string, format: uuid, nullable: true }
+        sort: { type: integer }
+        isActive: { type: boolean }
+        children:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+    CategoryRequest:
+      type: object
+      required: [name, slug, sort, active]
+      properties:
+        name: { type: string, maxLength: 255 }
+        slug: { type: string, maxLength: 255, pattern: "^[a-z0-9-]+$" }
+        parentId: { type: string, format: uuid, nullable: true }
+        sort: { type: integer, default: 0 }
+        active: { type: boolean, default: true }
+    CategoryResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Category" }
+    CategoryListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Category" }
+    CategoryTreeResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Category" }
+
+    Brand:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 255 }
+        slug: { type: string, maxLength: 255, pattern: "^[a-z0-9-]+$" }
+    BrandRequest:
+      type: object
+      required: [name, slug]
+      properties:
+        name: { type: string, maxLength: 255 }
+        slug: { type: string, maxLength: 255, pattern: "^[a-z0-9-]+$" }
+    BrandResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Brand" }
+    BrandListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Brand" }
+
+    Product:
+      type: object
+      required: [id, sku, name, categoryId, unit, vatRate, minStock, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string, maxLength: 100 }
+        name: { type: string, maxLength: 500 }
+        categoryId: { type: string, format: uuid }
+        brandId: { type: string, format: uuid, nullable: true }
+        description: { type: string, nullable: true, maxLength: 4000 }
+        unit: { type: string, maxLength: 20, default: "кг" }
+        manufacturer: { type: string, nullable: true, maxLength: 255 }
+        country: { type: string, nullable: true, maxLength: 100, default: "РБ" }
+        tnvedCode: { type: string, nullable: true, maxLength: 20 }
+        barcode: { type: string, nullable: true, maxLength: 50 }
+        vatRate: { type: number, default: 10 }
+        weightPerUnit: { type: number, nullable: true }
+        minStock: { type: number, default: 0 }
+        isActive: { type: boolean, default: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ProductRequest:
+      type: object
+      required: [sku, name, categoryId, unit, vatRate, minStock, active]
+      properties:
+        sku: { type: string, maxLength: 100 }
+        name: { type: string, maxLength: 500 }
+        categoryId: { type: string, format: uuid }
+        brandId: { type: string, format: uuid, nullable: true }
+        description: { type: string, nullable: true, maxLength: 4000 }
+        unit: { type: string, maxLength: 20, default: "кг" }
+        manufacturer: { type: string, nullable: true, maxLength: 255 }
+        country: { type: string, nullable: true, maxLength: 100, default: "РБ" }
+        tnvedCode: { type: string, nullable: true, maxLength: 20 }
+        barcode: { type: string, nullable: true, maxLength: 50 }
+        vatRate: { type: number, default: 10 }
+        weightPerUnit: { type: number, nullable: true }
+        minStock: { type: number, default: 0 }
+        active: { type: boolean, default: true }
+    ProductResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Product" }
+    ProductListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Product" }
+
+    CatalogProduct:
+      type: object
+      required: [id, sku, name, unit, retailPrice]
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        category: { $ref: "#/components/schemas/Category" }
+        brand: { $ref: "#/components/schemas/Brand", nullable: true }
+        unit: { type: string }
+        description: { type: string, nullable: true }
+        retailPrice: { type: number }
+    CatalogProductResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/CatalogProduct" }
+    CatalogProductListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/CatalogProduct" }

@@ -1,0 +1,14 @@
+meta {
+  name: Delete brand
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{host}}/api/v1/admin/catalog/brands/{{createdBrandId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

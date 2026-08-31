@@ -1,0 +1,34 @@
+meta {
+  name: Update product
+  type: http
+  seq: 15
+}
+
+put {
+  url: {{host}}/api/v1/admin/catalog/products/{{createdProductId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "sku": "SKU-{{$timestamp}}",
+    "name": "Товар обновлённый {{$timestamp}}",
+    "categoryId": "{{createdCategoryId}}",
+    "brandId": "{{createdBrandId}}",
+    "description": "Обновлённое описание",
+    "unit": "кг",
+    "manufacturer": "ООО Густо",
+    "country": "РБ",
+    "tnvedCode": "0201",
+    "barcode": "4600000000000",
+    "vatRate": 10,
+    "weightPerUnit": 1.5,
+    "minStock": 10,
+    "active": true
+  }
+}
