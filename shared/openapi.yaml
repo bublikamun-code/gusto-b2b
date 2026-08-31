@@ -216,6 +216,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Envelope" }
         "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
 components:
   securitySchemes:
@@ -325,10 +326,12 @@ components:
       enum:
         # auth
         - AUTH_INVALID_CREDENTIALS # неверный email/пароль
+        - AUTH_UNAUTHORIZED        # запрос без/с недействительным access-токеном
         - AUTH_2FA_REQUIRED        # login без totpCode при включённой 2FA
         - AUTH_2FA_INVALID         # неверный код TOTP
         - AUTH_TOKEN_EXPIRED       # access-токен истёк
         - AUTH_TOKEN_INVALID       # подпись/формат токена не валидны
+        - AUTH_REFRESH_INVALID     # refresh-токен недействителен/отсутствует
         - AUTH_REFRESH_REUSED      # повтор использованного refresh → ревок цепочки
         - AUTH_RESET_TOKEN_INVALID # токен восстановления просрочен/неверен
         # доступ
@@ -378,9 +381,10 @@ components:
         fullName: { type: string }
     AccessToken:
       type: object
-      required: [accessToken, expiresIn]
+      required: [accessToken, tokenType, expiresIn]
       properties:
         accessToken: { type: string, description: "JWT, 15 мин" }
+        tokenType: { type: string, example: "Bearer" }
         expiresIn: { type: integer, description: "Секунд до истечения access-токена", example: 900 }
     UserResponse:
       allOf:

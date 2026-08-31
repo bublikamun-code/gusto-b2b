@@ -458,6 +458,7 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 2 — Auth и пользователи
 
 ### S08 [B] JWT + refresh
+> ✅ Выполнено 2026-08-31 [B] — JWT access 15 мин + refresh (httpOnly Secure SameSite=Strict, 7 дней, rotation + reuse detection), таблица refresh_tokens, revoke на logout, саморегистрация физлиц, восстановление пароля по хэшированному токену, Redis rate limiting 5/15 мин, интеграционные тесты, Bruno-коллекция auth.
 - Login (email+password) → access 15 мин + refresh (httpOnly cookie, Secure, SameSite=Strict, 7 дней, rotation + reuse detection: повтор старого refresh ревокает всю цепочку).
 - Таблица `refresh_tokens`, revoke на logout.
 - Саморегистрация физлица `POST /auth/register` (email/телефон + пароль, роль CUSTOMER_INDIVIDUAL, без 2FA).

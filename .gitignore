@@ -2,6 +2,9 @@
 .env
 *.local
 
+# локальные инструменты проекта
+.tools/
+
 # java
 backend/target/
 backend/.mvn/
