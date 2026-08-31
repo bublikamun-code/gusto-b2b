@@ -29,6 +29,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetService passwordResetService;
+    private final TotpService totpService;
     private final UserMapper userMapper;
 
     @Transactional
@@ -47,6 +48,16 @@ public class AuthService {
 
         User user = userRepository.findByEmailIgnoreCase(principal.getUsername())
                 .orElseThrow(() -> new GustoException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+
+        if (user.isTotpEnabled()) {
+            String totpCode = request.getTotpCode();
+            if (totpCode == null || totpCode.isBlank()) {
+                throw new GustoException(ErrorCode.AUTH_2FA_REQUIRED);
+            }
+            if (!totpService.verifyCode(user, totpCode) && !totpService.verifyRecoveryCode(user, totpCode)) {
+                throw new GustoException(ErrorCode.AUTH_2FA_INVALID);
+            }
+        }
 
         String accessToken = jwtService.generateAccessToken(user);
         RefreshTokenService.TokenPair refreshPair = refreshTokenService.create(user, ip, userAgent);
@@ -97,9 +108,9 @@ public class AuthService {
 
     @Transactional
     public void confirmPasswordReset(String token, String newPassword) {
-        if (!passwordResetService.resetPassword(token, newPassword)) {
-            throw new GustoException(ErrorCode.AUTH_RESET_TOKEN_INVALID);
-        }
+        User user = passwordResetService.resetPassword(token, newPassword)
+                .orElseThrow(() -> new GustoException(ErrorCode.AUTH_RESET_TOKEN_INVALID));
+        refreshTokenService.revokeAllUserTokens(user);
     }
 
     @Transactional(readOnly = true)

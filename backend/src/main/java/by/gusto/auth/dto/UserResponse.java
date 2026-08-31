@@ -21,6 +21,11 @@ public class UserResponse {
     private String phone;
     private Role role;
 
+    private UUID companyId;
+
     @JsonProperty("isActive")
     private boolean active;
+
+    @JsonProperty("totpEnabled")
+    private boolean totpEnabled;
 }

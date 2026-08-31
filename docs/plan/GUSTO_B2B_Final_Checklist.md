@@ -469,6 +469,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(auth): jwt access and refresh flow`.
 
 ### S09 [B] Роли, guards, ownership
+> ✅ Выполнено 2026-08-31 [B] — `@PreAuthorize`/method security по ролям, ownership-aspect для компаний, TOTP 2FA (setup/verify/recovery codes) для ADMIN/ACCOUNTANT, интеграция 2FA в login, негативные тесты 401/403 и IDOR.
 - `@PreAuthorize`/method security по ролям.
 - Ownership-aspect: менеджер видит только назначенные `companies`, клиент — только свою компанию.
 - 2FA TOTP для ADMIN/ACCOUNTANT (setup, verify, recovery codes).

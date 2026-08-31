@@ -49,14 +49,14 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public boolean resetPassword(String rawToken, String newPassword) {
+    public Optional<User> resetPassword(String rawToken, String newPassword) {
         if (rawToken == null || rawToken.isBlank()) {
-            return false;
+            return Optional.empty();
         }
         String hash = sha256(rawToken);
         Optional<PasswordResetToken> tokenOpt = tokenRepository.findByTokenHash(hash);
         if (tokenOpt.isEmpty() || tokenOpt.get().getUsed() || tokenOpt.get().getExpiresAt().isBefore(Instant.now())) {
-            return false;
+            return Optional.empty();
         }
         PasswordResetToken token = tokenOpt.get();
         token.setUsed(true);
@@ -64,7 +64,7 @@ public class PasswordResetService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         tokenRepository.save(token);
         userRepository.save(user);
-        return true;
+        return Optional.of(user);
     }
 
     private String sha256(String input) {

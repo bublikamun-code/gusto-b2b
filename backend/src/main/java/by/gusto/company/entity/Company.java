@@ -1,9 +1,7 @@
-package by.gusto.auth.entity;
+package by.gusto.company.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,46 +18,54 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "companies")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class Company {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @UuidGenerator
     private UUID id;
 
-    @Column(nullable = false, unique = true, columnDefinition = "citext")
-    private String email;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    @Column(name = "short_name")
+    private String shortName;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+    @Column(unique = true)
+    private String unp;
 
-    private String phone;
+    @Column(name = "legal_address")
+    private String legalAddress;
 
-    @Enumerated(EnumType.STRING)
+    @Column(name = "actual_address")
+    private String actualAddress;
+
+    @Column(name = "bank_account")
+    private String bankAccount;
+
+    @Column(name = "bank_name")
+    private String bankName;
+
+    @Column(name = "bank_bic")
+    private String bankBic;
+
+    @Column(name = "contact_phone")
+    private String contactPhone;
+
+    @Column(name = "contact_email")
+    private String contactEmail;
+
     @Column(nullable = false, length = 20)
-    private Role role;
-
-    @Column(name = "is_active", nullable = false)
     @Builder.Default
-    private boolean active = true;
+    private String status = "ACTIVE";
 
-    @Column(name = "totp_secret")
-    private String totpSecret;
-
-    @Column(name = "totp_enabled", nullable = false)
-    @Builder.Default
-    private boolean totpEnabled = false;
-
-    @Column(name = "company_id")
-    private UUID companyId;
+    @Column(name = "manager_id")
+    private UUID managerId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -68,7 +74,4 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
 }

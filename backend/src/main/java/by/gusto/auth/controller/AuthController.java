@@ -6,12 +6,17 @@ import by.gusto.auth.dto.PasswordResetConfirmRequest;
 import by.gusto.auth.dto.PasswordResetRequest;
 import by.gusto.auth.dto.RegisterRequest;
 import by.gusto.auth.dto.TokenResponse;
+import by.gusto.auth.dto.TotpRecoveryResponse;
+import by.gusto.auth.dto.TotpSetupResponse;
+import by.gusto.auth.dto.TotpVerifyRequest;
 import by.gusto.auth.dto.UserResponse;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.mapper.UserMapper;
+import by.gusto.auth.service.AuthContext;
 import by.gusto.auth.service.AuthService;
 import by.gusto.auth.service.AuthService.AuthResult;
 import by.gusto.auth.service.RateLimitService;
+import by.gusto.auth.service.TotpService;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -23,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -43,6 +50,8 @@ public class AuthController {
     private final RateLimitService rateLimitService;
     private final SecurityProperties securityProperties;
     private final UserMapper userMapper;
+    private final TotpService totpService;
+    private final AuthContext authContext;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<TokenResponse>> login(
@@ -87,6 +96,27 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
         UserResponse user = authService.getCurrentUser(principal.getUsername());
         return ResponseEntity.ok(ApiResponse.success(user));
+    }
+
+    @PostMapping("/2fa/enable")
+    @PreAuthorize("hasAnyRole('ADMIN','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<TotpSetupResponse>> enable2fa() {
+        User user = authContext.getCurrentUser();
+        TotpService.TotpSetupResult result = totpService.generateSecret(user);
+        return ResponseEntity.ok(ApiResponse.success(TotpSetupResponse.builder()
+                .secret(result.secret())
+                .otpauthUrl(result.otpauthUrl())
+                .build()));
+    }
+
+    @PostMapping("/2fa/verify")
+    @PreAuthorize("hasAnyRole('ADMIN','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<TotpRecoveryResponse>> verify2fa(@Valid @RequestBody TotpVerifyRequest request) {
+        User user = authContext.getCurrentUser();
+        List<String> codes = totpService.verifyAndEnable(user, request.getCode());
+        return ResponseEntity.ok(ApiResponse.success(TotpRecoveryResponse.builder()
+                .recoveryCodes(codes)
+                .build()));
     }
 
     @PostMapping("/password-reset/request")
