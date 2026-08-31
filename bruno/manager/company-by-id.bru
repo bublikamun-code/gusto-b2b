@@ -1,0 +1,14 @@
+meta {
+  name: Company by ID (ownership)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/api/v1/manager/companies/{{companyId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

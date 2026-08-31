@@ -31,6 +31,9 @@ servers:
 tags:
   - name: health
   - name: auth
+  - name: admin
+  - name: manager
+  - name: cabinet
 
 paths:
   /healthz:
@@ -218,6 +221,70 @@ paths:
         "400": { $ref: "#/components/responses/ValidationFailed" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /admin/users:
+    get:
+      tags: [admin]
+      summary: Список пользователей (только ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список пользователей
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /manager/companies:
+    get:
+      tags: [manager]
+      summary: Список назначенных компаний (только MANAGER)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Компании, закреплённые за менеджером
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /manager/companies/{id}:
+    get:
+      tags: [manager]
+      summary: Карточка компании (MANAGER + ownership)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CompanyId"
+      responses:
+        "200":
+          description: Данные компании
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /cabinet/company:
+    get:
+      tags: [cabinet]
+      summary: Своя компания (CUSTOMER_LEGAL / CUSTOMER_INDIVIDUAL)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные компании текущего пользователя
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -232,6 +299,12 @@ components:
       in: header
       required: true
       description: Ключ идемпотентности (UUID), повтор с тем же ключом 24 ч → тот же результат
+      schema: { type: string, format: uuid }
+    CompanyId:
+      name: id
+      in: path
+      required: true
+      description: ID компании
       schema: { type: string, format: uuid }
     PageParam:
       name: page
@@ -260,6 +333,22 @@ components:
           examples:
             invalidFields:
               value: { data: null, meta: { }, error: { code: VALIDATION_FAILED, message: "Ошибка валидации", details: { "email": "некорректный email" } } }
+    Forbidden:
+      description: Доступ запрещён (недостаточно прав или чужой ресурс)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            forbidden:
+              value: { data: null, meta: { }, error: { code: ACCESS_DENIED, message: "Доступ запрещён" } }
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            notFound:
+              value: { data: null, meta: { }, error: { code: NOT_FOUND, message: "Не найдено" } }
     Conflict:
       description: Конфликт уникальности (email/УНП уже заняты)
       content:
@@ -391,6 +480,35 @@ components:
         - $ref: "#/components/schemas/Envelope"
         - properties:
             data: { $ref: "#/components/schemas/User" }
+    UserListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/User" }
+    Company:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        shortName: { type: string, nullable: true }
+        unp: { type: string, nullable: true }
+        status: { type: string, example: ACTIVE }
+        managerId: { type: string, format: uuid, nullable: true }
+    CompanyResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Company" }
+    CompanyListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Company" }
     TokenResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"

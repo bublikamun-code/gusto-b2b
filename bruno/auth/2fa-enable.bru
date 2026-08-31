@@ -13,3 +13,9 @@ post {
 auth:bearer {
   token: {{accessToken}}
 }
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setVar("totpSecret", res.getBody().data.secret);
+  }
+}
