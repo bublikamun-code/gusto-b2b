@@ -1,0 +1,22 @@
+meta {
+  name: Update user
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{host}}/api/v1/admin/users/{{createdUserId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "fullName": "Updated Name",
+    "active": false
+  }
+}

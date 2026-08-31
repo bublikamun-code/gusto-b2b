@@ -235,6 +235,197 @@ paths:
               schema: { $ref: "#/components/schemas/UserListResponse" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [admin]
+      summary: Создание пользователя ADMIN/ACCOUNTANT/MANAGER/CUSTOMER_LEGAL
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateUserRequest" }
+      responses:
+        "201":
+          description: Пользователь создан; пароль выдаётся админу отдельно
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID пользователя
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные пользователя
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактирование пользователя
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateUserRequest" }
+      responses:
+        "200":
+          description: Пользователь обновлён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [admin]
+      summary: Мягкое удаление пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Пользователь удалён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/users/{id}/reset-password:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID пользователя
+        schema: { type: string, format: uuid }
+    post:
+      tags: [admin]
+      summary: Сброс пароля админом (временный пароль, показывается 1 раз)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Временный пароль
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TemporaryPasswordResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/companies:
+    get:
+      tags: [admin]
+      summary: Список компаний
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список компаний
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [admin]
+      summary: Создание компании
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCompanyRequest" }
+      responses:
+        "201":
+          description: Компания создана
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/companies/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID компании
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка компании
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные компании
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактирование компании
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCompanyRequest" }
+      responses:
+        "200":
+          description: Компания обновлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [admin]
+      summary: Деактивация компании (status = INACTIVE)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Компания деактивирована
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /manager/companies:
     get:
@@ -252,19 +443,39 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
 
   /manager/companies/{id}:
+    parameters:
+      - $ref: "#/components/parameters/CompanyId"
     get:
       tags: [manager]
       summary: Карточка компании (MANAGER + ownership)
       security:
         - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/CompanyId"
       responses:
         "200":
           description: Данные компании
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [manager]
+      summary: Редактирование назначенной компании (MANAGER + ownership)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCompanyRequest" }
+      responses:
+        "200":
+          description: Компания обновлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -494,9 +705,18 @@ components:
         id: { type: string, format: uuid }
         name: { type: string }
         shortName: { type: string, nullable: true }
-        unp: { type: string, nullable: true }
+        unp: { type: string, nullable: true, pattern: "^\\d{9}|\\d{10}$", description: "УНП РБ: 9 или 10 цифр" }
+        legalAddress: { type: string, nullable: true }
+        actualAddress: { type: string, nullable: true }
+        bankAccount: { type: string, nullable: true }
+        bankName: { type: string, nullable: true }
+        bankBic: { type: string, nullable: true }
+        contactPhone: { type: string, nullable: true }
+        contactEmail: { type: string, format: email, nullable: true }
         status: { type: string, example: ACTIVE }
         managerId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     CompanyResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -550,6 +770,66 @@ components:
                   type: array
                   items: { type: string }
                   description: Показываются один раз
+
+    # ----- Admin / Companies CRUD -----------------------------------------------
+    CreateUserRequest:
+      type: object
+      required: [email, fullName, role]
+      properties:
+        email: { type: string, format: email }
+        fullName: { type: string, minLength: 2, maxLength: 255 }
+        phone: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/Role" }
+        companyId: { type: string, format: uuid, nullable: true, description: "Обязательна для CUSTOMER_LEGAL" }
+    UpdateUserRequest:
+      type: object
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 255 }
+        phone: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/Role" }
+        companyId: { type: string, format: uuid, nullable: true }
+        active: { type: boolean }
+    TemporaryPasswordResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: object
+              required: [userId, temporaryPassword]
+              properties:
+                userId: { type: string, format: uuid }
+                temporaryPassword: { type: string, description: "Показывается один раз" }
+    CreateCompanyRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 255 }
+        shortName: { type: string, maxLength: 255, nullable: true }
+        unp: { type: string, pattern: "^\\d{9}|\\d{10}$", nullable: true, description: "УНП РБ: 9 или 10 цифр" }
+        legalAddress: { type: string, maxLength: 500, nullable: true }
+        actualAddress: { type: string, maxLength: 500, nullable: true }
+        bankAccount: { type: string, maxLength: 50, nullable: true }
+        bankName: { type: string, maxLength: 255, nullable: true }
+        bankBic: { type: string, maxLength: 20, nullable: true }
+        contactPhone: { type: string, maxLength: 50, nullable: true }
+        contactEmail: { type: string, format: email, maxLength: 255, nullable: true }
+        managerId: { type: string, format: uuid, nullable: true }
+    UpdateCompanyRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255 }
+        shortName: { type: string, maxLength: 255, nullable: true }
+        unp: { type: string, pattern: "^\\d{9}|\\d{10}$", nullable: true }
+        legalAddress: { type: string, maxLength: 500, nullable: true }
+        actualAddress: { type: string, maxLength: 500, nullable: true }
+        bankAccount: { type: string, maxLength: 50, nullable: true }
+        bankName: { type: string, maxLength: 255, nullable: true }
+        bankBic: { type: string, maxLength: 20, nullable: true }
+        contactPhone: { type: string, maxLength: 50, nullable: true }
+        contactEmail: { type: string, format: email, maxLength: 255, nullable: true }
+        managerId: { type: string, format: uuid, nullable: true }
+        status: { type: string, maxLength: 20, nullable: true }
+
     PasswordResetRequest:
       type: object
       required: [email]

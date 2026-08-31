@@ -1,0 +1,33 @@
+meta {
+  name: Create company
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{host}}/api/v1/admin/companies
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "ООО Густо",
+    "shortName": "Густо",
+    "unp": "123456789",
+    "legalAddress": "г. Минск",
+    "contactPhone": "+375291111111",
+    "contactEmail": "info@gusto.by",
+    "managerId": "{{managerId}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("createdCompanyId", res.getBody().data.id);
+  }
+}
