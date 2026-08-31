@@ -1,0 +1,31 @@
+meta {
+  name: Create category
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/api/v1/admin/catalog/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Категория {{$timestamp}}",
+    "slug": "category-{{$timestamp}}",
+    "parentId": null,
+    "sort": 0,
+    "active": true
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("createdCategoryId", res.getBody().data.id);
+  }
+}

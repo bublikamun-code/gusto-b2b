@@ -499,6 +499,8 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 3 — Каталог
 
 ### S13 [B] Каталог API
+> ✅ Выполнено 2026-08-31 [B] — миграция V5 (products.brand_id, created_at/updated_at, pg_trgm-индекс по name); сущности и репозитории Category, Brand, Product, PriceList, ProductPrice; CRUD admin/catalog/categories|brands|products; публичные GET /catalog/categories|brands|products|products/{sku} с пагинацией, поиском по части имени и фильтрами по категории/бренду; розничная цена из активного прайс-листа; 5 интеграционных тестов каталога; OpenAPI schemas + Bruno-коллекции `admin/catalog/` и `catalog/`; `npm run generate-api`, `npm run lint`, `npm run build` зелёные; backend `mvn -B verify` 30 тестов.
+
 - CRUD категорий (дерево), товаров, брендов.
 - Публичные `GET /catalog/*` с пагинацией/поиском/фильтрами, розничные цены из активного прайса.
 - Индексы: `pg_trgm` на `products.name`.

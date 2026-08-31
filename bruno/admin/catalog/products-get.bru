@@ -1,0 +1,14 @@
+meta {
+  name: Get product
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{host}}/api/v1/admin/catalog/products/{{createdProductId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

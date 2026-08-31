@@ -1,0 +1,10 @@
+meta {
+  name: Public product by SKU
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/api/v1/catalog/products/{{createdProductSku}}
+  auth: none
+}

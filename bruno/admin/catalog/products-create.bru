@@ -1,0 +1,41 @@
+meta {
+  name: Create product
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{host}}/api/v1/admin/catalog/products
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "sku": "SKU-{{$timestamp}}",
+    "name": "Товар {{$timestamp}}",
+    "categoryId": "{{createdCategoryId}}",
+    "brandId": "{{createdBrandId}}",
+    "description": "Описание товара",
+    "unit": "кг",
+    "manufacturer": "ООО Густо",
+    "country": "РБ",
+    "tnvedCode": "0201",
+    "barcode": "4600000000000",
+    "vatRate": 10,
+    "weightPerUnit": 1.0,
+    "minStock": 0,
+    "active": true
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("createdProductId", res.getBody().data.id);
+    bru.setVar("createdProductSku", res.getBody().data.sku);
+  }
+}
