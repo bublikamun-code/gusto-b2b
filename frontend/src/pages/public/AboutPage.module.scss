@@ -1,0 +1,72 @@
+@use "../../styles/tokens" as *;
+
+.about {
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.about__header {
+  margin-bottom: 2rem;
+}
+
+.about__eyebrow {
+  display: block;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  color: $color-bordeaux;
+  margin-bottom: 0.5rem;
+}
+
+.about__title {
+  font-family: $font-display;
+  font-size: 2.75rem;
+  color: $color-graphite;
+  margin: 0;
+}
+
+.about__content {
+  max-width: 45rem;
+
+  p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: rgba($color-graphite, 0.9);
+    margin: 0 0 1rem;
+  }
+}
+
+.about__stats {
+  display: flex;
+  gap: 3rem;
+  margin-top: 2.5rem;
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  strong {
+    font-family: $font-display;
+    font-size: 2.5rem;
+    color: $color-bordeaux;
+  }
+
+  span {
+    font-size: 0.9rem;
+    color: rgba($color-graphite, 0.7);
+  }
+}
+
+@media (max-width: 600px) {
+  .about__stats {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .about__title {
+    font-size: 2rem;
+  }
+}

@@ -1,0 +1,137 @@
+@use "../../styles/tokens" as *;
+
+.product {
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.product__breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba($color-graphite, 0.7);
+  margin-bottom: 1.5rem;
+
+  a {
+    color: $color-bordeaux;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.product__status {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: rgba($color-graphite, 0.7);
+}
+
+.product__layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.product__media {
+  background-color: $color-card;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+}
+
+.product__placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba($color-bordeaux, 0.08) 0%, rgba($color-yolk, 0.08) 100%);
+  display: grid;
+  place-items: center;
+
+  &::after {
+    content: "ГУСТО";
+    font-family: $font-display;
+    font-size: 3rem;
+    color: rgba($color-bordeaux, 0.2);
+  }
+}
+
+.product__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.product__category,
+.product__brand {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: $color-bordeaux;
+}
+
+.product__name {
+  font-family: $font-display;
+  font-size: 2.5rem;
+  color: $color-graphite;
+  margin: 0;
+}
+
+.product__desc {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba($color-graphite, 0.85);
+  margin: 0 0 1rem;
+}
+
+.product__priceRow {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 1rem 0;
+}
+
+.product__price {
+  font-family: $font-display;
+  font-size: 2.25rem;
+  color: $color-bordeaux;
+}
+
+.product__props {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  dt {
+    font-size: 0.8rem;
+    color: rgba($color-graphite, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 900px) {
+  .product__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .product__name {
+    font-size: 2rem;
+  }
+}
