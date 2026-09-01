@@ -35,6 +35,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gustomeat.by}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me}
+      APP_STORAGE_PATH: /app/data/files
+    volumes:
+      - filedata:/app/data/files
     ports:
       - "8080:8080"
     depends_on:
@@ -57,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  filedata:

@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -23,4 +25,11 @@ public class CabinetProductResponse {
     private String description;
     private BigDecimal retailPrice;
     private BigDecimal customerPrice;
+
+    @Builder.Default
+    private List<String> imageUrls = new ArrayList<>();
+
+    public String getImageUrl() {
+        return imageUrls.isEmpty() ? null : imageUrls.get(0);
+    }
 }

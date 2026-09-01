@@ -1,0 +1,14 @@
+meta {
+  name: Detach image from product
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{host}}/api/v1/admin/catalog/products/{{createdProductId}}/images/{{createdProductImageId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

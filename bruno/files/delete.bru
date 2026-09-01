@@ -1,0 +1,14 @@
+meta {
+  name: Delete file
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{host}}/api/v1/files/{{uploadedStorageKey}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

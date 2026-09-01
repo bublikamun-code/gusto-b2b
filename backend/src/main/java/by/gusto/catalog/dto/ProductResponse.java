@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -36,4 +38,11 @@ public class ProductResponse {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    @Builder.Default
+    private List<String> imageUrls = new ArrayList<>();
+
+    public String getImageUrl() {
+        return imageUrls.isEmpty() ? null : imageUrls.get(0);
+    }
 }

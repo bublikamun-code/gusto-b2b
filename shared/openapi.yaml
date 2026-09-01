@@ -35,9 +35,9 @@ tags:
   - name: users
   - name: companies
   - name: catalog
+  - name: files
   - name: manager
   - name: cabinet
-  - name: files
 
 paths:
   /healthz:
@@ -1328,9 +1328,75 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /admin/catalog/products/{id}/images:
+  /files:
+    post:
+      tags: [files]
+      summary: Загрузка файла
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                visibility:
+                  type: string
+                  enum: [PUBLIC, PRIVATE]
+                  default: PRIVATE
+      responses:
+        "201":
+          description: Файл загружен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FileResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /files/{storageKey}:
     parameters:
-      - name: id
+      - name: storageKey
+        in: path
+        required: true
+        description: Storage-key файла
+        schema: { type: string }
+    get:
+      tags: [files]
+      summary: Скачивание файла (PUBLIC — без авторизации, PRIVATE — с проверкой прав)
+      responses:
+        "200":
+          description: Содержимое файла
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [files]
+      summary: Удаление файла
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Файл удалён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/catalog/products/{productId}/images:
+    parameters:
+      - name: productId
         in: path
         required: true
         description: ID товара
@@ -1360,11 +1426,16 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required: [file]
               properties:
                 file:
                   type: string
                   format: binary
                   description: "Файл изображения (jpeg/png/webp, до 5 МБ)"
+      parameters:
+        - name: sort
+          in: query
+          schema: { type: integer, default: 0 }
       responses:
         "201":
           description: Изображение загружено
@@ -1401,26 +1472,6 @@ paths:
               schema: { $ref: "#/components/schemas/Envelope" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-
-  /files/{storageKey}:
-    parameters:
-      - name: storageKey
-        in: path
-        required: true
-        description: Непредсказуемый ключ хранилища (UUID)
-        schema: { type: string, format: uuid }
-    get:
-      tags: [files]
-      summary: Публичный доступ к файлу
-      responses:
-        "200":
-          description: Содержимое файла
-          content:
-            "*/*":
-              schema:
-                type: string
-                format: binary
         "404": { $ref: "#/components/responses/NotFound" }
 
 components:
@@ -1863,9 +1914,12 @@ components:
         weightPerUnit: { type: number, nullable: true }
         minStock: { type: number, default: 0 }
         isActive: { type: boolean, default: true }
-        imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+        imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
+        imageUrls:
+          type: array
+          items: { type: string }
     ProductRequest:
       type: object
       required: [sku, name, categoryId, unit, vatRate, minStock, active]
@@ -1910,6 +1964,9 @@ components:
         description: { type: string, nullable: true }
         retailPrice: { type: number }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
+        imageUrls:
+          type: array
+          items: { type: string }
     CatalogProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -2066,6 +2123,9 @@ components:
         retailPrice: { type: number }
         customerPrice: { type: number }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
+        imageUrls:
+          type: array
+          items: { type: string }
     CabinetProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -2079,19 +2139,32 @@ components:
               type: array
               items: { $ref: "#/components/schemas/CabinetProduct" }
 
-    # ----- Files / Product images ------------------------------------------------
-    ProductImage:
+    # ----- Files ---------------------------------------------------------------
+    File:
       type: object
-      required: [id, productId, storageKey, url, contentType, size, sort]
+      required: [id, storageKey, originalName, mimeType, sizeBytes, visibility, url, createdAt]
       properties:
         id: { type: string, format: uuid }
-        productId: { type: string, format: uuid }
-        storageKey: { type: string, format: uuid, description: "Непредсказуемый ключ в хранилище" }
-        url: { type: string, description: "Публичный URL для отображения изображения" }
-        contentType: { type: string, example: "image/jpeg" }
-        size: { type: integer, minimum: 0, description: "Размер в байтах" }
-        sort: { type: integer, minimum: 0, description: "Порядок сортировки" }
+        storageKey: { type: string }
+        originalName: { type: string }
+        mimeType: { type: string }
+        sizeBytes: { type: integer }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        url: { type: string }
         createdAt: { type: string, format: date-time }
+    FileResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/File" }
+    ProductImage:
+      type: object
+      required: [id, fileId, url, sort]
+      properties:
+        id: { type: string, format: uuid }
+        fileId: { type: string, format: uuid }
+        url: { type: string }
+        sort: { type: integer }
     ProductImageResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
