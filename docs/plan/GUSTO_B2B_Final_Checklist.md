@@ -535,6 +535,7 @@ settings (key TEXT PK, value JSONB)
 
 ### S17 [B] Фото товаров и файлы
 > ✅ Выполнено 2026-09-01 [B+A] — backend: модуль `by.gusto.file` (`FileEntity`, `ProductImage`, `FileStorageService`, `FileService`, `ProductImageService`, `ProductImageUrlResolver`), `POST /api/v1/files`, `GET/DELETE /api/v1/files/{storageKey}`, `AdminProductImageController` с multipart-загрузкой; frontend: страница `/admin/products` с модалкой фото, `ProductCard`/`ProductPage` показывают `imageUrl`; `shared/openapi.yaml` синхронизирован (поля `imageUrl` + `imageUrls`, пути `/admin/catalog/products/{productId}/images`); `mvn -B verify` и `npm run lint`/`build` зелёные.
+> 🔧 Hotfix 2026-09-01 [A] — `ProductImageService.toResponse` теперь строит URL по `FileEntity.storageKey`, а не по `fileId`; исправлен 404 на превью в админской модалке фото.
 - Модуль `files`: загрузка (magic-bytes, лимиты), хранение в локальном volume (S3-подобный API, совместимость на будущее).
 - Модель доступа (см. 1.6): приватные файлы — стриминг через backend с проверкой прав; публичные (фото товаров) — `visibility='PUBLIC'`, `storage_key` = непредсказуемый UUID.
 - `product_images`, выдача по защищённым URL.

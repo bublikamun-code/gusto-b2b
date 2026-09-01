@@ -20,7 +20,6 @@ public class ProductImageService {
 
     private final ProductImageRepository productImageRepository;
     private final FileRepository fileRepository;
-    private final FileService fileService;
 
     @Transactional(readOnly = true)
     public List<ProductImageResponse> getImages(UUID productId) {
@@ -60,10 +59,12 @@ public class ProductImageService {
     }
 
     private ProductImageResponse toResponse(ProductImage image) {
+        FileEntity file = fileRepository.findById(image.getFileId())
+                .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Файл не найден"));
         return ProductImageResponse.builder()
                 .id(image.getId())
                 .fileId(image.getFileId())
-                .url(fileService.buildPublicUrl(image.getFileId().toString()))
+                .url("/api/v1/files/" + file.getStorageKey())
                 .sort(image.getSort())
                 .build();
     }
