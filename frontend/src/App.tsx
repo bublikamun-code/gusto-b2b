@@ -13,6 +13,7 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import CabinetDashboardPage from "./pages/cabinet/CabinetDashboardPage";
+import CabinetCatalogPage from "./pages/cabinet/CabinetCatalogPage";
 import HomePage from "./pages/public/HomePage";
 import CatalogPage from "./pages/public/CatalogPage";
 import ProductPage from "./pages/public/ProductPage";
@@ -47,6 +48,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/manager" element={<ManagerDashboardPage />} />
             <Route path="/cabinet" element={<CabinetDashboardPage />} />
+            <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
           </Route>
 
           <Route element={<PublicLayout />}>

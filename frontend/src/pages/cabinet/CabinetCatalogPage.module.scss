@@ -1,0 +1,160 @@
+@use "sass:color";
+@use "../../styles/tokens" as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-cream;
+  color: $color-graphite;
+  font-family: $font-body;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: $color-bordeaux;
+  color: $color-cream;
+
+  &__left,
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__logo {
+    font-family: $font-display;
+    font-size: 1.25rem;
+    color: $color-cream;
+    text-decoration: none;
+  }
+
+  &__sub {
+    font-family: $font-heading;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+
+  &__cart {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba($color-cream, 0.12);
+    border-radius: 2px;
+  }
+
+  &__cartLabel {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__cartCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    background: $color-yolk;
+    color: $color-graphite;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  &__cartSum {
+    font-family: $font-display;
+    min-width: 5rem;
+    text-align: right;
+  }
+
+  &__user {
+    font-size: 0.9rem;
+  }
+
+  &__link {
+    color: $color-cream;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.bulk {
+  background: $color-card;
+  padding: 1rem 1.25rem;
+  border-radius: 2px;
+  margin-bottom: 1.25rem;
+
+  &__title {
+    font-family: $font-heading;
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem;
+  }
+
+  &__hint {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: rgba($color-graphite, 0.7);
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  &__textarea {
+    flex: 1 1 auto;
+  }
+
+  &__button {
+    flex: 0 0 auto;
+    margin-top: 1.5rem;
+  }
+
+  &__error {
+    margin: 0.5rem 0 0;
+    color: $color-bordeaux;
+    font-size: 0.85rem;
+  }
+
+  &__success {
+    margin: 0.5rem 0 0;
+    color: color.adjust($color-yolk, $lightness: -15%);
+    font-size: 0.85rem;
+  }
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.quantityInput {
+  max-width: 5rem;
+  margin: 0 auto;
+
+  input {
+    text-align: center;
+  }
+}
+
+.pagination {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
