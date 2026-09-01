@@ -68,3 +68,31 @@
   color: var(--color-text-secondary, #555555);
   font-size: 0.875rem;
 }
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.imageItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.imageThumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  background: rgba($color-graphite, 0.06);
+}
+
+.inlineThumb {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  background: rgba($color-graphite, 0.06);
+}

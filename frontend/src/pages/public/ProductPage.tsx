@@ -46,7 +46,15 @@ export default function ProductPage() {
 
       <div className={styles.product__layout}>
         <div className={styles.product__media}>
-          <div className={styles.product__placeholder} aria-hidden />
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className={styles.product__image}
+            />
+          ) : (
+            <div className={styles.product__placeholder} aria-hidden />
+          )}
         </div>
 
         <div className={styles.product__info}>

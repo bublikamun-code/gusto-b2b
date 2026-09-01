@@ -534,6 +534,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): cabinet compact catalog`.
 
 ### S17 [B] Фото товаров и файлы
+> 🔄 В процессе 2026-09-01 [A] — frontend-часть готова: `shared/openapi.yaml` дополнен полем `imageUrl` и эндпоинтами `/admin/catalog/products/{id}/images` + `/files/{storageKey}`; API-клиенты `adminCatalog.ts`/`productImages.ts`; страница `/admin/products` с таблицей товаров и модалкой загрузки/удаления фото; фото отображаются в `ProductCard` и `ProductPage` (fallback на placeholder); `npm run lint` и `npm run build` зелёные. Backend-модуль `files`, миграции и хранилище — в работе у Dev B.
 - Модуль `files`: загрузка (magic-bytes, лимиты), хранение в локальном volume (S3-подобный API, совместимость на будущее).
 - Модель доступа (см. 1.6): приватные файлы — стриминг через backend с проверкой прав; публичные (фото товаров) — `visibility='PUBLIC'`, `storage_key` = непредсказуемый UUID.
 - `product_images`, выдача по защищённым URL.
