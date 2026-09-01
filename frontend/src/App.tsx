@@ -2,8 +2,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthInit } from "./components/auth/AuthInit";
 import { AuthRedirect, ProtectedRoute, RoleGuard } from "./components/auth/AuthGuards";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import { PublicLayout } from "./components/public/PublicLayout";
 import NotFoundPage from "./pages/NotFoundPage";
-import StubPage from "./pages/StubPage";
 import UiKitPage from "./pages/UiKitPage";
 import LoginPage from "./pages/LoginPage";
 import RequestPasswordResetPage from "./pages/RequestPasswordResetPage";
@@ -13,6 +13,11 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import CabinetDashboardPage from "./pages/cabinet/CabinetDashboardPage";
+import HomePage from "./pages/public/HomePage";
+import CatalogPage from "./pages/public/CatalogPage";
+import ProductPage from "./pages/public/ProductPage";
+import DeliveryPage from "./pages/public/DeliveryPage";
+import AboutPage from "./pages/public/AboutPage";
 
 export default function App() {
   return (
@@ -44,7 +49,14 @@ export default function App() {
             <Route path="/cabinet" element={<CabinetDashboardPage />} />
           </Route>
 
-          <Route path="/" element={<StubPage />} />
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/products/:sku" element={<ProductPage />} />
+            <Route path="/delivery" element={<DeliveryPage />} />
+            <Route path="/about" element={<AboutPage />} />
+          </Route>
+
           <Route path="/ui-kit" element={<UiKitPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
