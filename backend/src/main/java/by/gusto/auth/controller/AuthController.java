@@ -101,6 +101,9 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
+        if (principal == null) {
+            throw new GustoException(ErrorCode.AUTH_UNAUTHORIZED, "Требуется авторизация");
+        }
         UserResponse user = authService.getCurrentUser(principal.getUsername());
         return ResponseEntity.ok(ApiResponse.success(user));
     }

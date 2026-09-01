@@ -14,6 +14,8 @@ import java.util.UUID;
 @Repository
 public interface PriceListRepository extends JpaRepository<PriceList, UUID> {
 
+    List<PriceList> findAllByOrderByValidFromDesc();
+
     @Query("""
             SELECT pl FROM PriceList pl
             WHERE pl.active = true
