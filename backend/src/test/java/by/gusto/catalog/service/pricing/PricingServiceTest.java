@@ -95,7 +95,7 @@ class PricingServiceTest {
 
         Optional<BigDecimal> price = pricingService.getCustomerPrice(companyId, productId, date);
 
-        assertThat(price).isPresent().hasValue(BigDecimal.valueOf(80.00));
+        assertThat(price).isPresent().hasValue(new BigDecimal("80.00"));
     }
 
     @Test
