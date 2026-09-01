@@ -8,6 +8,7 @@
 # java
 backend/target/
 backend/.mvn/
+backend/data/
 
 # node
 frontend/node_modules/

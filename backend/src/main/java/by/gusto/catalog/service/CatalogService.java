@@ -15,6 +15,7 @@ import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.catalog.repository.ProductSpecification;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
+import by.gusto.file.service.ProductImageUrlResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +39,7 @@ public class CatalogService {
     private final RetailPriceService retailPriceService;
     private final CategoryMapper categoryMapper;
     private final BrandMapper brandMapper;
+    private final ProductImageUrlResolver imageUrlResolver;
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> getActiveCategoryTree() {
@@ -64,8 +66,12 @@ public class CatalogService {
         List<Product> products = page.getContent();
         Map<UUID, BigDecimal> prices = retailPriceService.getRetailPrices(
                 products.stream().map(Product::getId).collect(Collectors.toSet()));
+        Map<UUID, List<String>> imageUrls = imageUrlResolver.resolveUrls(
+                products.stream().map(Product::getId).toList());
 
-        return page.map(product -> toCatalogResponse(product, prices.get(product.getId())));
+        return page.map(product -> toCatalogResponse(
+                product, prices.get(product.getId()),
+                imageUrls.getOrDefault(product.getId(), List.of())));
     }
 
     @Transactional(readOnly = true)
@@ -74,10 +80,10 @@ public class CatalogService {
                 .filter(Product::isActive)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Товар не найден"));
         BigDecimal price = retailPriceService.getRetailPrice(product.getId()).orElse(null);
-        return toCatalogResponse(product, price);
+        return toCatalogResponse(product, price, imageUrlResolver.resolveUrls(product.getId()));
     }
 
-    private CatalogProductResponse toCatalogResponse(Product product, BigDecimal retailPrice) {
+    private CatalogProductResponse toCatalogResponse(Product product, BigDecimal retailPrice, List<String> imageUrls) {
         Category category = product.getCategoryId() != null
                 ? categoryRepository.findById(product.getCategoryId()).orElse(null)
                 : null;
@@ -94,6 +100,7 @@ public class CatalogService {
                 .unit(product.getUnit())
                 .description(product.getDescription())
                 .retailPrice(retailPrice)
+                .imageUrls(imageUrls)
                 .build();
     }
 

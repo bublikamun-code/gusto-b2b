@@ -9,6 +9,7 @@ import by.gusto.catalog.repository.CategoryRepository;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
+import by.gusto.file.service.ProductImageUrlResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,6 +30,7 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
+    private final ProductImageUrlResolver imageUrlResolver;
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAll(int page, int size, String search, UUID categoryId, UUID brandId, Boolean active) {
@@ -34,20 +38,31 @@ public class ProductService {
         Page<Product> products = productRepository.findAll(
                 by.gusto.catalog.repository.ProductSpecification.filter(categoryId, brandId, active, search),
                 pageable);
-        return products.map(productMapper::toResponse);
+        Map<UUID, List<String>> imageUrls = imageUrlResolver.resolveUrls(
+                products.getContent().stream().map(Product::getId).toList());
+        return products.map(p -> enrich(productMapper.toResponse(p), imageUrls.getOrDefault(p.getId(), List.of())));
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getById(UUID id) {
         Product product = findActiveProduct(id);
-        return productMapper.toResponse(product);
+        ProductResponse response = productMapper.toResponse(product);
+        response.setImageUrls(imageUrlResolver.resolveUrls(id));
+        return response;
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getBySku(String sku) {
         Product product = productRepository.findBySkuAndDeletedAtIsNull(sku)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Товар не найден"));
-        return productMapper.toResponse(product);
+        ProductResponse response = productMapper.toResponse(product);
+        response.setImageUrls(imageUrlResolver.resolveUrls(product.getId()));
+        return response;
+    }
+
+    private ProductResponse enrich(ProductResponse response, List<String> imageUrls) {
+        response.setImageUrls(imageUrls);
+        return response;
     }
 
     @Transactional

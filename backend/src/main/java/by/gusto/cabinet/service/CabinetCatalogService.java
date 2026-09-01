@@ -15,6 +15,7 @@ import by.gusto.catalog.service.RetailPriceService;
 import by.gusto.catalog.service.pricing.PricingService;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
+import by.gusto.file.service.ProductImageUrlResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ public class CabinetCatalogService {
     private final PricingService pricingService;
     private final CategoryMapper categoryMapper;
     private final BrandMapper brandMapper;
+    private final ProductImageUrlResolver imageUrlResolver;
 
     @Transactional(readOnly = true)
     public Page<CabinetProductResponse> getProducts(ProductFilterRequest filter, UUID companyId) {
@@ -52,9 +55,12 @@ public class CabinetCatalogService {
 
         Map<UUID, BigDecimal> retailPrices = retailPriceService.getRetailPrices(
                 page.getContent().stream().map(Product::getId).collect(Collectors.toSet()));
+        Map<UUID, List<String>> imageUrls = imageUrlResolver.resolveUrls(
+                page.getContent().stream().map(Product::getId).toList());
 
         return page.map(product -> toCabinetResponse(
-                product, companyId, retailPrices.get(product.getId())));
+                product, companyId, retailPrices.get(product.getId()),
+                imageUrls.getOrDefault(product.getId(), List.of())));
     }
 
     @Transactional(readOnly = true)
@@ -63,10 +69,10 @@ public class CabinetCatalogService {
                 .filter(Product::isActive)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Товар не найден"));
         BigDecimal retailPrice = retailPriceService.getRetailPrice(product.getId()).orElse(null);
-        return toCabinetResponse(product, companyId, retailPrice);
+        return toCabinetResponse(product, companyId, retailPrice, imageUrlResolver.resolveUrls(product.getId()));
     }
 
-    private CabinetProductResponse toCabinetResponse(Product product, UUID companyId, BigDecimal retailPrice) {
+    private CabinetProductResponse toCabinetResponse(Product product, UUID companyId, BigDecimal retailPrice, List<String> imageUrls) {
         Category category = product.getCategoryId() != null
                 ? categoryRepository.findById(product.getCategoryId()).orElse(null)
                 : null;
@@ -86,6 +92,7 @@ public class CabinetCatalogService {
                 .description(product.getDescription())
                 .retailPrice(retailPrice)
                 .customerPrice(customerPrice)
+                .imageUrls(imageUrls)
                 .build();
     }
 }

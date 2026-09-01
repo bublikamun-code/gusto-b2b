@@ -1,0 +1,27 @@
+meta {
+  name: Upload file
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/files
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:multipart-form {
+  file: @file(E:/projects/gusto-b2b/bruno/files/test.png)
+  visibility: PUBLIC
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("uploadedFileId", res.getBody().data.id);
+    bru.setVar("uploadedStorageKey", res.getBody().data.storageKey);
+  }
+}

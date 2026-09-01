@@ -1,0 +1,14 @@
+meta {
+  name: List product images
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/api/v1/admin/catalog/products/{{createdProductId}}/images
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

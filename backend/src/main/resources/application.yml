@@ -13,6 +13,10 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   flyway:
     enabled: true
     # Плейсхолдеры для сид-миграции V2 (пароль админа живёт только в .env)
@@ -44,3 +48,7 @@ app:
     rate-limit:
       attempts: 5
       window-minutes: 15
+  storage:
+    path: ${APP_STORAGE_PATH:./data/files}
+    max-file-size: ${APP_STORAGE_MAX_FILE_SIZE:10485760}
+    allowed-mime-types: ${APP_STORAGE_ALLOWED_MIME_TYPES:image/jpeg,image/png,image/webp}

@@ -1,0 +1,20 @@
+meta {
+  name: Attach image to product
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/api/v1/admin/catalog/products/{{createdProductId}}/images?fileId={{uploadedFileId}}&sort=0
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("createdProductImageId", res.getBody().data.id);
+  }
+}
