@@ -19,7 +19,8 @@ async function apiRawRequest<T>(path: string, options: RequestOptions = {}): Pro
   const url = `${API_BASE}${path}`;
   const headers = new Headers(rest.headers);
   headers.set("Accept", "application/json");
-  if (body !== undefined) {
+  const isFormData = body instanceof FormData;
+  if (body !== undefined && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
   if (token) {
@@ -30,7 +31,7 @@ async function apiRawRequest<T>(path: string, options: RequestOptions = {}): Pro
     ...rest,
     headers,
     credentials: "include",
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? (isFormData ? body : JSON.stringify(body)) : undefined,
   });
 
   const envelope = (await response.json()) as ApiEnvelope<T>;

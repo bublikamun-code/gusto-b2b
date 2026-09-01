@@ -19,7 +19,16 @@ export function ProductCard({ product, badge }: ProductCardProps) {
             {badge}
           </Badge>
         )}
-        <div className={styles.card__placeholder} aria-hidden />
+        {product.imageUrl ? (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className={styles.card__image}
+            loading="lazy"
+          />
+        ) : (
+          <div className={styles.card__placeholder} aria-hidden />
+        )}
       </Link>
       <div className={styles.card__body}>
         <Link to={`/products/${product.sku}`} className={styles.card__name}>
