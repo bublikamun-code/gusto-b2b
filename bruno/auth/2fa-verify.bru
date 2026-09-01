@@ -16,6 +16,10 @@ auth:bearer {
 
 body:json {
   {
-    "code": "123456"
+    "code": "{{totpCode}}"
   }
+}
+
+docs {
+  Укажите текущий 6-значный код из TOTP-приложения в переменной `totpCode`.
 }

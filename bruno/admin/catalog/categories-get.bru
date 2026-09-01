@@ -1,0 +1,14 @@
+meta {
+  name: Get category
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/api/v1/admin/catalog/categories/{{createdCategoryId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

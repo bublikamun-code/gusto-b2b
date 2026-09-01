@@ -1,0 +1,14 @@
+meta {
+  name: My company
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/api/v1/cabinet/company
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -458,6 +458,7 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 2 — Auth и пользователи
 
 ### S08 [B] JWT + refresh
+> ✅ Выполнено 2026-08-31 [B] — JWT access 15 мин + refresh (httpOnly Secure SameSite=Strict, 7 дней, rotation + reuse detection), таблица refresh_tokens, revoke на logout, саморегистрация физлиц, восстановление пароля по хэшированному токену, Redis rate limiting 5/15 мин, интеграционные тесты, Bruno-коллекция auth.
 - Login (email+password) → access 15 мин + refresh (httpOnly cookie, Secure, SameSite=Strict, 7 дней, rotation + reuse detection: повтор старого refresh ревокает всю цепочку).
 - Таблица `refresh_tokens`, revoke на logout.
 - Саморегистрация физлица `POST /auth/register` (email/телефон + пароль, роль CUSTOMER_INDIVIDUAL, без 2FA).
@@ -468,6 +469,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(auth): jwt access and refresh flow`.
 
 ### S09 [B] Роли, guards, ownership
+> ✅ Выполнено 2026-08-31 [B] — `@PreAuthorize`/method security по ролям, ownership-aspect для компаний, TOTP 2FA (setup/verify/recovery codes) для ADMIN/ACCOUNTANT, интеграция 2FA в login, негативные тесты 401/403 и IDOR.
 - `@PreAuthorize`/method security по ролям.
 - Ownership-aspect: менеджер видит только назначенные `companies`, клиент — только свою компанию.
 - 2FA TOTP для ADMIN/ACCOUNTANT (setup, verify, recovery codes).
@@ -482,11 +484,12 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): auth pages and routing`.
 
 ### S11 [B] CRUD пользователей и компаний
+> ✅ Выполнено 2026-08-31 [B] — admin CRUD пользователей и компаний, сброс пароля админом (временный пароль), валидация УНП (9/10 цифр), manager может редактировать назначенные компании, 6 интеграционных тестов, OpenAPI + Bruno.
 - Админ создаёт бухгалтера/менеджера/клиента. Привязка `users.company_id`.
 - Компании: УНП уникален, привязка `manager_id`, контакты.
 - Сброс пароля админом (временный пароль, показать 1 раз).
 - **Приёмка:** интеграционные тесты CRUD + валидация УНП.
-- `GIT(STD)` — `feat(users): companies and users crud`.
+- `GIT(STD)` — `feat(users): companies and users crud [S11]`.
 
 ### S12 [A] Админка: пользователи и компании
 - Таблицы с фильтрами/поиском, формы создания, назначение менеджера.
@@ -497,6 +500,8 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 3 — Каталог
 
 ### S13 [B] Каталог API
+> ✅ Выполнено 2026-08-31 [B] — миграция V5 (products.brand_id, created_at/updated_at, pg_trgm-индекс по name); сущности и репозитории Category, Brand, Product, PriceList, ProductPrice; CRUD admin/catalog/categories|brands|products; публичные GET /catalog/categories|brands|products|products/{sku} с пагинацией, поиском по части имени и фильтрами по категории/бренду; розничная цена из активного прайс-листа; 5 интеграционных тестов каталога; OpenAPI schemas + Bruno-коллекции `admin/catalog/` и `catalog/`; `npm run generate-api`, `npm run lint`, `npm run build` зелёные; backend `mvn -B verify` 30 тестов.
+
 - CRUD категорий (дерево), товаров, брендов.
 - Публичные `GET /catalog/*` с пагинацией/поиском/фильтрами, розничные цены из активного прайса.
 - Индексы: `pg_trgm` на `products.name`.

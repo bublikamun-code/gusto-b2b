@@ -1,0 +1,14 @@
+meta {
+  name: Deactivate company
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{host}}/api/v1/admin/companies/{{createdCompanyId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

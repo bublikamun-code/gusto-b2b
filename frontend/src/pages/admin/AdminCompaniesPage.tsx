@@ -11,7 +11,7 @@ import styles from "./AdminPages.module.scss";
 
 const STATUSES: { value: CompanyStatus; label: string }[] = [
   { value: "ACTIVE", label: "Активна" },
-  { value: "BLOCKED", label: "Заблокирована" },
+  { value: "INACTIVE", label: "Неактивна" },
 ];
 
 const statusLabel = (status: CompanyStatus) => STATUSES.find((s) => s.value === status)?.label ?? status;
@@ -19,7 +19,7 @@ const statusLabel = (status: CompanyStatus) => STATUSES.find((s) => s.value === 
 const companySchema = z.object({
   name: z.string().min(2, "Название не может быть короче 2 символов"),
   shortName: z.string().optional(),
-  unp: z.string().regex(/^\d{9}$/, "УНП должен состоять из 9 цифр"),
+  unp: z.string().regex(/^\d{9}|\d{10}$/, "УНП должен состоять из 9 или 10 цифр"),
   legalAddress: z.string().optional(),
   actualAddress: z.string().optional(),
   bankAccount: z.string().optional(),
@@ -27,7 +27,7 @@ const companySchema = z.object({
   bankBic: z.string().optional(),
   contactPhone: z.string().optional(),
   contactEmail: z.string().email("Введите корректный email").optional().or(z.literal("")),
-  status: z.enum(["ACTIVE", "BLOCKED"]),
+  status: z.enum(["ACTIVE", "INACTIVE"]),
   managerId: z.string().optional(),
 });
 
@@ -54,7 +54,7 @@ function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmit
       ? {
           name: company.name,
           shortName: company.shortName ?? undefined,
-          unp: company.unp,
+          unp: company.unp ?? "",
           legalAddress: company.legalAddress ?? undefined,
           actualAddress: company.actualAddress ?? undefined,
           bankAccount: company.bankAccount ?? undefined,

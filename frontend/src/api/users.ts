@@ -78,14 +78,18 @@ export function deleteUser(id: string): Promise<void> {
   return apiRequest<void>(`/admin/users/${id}`, { method: "DELETE", token });
 }
 
-export function resetUserPassword(id: string): Promise<ResetPasswordResult> {
+export async function resetUserPassword(id: string): Promise<ResetPasswordResult> {
   if (isMockEnabled()) {
     try {
-      return Promise.resolve(resetMockPassword(id));
+      return resetMockPassword(id);
     } catch {
       return Promise.reject({ code: "NOT_FOUND", message: "Пользователь не найден" });
     }
   }
   const token = useAuthStore.getState().accessToken ?? undefined;
-  return apiRequest<ResetPasswordResult>(`/admin/users/${id}/reset-password`, { method: "POST", token });
+  const result = await apiRequest<{ userId: string; temporaryPassword: string }>(
+    `/admin/users/${id}/reset-password`,
+    { method: "POST", token },
+  );
+  return { temporaryPassword: result.temporaryPassword };
 }

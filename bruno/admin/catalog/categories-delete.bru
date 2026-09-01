@@ -1,0 +1,14 @@
+meta {
+  name: Delete category
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{host}}/api/v1/admin/catalog/categories/{{createdCategoryId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -53,10 +53,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 export async function apiListRequest<T>(path: string, options: RequestOptions = {}): Promise<ListResponse<T>> {
   const envelope = await apiRawRequest<T[]>(path, options);
   const meta: ApiMeta = envelope.meta ?? {};
+  const items = (envelope.data ?? []) as T[];
   return {
-    items: (envelope.data ?? []) as T[],
+    items,
     page: meta.page ?? 0,
     size: meta.size ?? 20,
-    total: meta.total ?? 0,
+    total: meta.total ?? items.length,
   };
 }
