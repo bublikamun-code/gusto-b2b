@@ -41,6 +41,9 @@ export function AdminLayout() {
             <NavLink to="/admin/companies" className={({ isActive }) => (isActive ? styles.active : undefined)}>
               Компании
             </NavLink>
+            <NavLink to="/admin/products" className={({ isActive }) => (isActive ? styles.active : undefined)}>
+              Товары
+            </NavLink>
           </nav>
         </aside>
 

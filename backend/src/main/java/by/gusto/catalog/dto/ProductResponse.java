@@ -41,4 +41,8 @@ public class ProductResponse {
 
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
+
+    public String getImageUrl() {
+        return imageUrls.isEmpty() ? null : imageUrls.get(0);
+    }
 }

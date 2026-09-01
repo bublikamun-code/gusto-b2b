@@ -11,6 +11,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
+import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import CabinetDashboardPage from "./pages/cabinet/CabinetDashboardPage";
 import CabinetCatalogPage from "./pages/cabinet/CabinetCatalogPage";
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/companies" element={<AdminCompaniesPage />} />
+              <Route path="/admin/products" element={<AdminProductsPage />} />
             </Route>
           </Route>
 

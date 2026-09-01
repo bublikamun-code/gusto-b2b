@@ -168,15 +168,8 @@ class FileIntegrationTest {
 
     @Test
     void adminCanAttachImageToProductAndCatalogReturnsIt() {
-        ResponseEntity<ApiResponse> uploadResp = uploadFile("product.png", PNG_BYTES, "PUBLIC", adminToken);
-        assertThat(uploadResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-        @SuppressWarnings("unchecked")
-        String fileId = (String) ((Map<String, Object>) uploadResp.getBody().getData()).get("id");
-
-        ResponseEntity<ApiResponse> attachResp = post(
-                "/api/v1/admin/catalog/products/" + productId + "/images?fileId=" + fileId + "&sort=0",
-                adminToken, null);
+        ResponseEntity<ApiResponse> attachResp = uploadProductImage(
+                "product.png", PNG_BYTES, productId, adminToken);
         assertThat(attachResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         ResponseEntity<ApiResponse> catalogResp = restTemplate.getForEntity(
@@ -253,6 +246,23 @@ class FileIntegrationTest {
 
         return restTemplate.exchange("/api/v1/files", HttpMethod.POST,
                 new HttpEntity<>(body, headers), ApiResponse.class);
+    }
+
+    private ResponseEntity<ApiResponse> uploadProductImage(String filename, byte[] content, UUID productId, String token) {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(content) {
+            @Override
+            public String getFilename() {
+                return filename;
+            }
+        });
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        return restTemplate.exchange("/api/v1/admin/catalog/products/" + productId + "/images?sort=0",
+                HttpMethod.POST, new HttpEntity<>(body, headers), ApiResponse.class);
     }
 
     private ResponseEntity<ApiResponse> post(String path, String token, Object body) {
