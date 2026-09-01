@@ -1,0 +1,84 @@
+@use "../../styles/tokens" as *;
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-secondary, #f6f6f4);
+}
+
+.header {
+  height: 64px;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #e5e5e0);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--color-accent, #8c1d1d);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user {
+  color: var(--color-text-secondary, #555555);
+  font-size: 0.875rem;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+}
+
+.sidebar {
+  width: 220px;
+  background: var(--color-surface, #ffffff);
+  border-right: 1px solid var(--color-border, #e5e5e0);
+  padding: 1rem 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  a {
+    padding: 0.75rem 1.25rem;
+    color: var(--color-text, #1a1a1a);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: var(--color-bg-secondary, #f6f6f4);
+    }
+
+    &.active {
+      background: var(--color-bg-secondary, #f6f6f4);
+      color: var(--color-accent, #8c1d1d);
+      border-left-color: var(--color-accent, #8c1d1d);
+      font-weight: 600;
+    }
+  }
+}
+
+.main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: auto;
+}

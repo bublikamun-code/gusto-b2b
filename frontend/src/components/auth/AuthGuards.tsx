@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import type { Role } from "../../types/admin";
 
 export function ProtectedRoute() {
   const { user, isLoading } = useAuthStore();
@@ -11,6 +12,25 @@ export function ProtectedRoute() {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <Outlet />;
+}
+
+export function RoleGuard({ allowed }: { allowed: Role[] }) {
+  const { user, isLoading } = useAuthStore();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <div className="auth-loading">Загрузка…</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!allowed.includes(user.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

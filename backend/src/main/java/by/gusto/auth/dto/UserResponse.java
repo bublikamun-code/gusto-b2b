@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -28,4 +29,7 @@ public class UserResponse {
 
     @JsonProperty("totpEnabled")
     private boolean totpEnabled;
+
+    private Instant createdAt;
+    private Instant updatedAt;
 }

@@ -2,6 +2,7 @@ package by.gusto.auth.controller;
 
 import by.gusto.auth.config.SecurityProperties;
 import by.gusto.auth.dto.LoginRequest;
+import by.gusto.auth.dto.LoginResponse;
 import by.gusto.auth.dto.PasswordResetConfirmRequest;
 import by.gusto.auth.dto.PasswordResetRequest;
 import by.gusto.auth.dto.RegisterRequest;
@@ -54,14 +55,20 @@ public class AuthController {
     private final AuthContext authContext;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<TokenResponse>> login(
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
         checkRateLimit("login", httpRequest, request.getEmail());
         AuthResult result = authService.login(request, clientIp(httpRequest), userAgent(httpRequest));
         setRefreshCookie(httpResponse, result.refreshToken());
-        return ResponseEntity.ok(ApiResponse.success(result.tokenResponse()));
+        LoginResponse response = LoginResponse.builder()
+                .accessToken(result.tokenResponse().getAccessToken())
+                .tokenType(result.tokenResponse().getTokenType())
+                .expiresIn(result.tokenResponse().getExpiresIn())
+                .user(result.userResponse())
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/register")

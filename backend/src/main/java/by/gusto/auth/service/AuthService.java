@@ -67,7 +67,8 @@ public class AuthService {
                 .tokenType("Bearer")
                 .expiresIn(jwtService.getAccessTtlSeconds())
                 .build();
-        return new AuthResult(response, refreshPair.rawToken());
+        UserResponse userResponse = userMapper.toResponse(user);
+        return new AuthResult(response, refreshPair.rawToken(), userResponse);
     }
 
     @Transactional
@@ -94,7 +95,7 @@ public class AuthService {
                 .tokenType("Bearer")
                 .expiresIn(jwtService.getAccessTtlSeconds())
                 .build();
-        return new AuthResult(response, pair.rawToken());
+        return new AuthResult(response, pair.rawToken(), null);
     }
 
     @Transactional
@@ -120,6 +121,6 @@ public class AuthService {
         return userMapper.toResponse(user);
     }
 
-    public record AuthResult(TokenResponse tokenResponse, String refreshToken) {
+    public record AuthResult(TokenResponse tokenResponse, String refreshToken, UserResponse userResponse) {
     }
 }

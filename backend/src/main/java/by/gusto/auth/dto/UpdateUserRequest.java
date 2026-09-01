@@ -1,6 +1,7 @@
 package by.gusto.auth.dto;
 
 import by.gusto.auth.entity.Role;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,5 +26,6 @@ public class UpdateUserRequest {
 
     private UUID companyId;
 
+    @JsonProperty("isActive")
     private Boolean active;
 }

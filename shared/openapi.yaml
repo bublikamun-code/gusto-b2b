@@ -32,6 +32,8 @@ tags:
   - name: health
   - name: auth
   - name: admin
+  - name: users
+  - name: companies
   - name: catalog
   - name: manager
   - name: cabinet
@@ -228,6 +230,25 @@ paths:
       summary: Список пользователей (только ADMIN)
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: role
+          in: query
+          schema: { $ref: "#/components/schemas/Role" }
+        - name: companyId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: managerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Поиск по email, ФИО, телефону
+        - name: isActive
+          in: query
+          schema: { type: boolean }
       responses:
         "200":
           description: Список пользователей
@@ -342,6 +363,19 @@ paths:
       summary: Список компаний
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/CompanyStatus" }
+        - name: managerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Поиск по названию, сокращённому названию, УНП
       responses:
         "200":
           description: Список компаний
@@ -1024,7 +1058,7 @@ components:
       enum: [ADMIN, ACCOUNTANT, MANAGER, CUSTOMER_LEGAL, CUSTOMER_INDIVIDUAL]
     User:
       type: object
-      required: [id, email, fullName, role, isActive]
+      required: [id, email, fullName, role, isActive, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
@@ -1034,6 +1068,8 @@ components:
         companyId: { type: string, format: uuid, nullable: true, description: "Заполнен у CUSTOMER_LEGAL" }
         isActive: { type: boolean }
         totpEnabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     LoginRequest:
       type: object
       required: [email, password]
@@ -1068,6 +1104,9 @@ components:
             data:
               type: array
               items: { $ref: "#/components/schemas/User" }
+    CompanyStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE]
     Company:
       type: object
       required: [id, name, status]
@@ -1083,7 +1122,7 @@ components:
         bankBic: { type: string, nullable: true }
         contactPhone: { type: string, nullable: true }
         contactEmail: { type: string, format: email, nullable: true }
-        status: { type: string, example: ACTIVE }
+        status: { $ref: "#/components/schemas/CompanyStatus" }
         managerId: { type: string, format: uuid, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -1158,7 +1197,7 @@ components:
         phone: { type: string, nullable: true }
         role: { $ref: "#/components/schemas/Role" }
         companyId: { type: string, format: uuid, nullable: true }
-        active: { type: boolean }
+        isActive: { type: boolean }
     TemporaryPasswordResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -1184,6 +1223,7 @@ components:
         contactPhone: { type: string, maxLength: 50, nullable: true }
         contactEmail: { type: string, format: email, maxLength: 255, nullable: true }
         managerId: { type: string, format: uuid, nullable: true }
+        status: { $ref: "#/components/schemas/CompanyStatus" }
     UpdateCompanyRequest:
       type: object
       properties:
@@ -1198,7 +1238,7 @@ components:
         contactPhone: { type: string, maxLength: 50, nullable: true }
         contactEmail: { type: string, format: email, maxLength: 255, nullable: true }
         managerId: { type: string, format: uuid, nullable: true }
-        status: { type: string, maxLength: 20, nullable: true }
+        status: { $ref: "#/components/schemas/CompanyStatus" }
 
     PasswordResetRequest:
       type: object
