@@ -16,6 +16,8 @@ import java.util.UUID;
 @Repository
 public interface ProductPriceRepository extends JpaRepository<ProductPrice, UUID> {
 
+    List<ProductPrice> findAllByPriceListIdOrderByValidFromDesc(UUID priceListId);
+
     @Query("""
             SELECT pp FROM ProductPrice pp
             WHERE pp.priceListId = :priceListId

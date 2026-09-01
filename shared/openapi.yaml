@@ -820,6 +820,383 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /admin/pricing/price-lists:
+    get:
+      tags: [admin]
+      summary: Список прайс-листов
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список прайс-листов
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PriceListListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [admin]
+      summary: Создать прайс-лист
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PriceListRequest" }
+      responses:
+        "201":
+          description: Прайс-лист создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PriceListResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/price-lists/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка прайс-листа
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные прайс-листа
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PriceListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактировать прайс-лист
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PriceListRequest" }
+      responses:
+        "200":
+          description: Прайс-лист обновлён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PriceListResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [admin]
+      summary: Удалить прайс-лист
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Прайс-лист удалён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/pricing/price-lists/{priceListId}/prices:
+    parameters:
+      - name: priceListId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Цены товаров в прайс-листе
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список цен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductPriceListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/product-prices:
+    post:
+      tags: [admin]
+      summary: Создать цену товара
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductPriceRequest" }
+      responses:
+        "201":
+          description: Цена создана
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductPriceResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/product-prices/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка цены товара
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные цены
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductPriceResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактировать цену товара
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductPriceRequest" }
+      responses:
+        "200":
+          description: Цена обновлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductPriceResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [admin]
+      summary: Удалить цену товара
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Цена удалена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/pricing/companies/{companyId}/customer-prices:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Персональные цены компании
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список персональных цен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerPriceListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/customer-prices:
+    post:
+      tags: [admin]
+      summary: Создать персональную цену
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerPriceRequest" }
+      responses:
+        "201":
+          description: Персональная цена создана
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerPriceResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/customer-prices/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка персональной цены
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные персональной цены
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerPriceResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактировать персональную цену
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerPriceRequest" }
+      responses:
+        "200":
+          description: Персональная цена обновлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerPriceResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [admin]
+      summary: Удалить персональную цену
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Персональная цена удалена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/pricing/companies/{companyId}/customer-discounts:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Скидки компании
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список скидок
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerDiscountListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/customer-discounts:
+    post:
+      tags: [admin]
+      summary: Создать скидку компании
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerDiscountRequest" }
+      responses:
+        "201":
+          description: Скидка создана
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerDiscountResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/pricing/customer-discounts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [admin]
+      summary: Карточка скидки
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные скидки
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerDiscountResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [admin]
+      summary: Редактировать скидку
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerDiscountRequest" }
+      responses:
+        "200":
+          description: Скидка обновлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerDiscountResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [admin]
+      summary: Удалить скидку
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Скидка удалена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /catalog/categories:
     get:
       tags: [catalog]
@@ -896,6 +1273,56 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CompanyResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /cabinet/catalog:
+    get:
+      tags: [cabinet]
+      summary: Каталог товаров с ценой клиента
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Поиск по части названия
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: brandId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Список товаров с розничной и клиентской ценой
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CabinetProductListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /cabinet/catalog/{sku}:
+    parameters:
+      - name: sku
+        in: path
+        required: true
+        description: Артикул товара
+        schema: { type: string }
+    get:
+      tags: [cabinet]
+      summary: Карточка товара с ценой клиента
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные товара с розничной и клиентской ценой
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CabinetProductResponse" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1397,3 +1824,158 @@ components:
             data:
               type: array
               items: { $ref: "#/components/schemas/CatalogProduct" }
+
+    # ----- Pricing --------------------------------------------------------------
+    PriceList:
+      type: object
+      required: [id, name, validFrom, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 255 }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+        isActive: { type: boolean, default: true }
+    PriceListRequest:
+      type: object
+      required: [name, validFrom]
+      properties:
+        name: { type: string, maxLength: 255 }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+        isActive: { type: boolean, default: true }
+    PriceListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/PriceList" }
+    PriceListListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/PriceList" }
+
+    ProductPrice:
+      type: object
+      required: [id, priceListId, productId, price, validFrom]
+      properties:
+        id: { type: string, format: uuid }
+        priceListId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        price: { type: number }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+    ProductPriceRequest:
+      type: object
+      required: [priceListId, productId, price, validFrom]
+      properties:
+        priceListId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        price: { type: number, minimum: 0.01 }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+    ProductPriceResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/ProductPrice" }
+    ProductPriceListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/ProductPrice" }
+
+    CustomerPrice:
+      type: object
+      required: [id, companyId, productId, price, validFrom]
+      properties:
+        id: { type: string, format: uuid }
+        companyId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        price: { type: number }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+    CustomerPriceRequest:
+      type: object
+      required: [companyId, productId, price, validFrom]
+      properties:
+        companyId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        price: { type: number, minimum: 0.01 }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+    CustomerPriceResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/CustomerPrice" }
+    CustomerPriceListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/CustomerPrice" }
+
+    CustomerDiscount:
+      type: object
+      required: [id, companyId, discountPercent, validFrom]
+      properties:
+        id: { type: string, format: uuid }
+        companyId: { type: string, format: uuid }
+        brandId: { type: string, format: uuid, nullable: true }
+        categoryId: { type: string, format: uuid, nullable: true }
+        discountPercent: { type: number, minimum: 0, maximum: 100 }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+    CustomerDiscountRequest:
+      type: object
+      required: [companyId, discountPercent, validFrom]
+      properties:
+        companyId: { type: string, format: uuid }
+        brandId: { type: string, format: uuid, nullable: true }
+        categoryId: { type: string, format: uuid, nullable: true }
+        discountPercent: { type: number, minimum: 0, maximum: 100 }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+    CustomerDiscountResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/CustomerDiscount" }
+    CustomerDiscountListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/CustomerDiscount" }
+
+    CabinetProduct:
+      type: object
+      required: [id, sku, name, unit, retailPrice, customerPrice]
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        category: { $ref: "#/components/schemas/Category" }
+        brand: { $ref: "#/components/schemas/Brand", nullable: true }
+        unit: { type: string }
+        description: { type: string, nullable: true }
+        retailPrice: { type: number }
+        customerPrice: { type: number }
+    CabinetProductResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/CabinetProduct" }
+    CabinetProductListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/CabinetProduct" }

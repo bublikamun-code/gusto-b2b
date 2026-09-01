@@ -517,6 +517,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): public catalog pages`.
 
 ### S15 [B] Прайс-листы и персональные цены
+> ✅ Выполнено 2026-09-01 [B] — миграция V7 (индексы ценообразования); сущности и репозитории CustomerPrice/CustomerDiscount; PricingService с приоритетом персональная → скидка → базовая; PricingAdminService + AdminPricingController (CRUD прайс-листов, цен, персональных цен и скидок); CabinetCatalogController GET /cabinet/catalog с розничной и клиентской ценами; DTO/mapper'ы и обновление shared/openapi.yaml; юнит-тест PricingService и интеграционный тест CabinetCatalog; frontend lint/build и backend compile зелёные; ручные curl-проверки admin pricing и cabinet catalog прошли.
+
 - `price_lists`, `product_prices`, `customer_prices`, `customer_discounts`.
 - `PricingService`: приоритет персональная → скидка → базовая; период действия.
 - Эндпоинт кабинета `GET /cabinet/catalog` с ценой клиента.
