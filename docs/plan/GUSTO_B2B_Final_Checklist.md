@@ -878,6 +878,9 @@ git checkout -b feature/<dev>-s<номер>-<кратко>   # пример: fea
 
 # 4. Перед пушем (те же команды, что в 6.3 и AGENTS.md)
 mvn -B verify -f backend/pom.xml                                    # backend: unit + интеграционные
+#   после hotfix'а S08 («падать без env») для локального запуска нужны переменные —
+#   тестовые значения те же, что в .github/workflows/ci.yml:
+#   export JWT_SECRET=<64+ символов> ADMIN_PASSWORD=change-me
 npm --prefix frontend run lint && npm --prefix frontend run build   # frontend
 # `npm run test` добавляется сюда, когда в frontend появится Vitest
 
