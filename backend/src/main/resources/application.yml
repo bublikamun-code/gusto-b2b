@@ -22,7 +22,8 @@ spring:
     # Плейсхолдеры для сид-миграции V2 (пароль админа живёт только в .env)
     placeholders:
       admin_email: ${ADMIN_EMAIL:admin@gustomeat.by}
-      admin_password: ${ADMIN_PASSWORD:change-me}
+      # Без дефолта: пароль админа обязан приходить из env (.env / CI), иначе контекст не поднимется
+      admin_password: ${ADMIN_PASSWORD}
 
 server:
   port: 8080
@@ -39,7 +40,8 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-only-replace-with-64-random-characters-before-production}
+    # Без дефолта: секрет обязан приходить из env (.env / CI), иначе контекст не поднимется
+    secret: ${JWT_SECRET}
     issuer: gusto-b2b
     access-ttl-minutes: 15
     refresh-ttl-days: 7

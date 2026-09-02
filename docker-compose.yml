@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gusto}
       POSTGRES_DB: ${POSTGRES_DB:-gusto}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:7
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -32,9 +32,9 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-gusto}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-gusto}
       SPRING_DATA_REDIS_HOST: redis
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gustomeat.by}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       APP_STORAGE_PATH: /app/data/files
     volumes:
       - filedata:/app/data/files

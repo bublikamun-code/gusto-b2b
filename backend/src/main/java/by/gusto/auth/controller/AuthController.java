@@ -175,7 +175,8 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
-                .path("/api/v1/auth/refresh")
+                // Общий path: кука должна доезжать и на /auth/logout, иначе revoke не срабатывает
+                .path("/api/v1/auth")
                 .maxAge(Duration.ofDays(7))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -186,7 +187,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
-                .path("/api/v1/auth/refresh")
+                .path("/api/v1/auth")
                 .maxAge(Duration.ZERO)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
