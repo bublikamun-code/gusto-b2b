@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Input, Pagination, Select } from "../../components/ui";
+import { Button, Input, Pagination, Select } from "../../components/ui";
 import { listBrands, listCategories, listProducts } from "../../api/catalog";
 import { ProductCard } from "../../components/public/ProductCard";
 import styles from "./CatalogPage.module.scss";
@@ -14,7 +14,7 @@ export default function CatalogPage() {
   const categoryId = searchParams.get("categoryId") ?? "";
   const brandId = searchParams.get("brandId") ?? "";
   const search = searchParams.get("search") ?? "";
-  const page = Math.max(0, Number(searchParams.get("page") ?? "0"));
+  const page = Math.max(0, Number(searchParams.get("page")) || 0);
 
   const [draftSearch, setDraftSearch] = useState(search);
 
@@ -32,7 +32,7 @@ export default function CatalogPage() {
     queryFn: listBrands,
   });
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, isError, refetch } = useQuery({
     queryKey: ["products", "catalog", { page, size: PAGE_SIZE, search, categoryId, brandId }],
     queryFn: () => listProducts({ page, size: PAGE_SIZE, search, categoryId, brandId }),
   });
@@ -93,15 +93,26 @@ export default function CatalogPage() {
 
       {isLoading && <p className={styles.catalog__status}>Загружаем витрину…</p>}
 
-      {!isLoading && products?.items.length === 0 && (
+      {isError && (
+        <p className={styles.catalog__status}>
+          Не удалось загрузить каталог.{" "}
+          <Button size="sm" variant="secondary" onClick={() => refetch()}>
+            Повторить
+          </Button>
+        </p>
+      )}
+
+      {!isLoading && !isError && products?.items.length === 0 && (
         <p className={styles.catalog__status}>Товары не найдены. Попробуйте изменить фильтры.</p>
       )}
 
-      <div className={styles.catalog__grid}>
-        {products?.items.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {!isError && (
+        <div className={styles.catalog__grid}>
+          {products?.items.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
 
       {products && products.total > PAGE_SIZE && (
         <div className={styles.catalog__pagination}>

@@ -34,7 +34,7 @@ export default function CabinetCatalogPage() {
   const categoryId = searchParams.get("categoryId") ?? "";
   const brandId = searchParams.get("brandId") ?? "";
   const search = searchParams.get("search") ?? "";
-  const page = Math.max(0, Number(searchParams.get("page") ?? "0"));
+  const page = Math.max(0, Number(searchParams.get("page")) || 0);
 
   const [draftSearch, setDraftSearch] = useState(search);
   const [skuListDraft, setSkuListDraft] = useState("");
@@ -57,7 +57,7 @@ export default function CabinetCatalogPage() {
     queryFn: listBrands,
   });
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, isError, refetch } = useQuery({
     queryKey: ["cabinet-catalog", { page, size: PAGE_SIZE, search, categoryId, brandId }],
     queryFn: () => listCabinetProducts({ page, size: PAGE_SIZE, search, categoryId, brandId }),
   });
@@ -88,6 +88,8 @@ export default function CabinetCatalogPage() {
 
   function handleLogout() {
     logout().finally(() => {
+      useCartStore.getState().clear();
+      useCartStore.getState().setOwner(null);
       clearAuth();
       window.location.href = "/login";
     });
@@ -282,15 +284,24 @@ export default function CabinetCatalogPage() {
           />
         </section>
 
-        <Table
-          columns={columns}
-          data={products?.items ?? []}
-          rowKey={(row) => row.id}
-          loading={isLoading}
-          empty="Товары не найдены. Попробуйте изменить фильтры."
-        />
+        {isError ? (
+          <p className={styles.loadError}>
+            Не удалось загрузить каталог.{" "}
+            <Button size="sm" variant="secondary" onClick={() => refetch()}>
+              Повторить
+            </Button>
+          </p>
+        ) : (
+          <Table
+            columns={columns}
+            data={products?.items ?? []}
+            rowKey={(row) => row.id}
+            loading={isLoading}
+            empty="Товары не найдены. Попробуйте изменить фильтры."
+          />
+        )}
 
-        {products && products.total > PAGE_SIZE && (
+        {!isError && products && products.total > PAGE_SIZE && (
           <div className={styles.pagination}>
             <Pagination
               page={page + 1}

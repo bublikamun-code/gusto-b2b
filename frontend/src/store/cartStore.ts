@@ -12,10 +12,13 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
+  ownerId: string | null;
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   setQuantity: (sku: string, quantity: number) => void;
   removeItem: (sku: string) => void;
   clear: () => void;
+  /** При смене пользователя корзина предыдущего владельца не показывается новому */
+  setOwner: (ownerId: string | null) => void;
 }
 
 const CART_STORAGE_KEY = "gusto-cart";
@@ -24,8 +27,10 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      ownerId: null,
 
       addItem(product, quantity = 1) {
+        if (!Number.isFinite(quantity) || quantity <= 0) return;
         const items = [...get().items];
         const index = items.findIndex((item) => item.sku === product.sku);
         if (index >= 0) {
@@ -54,6 +59,12 @@ export const useCartStore = create<CartState>()(
 
       clear() {
         set({ items: [] });
+      },
+
+      setOwner(ownerId) {
+        if (get().ownerId !== ownerId) {
+          set({ items: [], ownerId });
+        }
       },
     }),
     {

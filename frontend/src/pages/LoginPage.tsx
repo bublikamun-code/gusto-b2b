@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Input, useToast } from "../components/ui";
 import { login } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
+import { useCartStore } from "../store/cartStore";
 import styles from "./AuthPages.module.scss";
 
 const loginSchema = z
@@ -47,6 +48,7 @@ export default function LoginPage() {
         totpCode: values.totpCode,
       });
       setAuth(payload.accessToken, payload.user);
+      useCartStore.getState().setOwner(payload.user.id);
       push("Вход выполнен", "success");
 
       const dashboardByRole: Record<string, string> = {

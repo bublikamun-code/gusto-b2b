@@ -478,6 +478,7 @@ settings (key TEXT PK, value JSONB)
 
 ### S10 [A] Страницы входа
 > ✅ Выполнено 2026-08-25 [A] — страницы login/2FA, запрос/сброс пароля; `AuthInit` (silent refresh по куке), `ProtectedRoute`, редиректы по ролям (admin→/admin, manager→/manager, клиент→/cabinet); API-клиент, Zustand-стор, валидация react-hook-form + zod; UI в бренд-стиле через UI-kit. Добавлены deps: zustand, @tanstack/react-query, react-hook-form, zod, @hookform/resolvers. lint+build зелёные; полный цикл входа вручную — после реализации S08 бэкендером.
+> 🔧 Hotfix 2026-09-02 [A] — аудит: (1) `AuthInit` сохранял токен refresh в переменную, `me()` ходил без него → F5 разлогинивал; теперь токен пишется в стор до `me()`, эффект инициализации выполняется один раз (убран двойной `/auth/me`); (2) `api/client.ts`: auto-refresh по 401 с single-flight (параллельные 401 не плодят refresh-запросы → нет `AUTH_REFRESH_REUSED`), при провале — `clearAuth`; (3) корзина привязана к `user.id` (`setOwner`), чистится при logout — позиции и чужие цены не переживают смену аккаунта; (4) публичная шапка показывает «Кабинет»/«Выйти» авторизованному; (5) обработка `isError` в каталоге/кабинете/главной (пустой экран → сообщение + «Повторить»); (6) убраны фейковые бейджи «ХИТ/НОВИНКА», удалён мёртвый `StubPage`, фикс `page=NaN` в URL.
 - Login, восстановление пароля, 2FA-ввод.
 - Защищённые роуты, редирект по роли (admin→/admin, manager→/manager, customer→/cabinet).
 - **Приёмка:** полный цикл входа вручную.
