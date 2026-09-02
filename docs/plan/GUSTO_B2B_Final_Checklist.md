@@ -459,6 +459,7 @@ settings (key TEXT PK, value JSONB)
 
 ### S08 [B] JWT + refresh
 > ✅ Выполнено 2026-08-31 [B] — JWT access 15 мин + refresh (httpOnly Secure SameSite=Strict, 7 дней, rotation + reuse detection), таблица refresh_tokens, revoke на logout, саморегистрация физлиц, восстановление пароля по хэшированному токену, Redis rate limiting 5/15 мин, интеграционные тесты, Bruno-коллекция auth.
+> 🔧 Hotfix 2026-09-02 [A] — аудит безопасности: (1) refresh-cookie `path` был `/api/v1/auth/refresh` → на `/auth/logout` кука не отправлялась и revoke молча no-op; исправлено на `/api/v1/auth` (проверено: logout ревокает, refresh после logout → `AUTH_REFRESH_REUSED`); (2) `docker-compose.yml`: порты postgres/redis прибиты к `127.0.0.1`; (3) `JWT_SECRET`/`ADMIN_PASSWORD` — убраны дефолты (`application.yml` падает без env, compose требует значения в `.env`, CI задаёт тестовые).
 - Login (email+password) → access 15 мин + refresh (httpOnly cookie, Secure, SameSite=Strict, 7 дней, rotation + reuse detection: повтор старого refresh ревокает всю цепочку).
 - Таблица `refresh_tokens`, revoke на logout.
 - Саморегистрация физлица `POST /auth/register` (email/телефон + пароль, роль CUSTOMER_INDIVIDUAL, без 2FA).
