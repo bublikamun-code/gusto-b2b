@@ -1,5 +1,7 @@
 # GUSTO B2B — Финальный подробный план реализации (чек-лист)
 
+> Версия 1.5 · 2026-09-03
+> v1.5 — закрыты пять остаточных пробелов аудита: (1) подтверждение email при саморегистрации физлица — новая сессия **S08.1**, гейтится настройкой `auth.require_email_confirmation` (по умолчанию выкл., включается на запуске с боевым SMTP — S42), чтобы не запереть тестовых пользователей до появления почты; (2) **выбор склада при заказе**: резерв идёт со склада по умолчанию `settings('stock.default_location')`, нехватка → `STOCK_INSUFFICIENT`, между складами — перемещение (S18.3), выбор склада на заказ — post-MVP; (3) фронтенд-тесты: новая сессия **S10.1** вводит Vitest (в стеке 1.5 он был, сессии не было); (4) профиль и смена пароля в кабинете клиента — новая сессия **S23.1**; (5) контакты получателя в заказе: `orders.recipient_name/recipient_phone` (снапшот, миграция в S20).
 > Версия 1.4 · 2026-09-02
 > v1.4 — аудит плана и кода по итогам S01–S17. Закрытые дыры: резерв остатков перенесён на материализованную таблицу `stock_balances` (вьюху-агрегат лочить невозможно), идемпотентность получила хранилище `idempotency_keys`, зафиксированы семантика НДС (цены включённые, 2.3), словари статусов (2.8), маршрутизация розничных заказов и заявок без менеджера (2.7), планировщик фоновых задач (1.6). Новые сессии: S17.1 (аудит файлов: доступы оказались закрыты с S17, доделаны `Content-Disposition` и защита ссылочных файлов), S19.1 (хиты/новинки, шаг весового товара). Уточнены: S12 (роутинг бухгалтера), S16 (захардкоженное «наличие»), S18–S23, S27, S29–S33, S35–S39, S41 (SEO, аудит-запись, дашборд процессов, 1С-мастер, бэкап файлов).
 > Версия 1.3 · 2026-08-24
@@ -76,6 +78,8 @@
 | Идемпотентность | `POST /orders`, `POST /site/requests` принимают заголовок `Idempotency-Key` (повтор возвращает тот же результат). Хранение — Postgres-таблица `idempotency_keys`, TTL 24 ч, очистку просроченных делает планировщик. |
 | Корзина | Персональная на пользователя (`carts.user_id`), включая физлиц. Общей корзины на компанию в MVP нет (осознанно); менеджер собирает заказ от имени клиента без корзины — контрактом `POST /orders` (S20). |
 | Маршрутизация розницы | Розничные заказы (физлица) и заявки с сайта создаются без менеджера и попадают в пул «не назначено»; менеджеры разбирают пул в «Едином окне входящих» (см. 2.7). |
+| Склад и заказ | Резерв при заказе — со склада по умолчанию `settings('stock.default_location')`; если на нём не хватает — `STOCK_INSUFFICIENT` (заказ не создаётся). Наличия между складами выравниваются перемещением (S18.3). Выбор склада под конкретный заказ/позицию — post-MVP. |
+| Подтверждение email | Саморегистрация физлица создаёт пользователя с неподтверждённым email и шлёт одноразовую ссылку (таблица `email_confirmation_tokens`). Вход без подтверждения блокируется кодом `AUTH_EMAIL_NOT_CONFIRMED`. Поведение гейтится настройкой `auth.require_email_confirmation` (по умолчанию выкл.; включается в S42 с боевым SMTP, чтобы не запереть тестовых пользователей до появления почты). |
 | Витрина | У товара флаги `is_hit`/`is_new` (управляются из админки, S19.1) — «Хиты недели» не должны зависеть от случайной сортировки. Публичные страницы приёмуются с проверкой мобильного вьюпорта и базовым SEO (S21). |
 | Валюта/локаль/время | BYN, ru-RU; БД хранит UTC, отображение — Europe/Minsk. |
 | Soft delete | Только `products` и `users` (`deleted_at`); остальное — статусы/архив. |
@@ -225,10 +229,17 @@ CHECK-ограничения добавляются новыми миграци�
 users (id UUID PK, email CITEXT UNIQUE, password_hash TEXT, full_name TEXT,
        phone TEXT, role VARCHAR(20) CHECK (role IN ('ADMIN','ACCOUNTANT','MANAGER','CUSTOMER_LEGAL','CUSTOMER_INDIVIDUAL')),
        company_id UUID NULL REFERENCES companies(id),
-       totp_secret TEXT NULL, is_active BOOLEAN, created_at, updated_at, deleted_at NULL)
+       totp_secret TEXT NULL, is_active BOOLEAN,
+       email_confirmed_at TIMESTAMPTZ NULL,   -- NULL = email не подтверждён (1.6, S08.1)
+       created_at, updated_at, deleted_at NULL)
 
 refresh_tokens (id UUID PK, user_id UUID FK, token_hash TEXT UNIQUE,
                 user_agent TEXT, ip TEXT, expires_at TIMESTAMPTZ, revoked BOOLEAN)
+
+-- Подтверждение email при саморегистрации (1.6, S08.1); по образцу password_reset_tokens
+email_confirmation_tokens (id UUID PK, user_id UUID FK, token_hash TEXT UNIQUE,
+                           expires_at TIMESTAMPTZ, used BOOLEAN DEFAULT FALSE, created_at)
+-- Индекс: (user_id), (expires_at) для очистки планировщиком
 
 -- Компании (юрлица)
 companies (id UUID PK, name TEXT, short_name TEXT, unp TEXT UNIQUE,
@@ -318,9 +329,12 @@ products ... + min_stock NUMERIC(12,3) DEFAULT 0  -- минимальный ос
 -- попадает в пул «не назначено» (2.7), менеджер берёт в работу из «Единого окна входящих».
 orders (id UUID PK, number TEXT UNIQUE, customer_company_id UUID FK NULL,
         customer_user_id UUID FK, manager_id UUID FK NULL,
+        stock_location_id UUID FK NULL REFERENCES stock_locations(id),  -- склад резерва (1.6 «Склад и заказ»)
         status VARCHAR(20) CHECK (status IN ('NEW','CONFIRMED','PROCESSING','READY','SHIPPED','COMPLETED','CANCELLED')),
         delivery_type VARCHAR(20) CHECK (delivery_type IN ('PICKUP','DELIVERY')),
-        delivery_address TEXT NULL, note TEXT,
+        delivery_address TEXT NULL,
+        recipient_name TEXT NULL, recipient_phone TEXT NULL,   -- контакты получателя, снапшот на момент заказа (особенно для розницы)
+        note TEXT,
         total_amount NUMERIC(12,2), total_vat NUMERIC(12,2), created_at, updated_at)
 order_items (id UUID PK, order_id UUID FK, product_id UUID FK,
              product_snapshot JSONB, quantity NUMERIC(12,3), unit_price NUMERIC(12,2),
@@ -407,7 +421,8 @@ integration_files (id UUID PK, direction VARCHAR(10) CHECK (direction IN ('IMPOR
 
 -- Настройки
 settings (key TEXT PK, value JSONB)
--- 'document.series.ttn', 'document.series.tn', 'seller.requisites', 'vat.default'
+-- 'document.series.ttn', 'document.series.tn', 'seller.requisites', 'vat.default',
+-- 'stock.default_location' (1.6 «Склад и заказ»), 'auth.require_email_confirmation' (1.6, S08.1)
 ```
 
 ## 3.2. Снапшоты (важно)
@@ -430,9 +445,11 @@ settings (key TEXT PK, value JSONB)
 ## 4.1. Группы эндпоинтов
 
 - `POST /auth/login|register|refresh|logout`, `GET /auth/me`, `POST /auth/2fa/enable|verify`, `POST /auth/password-reset/request|confirm`
+- `POST /auth/email/confirm|resend` — подтверждение email при саморегистрации (1.6, S08.1)
 - `GET /catalog/categories|products|products/{sku}` — публично, розничные цены; флаги `isHit`/`isNew` и шаг весового товара в контракте (S19.1)
 - `GET /cabinet/catalog` — кабинет юрлица: компактный список с ценами клиента
 - `GET /cabinet/pricing/export` — выгрузка прайса клиента в xlsx (со своими ценами)
+- `PATCH /cabinet/profile`, `POST /cabinet/password` — профиль и смена пароля клиента (с проверкой текущего, S23.1)
 - `GET|DELETE /cart`, `PUT /cart/items/{productId}` — персональная корзина авторизованного (юрист и физлицо; quantity, 0 = удалить); менеджер корзину клиента не использует — заказ от имени клиента создаётся сразу `POST /orders`
 - `GET|POST /orders`, `GET /orders/{id}`, `PATCH /orders/{id}/status` — создание идемпотентно по `Idempotency-Key`; в теле `POST /orders` менеджер может передать клиента (`customerCompanyId`) и позиции — заказ от имени клиента (1.6, 2.7)
 - `GET|POST /invoices`, `GET /invoices/{id}/pdf`
@@ -536,6 +553,18 @@ settings (key TEXT PK, value JSONB)
 - **Приёмка:** Bruno-коллекция auth зелёная.
 - `GIT(STD)` — `feat(auth): jwt access and refresh flow`.
 
+### S08.1 [AB] Подтверждение email при саморегистрации
+Закрывает дыру: зарегистрироваться можно на любой адрес и получать на него письма/уведомления о заказах.
+
+- Миграция: `users.email_confirmed_at`, таблица `email_confirmation_tokens` (3.1).
+- `POST /auth/register` создаёт физлицо с неподтверждённым email и кладёт в outbox письмо с одноразовой ссылкой (токен хэшем, TTL 24 ч).
+- `POST /auth/email/confirm` помечает `email_confirmed_at`; `POST /auth/email/resend` — повторная отправка (с тем же rate limiting).
+- Пока `email_confirmed_at` пуст и подтверждение включено — логин отдаёт `AUTH_EMAIL_NOT_CONFIRMED`.
+- **Гейт:** поведение управляется `settings('auth.require_email_confirmation')`, по умолчанию `false`. Включается в S42 вместе с боевым SMTP, чтобы до появления почты не запереть тестовых пользователей (в т.ч. заведённых админом юрлиц — их подтверждение не касается).
+- Фронтенд: страница «Подтвердите почту» + экран после перехода по ссылке.
+- **Приёмка:** при включённом гейте неподтверждённый пользователь не входит; подтверждение по ссылке активирует; при выключенном гейте всё как сейчас.
+- `GIT(STD)` — `feat(auth): email confirmation on registration [S08.1]`.
+
 ### S09 [B] Роли, guards, ownership
 > ✅ Выполнено 2026-08-31 [B] — `@PreAuthorize`/method security по ролям, ownership-aspect для компаний, TOTP 2FA (setup/verify/recovery codes) для ADMIN/ACCOUNTANT, интеграция 2FA в login, негативные тесты 401/403 и IDOR.
 - `@PreAuthorize`/method security по ролям.
@@ -551,6 +580,15 @@ settings (key TEXT PK, value JSONB)
 - Защищённые роуты, редирект по роли (admin→/admin, manager→/manager, customer→/cabinet).
 - **Приёмка:** полный цикл входа вручную.
 - `GIT(STD)` — `feat(frontend): auth pages and routing`.
+
+### S10.1 [A] Vitest: инфраструктура фронтенд-тестов
+Закрывает дыру: фронтенд заявлен с тестами (1.5), но ни одна сессия их не вводил — логика гвардов/редиректов/корзины пока без автотестов.
+
+- Подключить Vitest + Testing Library + jsdom; `npm run test` и шаг в CI.
+- Первые тесты — самое рисковое из уже написанного: `RoleGuard`/`AdminIndexRedirect` (ролевые редиректы), `cartStore` (привязка к `owner`, очистка при разлогине), форматтеры цен/итога корзины.
+- Дальше каждая фронтенд-сессия добавляет тесты на свою логику (корзина/оформление — обязательно).
+- **Приёмка:** `npm run test` зелёный в CI; покрытие гвардов и корзины.
+- `GIT(STD)` — `test(frontend): vitest setup and first tests [S10.1]`.
 
 ### S11 [B] CRUD пользователей и компаний
 > ✅ Выполнено 2026-08-31 [B] — admin CRUD пользователей и компаний, сброс пароля админом (временный пароль), валидация УНП (9/10 цифр), manager может редактировать назначенные компании, 6 интеграционных тестов, OpenAPI + Bruno.
@@ -674,18 +712,20 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(catalog): hit and new flags with weight step [S19.1]`.
 
 ### S20 [B] Заказы: создание
+- Миграция: в существующую `orders` добавить `stock_location_id`, `recipient_name`, `recipient_phone` (3.1; в V1 этих колонок нет).
 - Корзина `carts`/`cart_items` (persist в БД для авторизованных), `POST /orders` идемпотентен по заголовку `Idempotency-Key` — ключ и ответ хранятся в `idempotency_keys` (3.1), повтор возвращает сохранённый результат; двойной клик не создаёт второй заказ.
-- Транзакция: проверка остатков → резерв (`stock_balances` FOR UPDATE, 1.6) → снапшот цен (НДС-включённые, 2.3) → создание заказа с номером (sequence, см. 2.2).
+- Транзакция: выбор склада по умолчанию `settings('stock.default_location')` (1.6 «Склад и заказ») → проверка остатков → резерв (`stock_balances` FOR UPDATE, 1.6) → снапшот цен (НДС-включённые, 2.3) → создание заказа с номером (sequence, см. 2.2). Нехватка на складе — `STOCK_INSUFFICIENT`, заказ не создаётся.
+- В заказ снапшотом пишутся контакты получателя `recipient_name`/`recipient_phone` (для розницы обязательны, для юрлица — при доставке).
 - Контракт для менеджера: в теле `customerCompanyId` + позиции — заказ от имени клиента без корзины (4.1).
 - Розничный заказ физлица создаётся без `manager_id` → пул «не назначено» (2.7).
 - Событие `OrderCreated` → `outbox_messages`.
-- **Приёмка:** тест полного цикла; цены не меняются при смене прайса после заказа; повторный `Idempotency-Key` не создаёт дубль.
+- **Приёмка:** тест полного цикла; цены не меняются при смене прайса после заказа; повторный `Idempotency-Key` не создаёт дубль; при нехватке остатка заказ отклоняется со `STOCK_INSUFFICIENT`.
 - `GIT(STD)` — `feat(orders): creation with price snapshot`.
 
 ### S21 [A] Корзина и оформление
 - Корзина в кабинете (таблица, изменение количества, итог с НДС).
 - Миграция локальной корзины (примечание к S16): при логине позиции из `gusto-cart` переносятся в серверную корзину, локальный ключ чистится.
-- Оформление: доставка/самовывоз, адрес, комментарий, подтверждение.
+- Оформление: доставка/самовывоз, адрес, комментарий, подтверждение; для доставки — имя и телефон получателя (уходят в `orders.recipient_name/recipient_phone`, S20).
 - Розничная корзина на публичном сайте: оформление требует входа или короткой регистрации физлица (см. 1.6; гостевой checkout — post-MVP); розничный заказ уходит в пул «не назначено» (2.7).
 - Базовое SEO витрины: `title`/`description`/OG на публичных страницах, `sitemap.xml`.
 - **Приёмка:** заказ создаётся из UI (юрлицо и физлицо); мета-теги и sitemap на месте.
@@ -705,6 +745,14 @@ settings (key TEXT PK, value JSONB)
 - Менеджер: экран «Заказ от имени клиента» (компания → позиции → заказ, контракт S20).
 - **Приёмка:** цикл NEW→COMPLETED через UI; заказ от имени клиента создаётся менеджером.
 - `GIT(STD)` — `feat(frontend): orders cabinet and manager list`.
+
+### S23.1 [AB] Кабинет: профиль и смена пароля
+Закрывает дыру: клиенту негде поменять пароль и данные, кроме сброса через почту.
+
+- Бэкенд: `PATCH /cabinet/profile` (имя, телефон; для юрлица — контактные данные пользователя), `POST /cabinet/password` (текущий пароль + новый, с валидацией).
+- Фронтенд: страница «Профиль» в кабинете (юрлицо и физлицо), форма смены пароля.
+- **Приёмка:** клиент меняет пароль и входит с новым; неверный текущий пароль отклоняется.
+- `GIT(STD)` — `feat(cabinet): profile and password change [S23.1]`.
 
 ## Неделя 5 — Документы (счёт, ТН, ТТН)
 
@@ -816,7 +864,7 @@ settings (key TEXT PK, value JSONB)
 ### S38 [AB] Админ-панель: финал — операционный центр
 Админка — не только справочники, а управление процессами (цель 2).
 
-- Настройки: реквизиты продавца, серии документов, НДС по умолчанию, Telegram token и правила уведомлений; SMTP-транспорт остаётся в `.env` (S33).
+- Настройки: реквизиты продавца, серии документов, НДС по умолчанию, Telegram token и правила уведомлений, склад по умолчанию (`stock.default_location`) и гейт подтверждения email (`auth.require_email_confirmation`); SMTP-транспорт остаётся в `.env` (S33).
 - Журнал аудита с фильтрами — к этой сессии записи уже пишут модули заказов (S22), документов (S24) и импорта (S35).
 - Дашборд процессов: новые заказы/заявки за сегодня, позиции ниже `min_stock`, неоплаченные счета, просроченные задачи менеджеров.
 - Мастер импорта/экспорта 1С (эндпоинты S35/S36): загрузка файла → предпросмотр строк → отчёт ошибок → применение; выгрузки за период.
@@ -851,11 +899,14 @@ settings (key TEXT PK, value JSONB)
 ### S42 [AB] Заполнение и запуск
 - Демо-данные заменены реальными (товары, прайсы, реквизиты).
 - Заведены менеджер, бухгалтер, руководитель (2FA), 3 тестовых клиента.
-- **Приёмка:** полный бизнес-цикл на проде.
+- Включается `settings('auth.require_email_confirmation') = true` (боевой SMTP уже есть после S33) — саморегистрация физлиц только с подтверждённым email (S08.1).
+- **Приёмка:** полный бизнес-цикл на проде; новая регистрация требует подтверждения почты.
 
 ## Пост-MVP (после запуска)
 
 - Онлайн-оплата розницы (ЕРИП) и гостевой checkout без регистрации.
+- Выбор склада под конкретный заказ/позицию и сплит заказа по нескольким складам (сейчас — склад по умолчанию, 1.6).
+- Общая корзина на компанию (сейчас корзина персональная, 1.6).
 - Telegram Mini App (кабинет клиента внутри Telegram).
 - PWA-мобильное приложение.
 - Детальная аналитика и ABC/XYZ-анализ товаров.
@@ -882,7 +933,7 @@ mvn -B verify -f backend/pom.xml                                    # backend: u
 #   тестовые значения те же, что в .github/workflows/ci.yml:
 #   export JWT_SECRET=<64+ символов> ADMIN_PASSWORD=change-me
 npm --prefix frontend run lint && npm --prefix frontend run build   # frontend
-# `npm run test` добавляется сюда, когда в frontend появится Vitest
+npm --prefix frontend run test                                     # после сессии S10.1 (Vitest)
 
 # 5. Коммит и пуш
 git add -A
