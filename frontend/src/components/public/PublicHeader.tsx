@@ -1,5 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui";
+import { DASHBOARD_BY_ROLE } from "../auth/dashboardByRole";
+import { useAuthStore } from "../../store/authStore";
+import { useCartStore } from "../../store/cartStore";
+import { logout } from "../../api/auth";
 import styles from "./PublicHeader.module.scss";
 
 const NAV_LINKS = [
@@ -12,6 +16,16 @@ const NAV_LINKS = [
 
 export function PublicHeader() {
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  function handleLogout() {
+    logout().finally(() => {
+      useCartStore.getState().clear();
+      useCartStore.getState().setOwner(null);
+      clearAuth();
+    });
+  }
 
   return (
     <header className={styles.header}>
@@ -40,9 +54,20 @@ export function PublicHeader() {
       </nav>
 
       <div className={styles.actions}>
-        <Link to="/login" className={styles.actions__login}>
-          Войти
-        </Link>
+        {user ? (
+          <>
+            <Link to={DASHBOARD_BY_ROLE[user.role] ?? "/cabinet"} className={styles.actions__login}>
+              {user.fullName || "Кабинет"}
+            </Link>
+            <Button variant="secondary" size="sm" onClick={handleLogout}>
+              Выйти
+            </Button>
+          </>
+        ) : (
+          <Link to="/login" className={styles.actions__login}>
+            Войти
+          </Link>
+        )}
         <Button variant="primary" size="sm">
           Корзина
         </Button>

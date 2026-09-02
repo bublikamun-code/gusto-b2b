@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import { DASHBOARD_BY_ROLE } from "./dashboardByRole";
 import type { Role } from "../../types/admin";
 
 export function ProtectedRoute() {
@@ -35,14 +36,6 @@ export function RoleGuard({ allowed }: { allowed: Role[] }) {
 
   return <Outlet />;
 }
-
-const DASHBOARD_BY_ROLE: Record<string, string> = {
-  ADMIN: "/admin",
-  ACCOUNTANT: "/admin",
-  MANAGER: "/manager",
-  CUSTOMER_LEGAL: "/cabinet",
-  CUSTOMER_INDIVIDUAL: "/cabinet",
-};
 
 export function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore();

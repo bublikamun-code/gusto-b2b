@@ -194,6 +194,11 @@
   }
 }
 
+.section__error {
+  color: $color-bordeaux;
+  margin: 0 0 1rem;
+}
+
 .categories {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

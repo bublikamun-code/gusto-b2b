@@ -45,12 +45,12 @@ const DELIVERY_STEPS = [
 ];
 
 export default function HomePage() {
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isError: categoriesError } = useQuery({
     queryKey: ["categories"],
     queryFn: listCategories,
   });
 
-  const { data: hits } = useQuery({
+  const { data: hits, isError: hitsError } = useQuery({
     queryKey: ["products", "hits"],
     queryFn: () => listProducts({ page: 0, size: 6 }),
   });
@@ -117,6 +117,7 @@ export default function HomePage() {
             Все товары →
           </Link>
         </div>
+        {categoriesError && <p className={styles.section__error}>Не удалось загрузить категории.</p>}
         <div className={styles.categories}>
           {categories.map((category) => (
             <Link
@@ -139,9 +140,10 @@ export default function HomePage() {
             Перейти в каталог →
           </Link>
         </div>
+        {hitsError && <p className={styles.section__error}>Не удалось загрузить товары.</p>}
         <div className={styles.productsGrid}>
-          {hits?.items.map((product, index) => (
-            <ProductCard key={product.id} product={product} badge={index < 3 ? "ХИТ" : "НОВИНКА"} />
+          {hits?.items.map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </section>

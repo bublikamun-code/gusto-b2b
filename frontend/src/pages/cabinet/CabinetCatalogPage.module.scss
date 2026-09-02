@@ -158,3 +158,11 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.loadError {
+  margin: 1rem 0 0;
+  color: $color-bordeaux;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
