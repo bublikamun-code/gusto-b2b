@@ -39,12 +39,19 @@ public class FileController {
 
     @GetMapping("/{storageKey}")
     public ResponseEntity<InputStreamResource> download(@PathVariable String storageKey) {
+        // download() проверяет права на приватные файлы (1.6) и бросает 403/404
         InputStream inputStream = fileService.download(storageKey);
         FileEntity file = fileService.getFile(storageKey);
 
+        // не-изображения — только на скачивание: исполнение контента на домене запрещено
+        String disposition = file.getMimeType() != null && file.getMimeType().startsWith("image/")
+                ? "inline"
+                : "attachment";
+        String safeName = file.getOriginalName() == null ? "file"
+                : file.getOriginalName().replaceAll("[\\r\\n\"]", "_");
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + file.getOriginalName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + safeName + "\"")
                 .contentType(MediaType.parseMediaType(file.getMimeType()))
                 .body(new InputStreamResource(inputStream));
     }

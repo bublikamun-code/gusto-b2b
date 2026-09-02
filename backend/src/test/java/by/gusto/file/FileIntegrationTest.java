@@ -150,6 +150,7 @@ class FileIntegrationTest {
         ResponseEntity<byte[]> downloadResp = restTemplate.getForEntity(url, byte[].class);
         assertThat(downloadResp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(downloadResp.getHeaders().getContentType().toString()).startsWith("image/png");
+        assertThat(downloadResp.getHeaders().getContentDisposition().isInline()).isTrue();
         assertThat(downloadResp.getBody()).isEqualTo(PNG_BYTES);
     }
 
@@ -185,6 +186,37 @@ class FileIntegrationTest {
     }
 
     @Test
+    void fileReferencedByProductImageCannotBeDeleted() {
+        ResponseEntity<ApiResponse> uploadResp = uploadFile("attached.png", PNG_BYTES, "PUBLIC", adminToken);
+        assertThat(uploadResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        @SuppressWarnings("unchecked")
+        String storageKey = (String) ((Map<String, Object>) uploadResp.getBody().getData()).get("storageKey");
+        attachFileToProduct(storageKey, productId);
+
+        ResponseEntity<ApiResponse> deleteResp = delete("/api/v1/files/" + storageKey, adminToken);
+        assertThat(deleteResp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        // файл остаётся доступен
+        ResponseEntity<byte[]> downloadResp = restTemplate.getForEntity("/api/v1/files/" + storageKey, byte[].class);
+        assertThat(downloadResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void unreferencedFileCanBeDeleted() {
+        ResponseEntity<ApiResponse> uploadResp = uploadFile("free.png", PNG_BYTES, "PUBLIC", adminToken);
+        assertThat(uploadResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        @SuppressWarnings("unchecked")
+        String storageKey = (String) ((Map<String, Object>) uploadResp.getBody().getData()).get("storageKey");
+
+        ResponseEntity<ApiResponse> deleteResp = delete("/api/v1/files/" + storageKey, adminToken);
+        assertThat(deleteResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<ApiResponse> downloadResp = restTemplate.getForEntity(
+                "/api/v1/files/" + storageKey, ApiResponse.class);
+        assertThat(downloadResp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void invalidMimeTypeIsRejected() {
         byte[] text = "not an image".getBytes();
         ResponseEntity<ApiResponse> uploadResp = uploadFile("fake.png", text, "PUBLIC", adminToken);
@@ -192,15 +224,18 @@ class FileIntegrationTest {
     }
 
     private String createAdminAndLogin() {
+        // уникальный email на каждый тест: rate limiting считает попытки по IP+email,
+        // и повторный логин одним адресом в рамках класса упирается в лимит 5/15 мин
+        String email = "admin-files-" + UUID.randomUUID() + "@test.by";
         userRepository.save(User.builder()
-                .email("admin-files@test.by")
+                .email(email)
                 .passwordHash(passwordEncoder.encode("password123"))
                 .fullName("Admin Files")
                 .role(Role.ADMIN)
                 .active(true)
                 .build());
         LoginRequest request = new LoginRequest();
-        request.setEmail("admin-files@test.by");
+        request.setEmail(email);
         request.setPassword("password123");
         ResponseEntity<ApiResponse> response = restTemplate.postForEntity(
                 "/api/v1/auth/login", request, ApiResponse.class);
@@ -272,5 +307,22 @@ class FileIntegrationTest {
         }
         return restTemplate.exchange(path, HttpMethod.POST,
                 new HttpEntity<>(body, headers), ApiResponse.class);
+    }
+
+    private ResponseEntity<ApiResponse> delete(String path, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null) {
+            headers.setBearerAuth(token);
+        }
+        return restTemplate.exchange(path, HttpMethod.DELETE, new HttpEntity<>(headers), ApiResponse.class);
+    }
+
+    private void attachFileToProduct(String storageKey, UUID productId) {
+        FileEntity file = fileRepository.findByStorageKey(storageKey).orElseThrow();
+        productImageRepository.save(by.gusto.file.entity.ProductImage.builder()
+                .productId(productId)
+                .fileId(file.getId())
+                .sort(0)
+                .build());
     }
 }

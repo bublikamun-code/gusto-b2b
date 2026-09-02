@@ -14,6 +14,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, UUID
 
     List<ProductImage> findByProductIdInOrderBySortAsc(List<UUID> productIds);
 
+    boolean existsByFileId(UUID fileId);
+
     boolean existsByProductIdAndFileId(UUID productId, UUID fileId);
 
     void deleteByProductIdAndFileId(UUID productId, UUID fileId);

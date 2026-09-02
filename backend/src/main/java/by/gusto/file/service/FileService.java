@@ -7,6 +7,7 @@ import by.gusto.common.exception.GustoException;
 import by.gusto.file.dto.FileResponse;
 import by.gusto.file.entity.FileEntity;
 import by.gusto.file.repository.FileRepository;
+import by.gusto.file.repository.ProductImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +36,7 @@ public class FileService {
     private final FileStorageProperties properties;
     private final FileStorageService fileStorageService;
     private final FileRepository fileRepository;
+    private final ProductImageRepository productImageRepository;
     private final AuthContext authContext;
 
     @Transactional
@@ -93,6 +95,10 @@ public class FileService {
         UUID currentUserId = currentUserId();
         if (currentUserId == null || !currentUserId.equals(file.getOwnerId()) && !isAdmin()) {
             throw new GustoException(ErrorCode.ACCESS_DENIED, "Удаление файла запрещено");
+        }
+
+        if (productImageRepository.existsByFileId(file.getId())) {
+            throw new GustoException(ErrorCode.VALIDATION_FAILED, "Файл используется как фото товара");
         }
 
         fileStorageService.delete(storageKey);
