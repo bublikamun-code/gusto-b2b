@@ -8,6 +8,7 @@ import by.gusto.common.exception.GustoException;
 import by.gusto.file.dto.FileResponse;
 import by.gusto.file.entity.FileEntity;
 import by.gusto.file.repository.FileRepository;
+import by.gusto.file.repository.ProductImageRepository;
 import by.gusto.file.service.FileService;
 import by.gusto.file.service.FileStorageProperties;
 import by.gusto.file.service.FileStorageService;
@@ -55,6 +56,9 @@ class FileServiceTest {
 
     @Mock
     private FileRepository fileRepository;
+
+    @Mock
+    private ProductImageRepository productImageRepository;
 
     @Mock
     private AuthContext authContext;
@@ -147,11 +151,26 @@ class FileServiceTest {
         FileEntity file = privateFile();
         authenticate(UUID.randomUUID(), Role.ADMIN);
         when(fileRepository.findByStorageKey(storageKey)).thenReturn(Optional.of(file));
+        when(productImageRepository.existsByFileId(file.getId())).thenReturn(false);
         doNothing().when(fileStorageService).delete(storageKey);
 
         fileService.delete(storageKey);
 
         verify(fileStorageService).delete(storageKey);
+    }
+
+    @Test
+    void cannotDeleteFileReferencedByProductImage() {
+        FileEntity file = publicFile();
+        authenticate(UUID.randomUUID(), Role.ADMIN);
+        when(fileRepository.findByStorageKey(storageKey)).thenReturn(Optional.of(file));
+        when(productImageRepository.existsByFileId(file.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> fileService.delete(storageKey))
+                .isInstanceOf(GustoException.class)
+                .satisfies(e -> assertThat(((GustoException) e).getErrorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED));
+
+        verify(fileStorageService, org.mockito.Mockito.never()).delete(storageKey);
     }
 
     private FileEntity publicFile() {

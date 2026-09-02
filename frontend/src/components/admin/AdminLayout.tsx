@@ -18,6 +18,19 @@ export function AdminLayout() {
     }
   };
 
+  // Навигация по матрице 2.1: дашборд доступен и бухгалтеру,
+  // CRUD-разделы — только ADMIN (бэкенд /admin/** для остальных отдаёт 403).
+  const navItems = [
+    { to: "/admin/dashboard", label: "Дашборд" },
+    ...(user?.role === "ADMIN"
+      ? [
+          { to: "/admin/users", label: "Пользователи" },
+          { to: "/admin/companies", label: "Компании" },
+          { to: "/admin/products", label: "Товары" },
+        ]
+      : []),
+  ];
+
   return (
     <div className={styles.layout}>
       <header className={styles.header}>
@@ -35,15 +48,15 @@ export function AdminLayout() {
       <div className={styles.body}>
         <aside className={styles.sidebar}>
           <nav className={styles.nav}>
-            <NavLink to="/admin/users" className={({ isActive }) => (isActive ? styles.active : undefined)}>
-              Пользователи
-            </NavLink>
-            <NavLink to="/admin/companies" className={({ isActive }) => (isActive ? styles.active : undefined)}>
-              Компании
-            </NavLink>
-            <NavLink to="/admin/products" className={({ isActive }) => (isActive ? styles.active : undefined)}>
-              Товары
-            </NavLink>
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => (isActive ? styles.active : undefined)}
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
         </aside>
 

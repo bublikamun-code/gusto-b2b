@@ -1,7 +1,7 @@
 # GUSTO B2B — Финальный подробный план реализации (чек-лист)
 
 > Версия 1.4 · 2026-09-02
-> v1.4 — аудит плана и кода по итогам S01–S17. Закрытые дыры: резерв остатков перенесён на материализованную таблицу `stock_balances` (вьюху-агрегат лочить невозможно), идемпотентность получила хранилище `idempotency_keys`, зафиксированы семантика НДС (цены включённые, 2.3), словари статусов (2.8), маршрутизация розничных заказов и заявок без менеджера (2.7), планировщик фоновых задач (1.6). Новые сессии: S17.1 (приватные файлы — дыра в уже написанном `FileController`), S19.1 (хиты/новинки, шаг весового товара). Уточнены: S12 (роутинг бухгалтера), S16 (захардкоженное «наличие»), S18–S23, S27, S29–S33, S35–S39, S41 (SEO, аудит-запись, дашборд процессов, 1С-мастер, бэкап файлов).
+> v1.4 — аудит плана и кода по итогам S01–S17. Закрытые дыры: резерв остатков перенесён на материализованную таблицу `stock_balances` (вьюху-агрегат лочить невозможно), идемпотентность получила хранилище `idempotency_keys`, зафиксированы семантика НДС (цены включённые, 2.3), словари статусов (2.8), маршрутизация розничных заказов и заявок без менеджера (2.7), планировщик фоновых задач (1.6). Новые сессии: S17.1 (аудит файлов: доступы оказались закрыты с S17, доделаны `Content-Disposition` и защита ссылочных файлов), S19.1 (хиты/новинки, шаг весового товара). Уточнены: S12 (роутинг бухгалтера), S16 (захардкоженное «наличие»), S18–S23, S27, S29–S33, S35–S39, S41 (SEO, аудит-запись, дашборд процессов, 1С-мастер, бэкап файлов).
 > Версия 1.3 · 2026-08-24
 > v1.3 — команды «перед пушем» в Части 6 унифицированы с 6.3/AGENTS.md (`mvn -B verify`; убраны `./mvnw` — wrapper не используется по ADR — и `npm run test` — Vitest ещё не добавлен); зафиксировано: ветка по умолчанию на GitHub — `develop`; задачи S04 приведены к фактическим Makefile-командам.
 > v1.2 — добавлены: синхронизация локального окружения (6.1), правила асинхронной работы (6.2), ритуал AI-ассистента со сверкой файлов (6.3), хранение плана и отметка прогресса в репозитории (6.4); отмечен прогресс S01–S04.
@@ -182,11 +182,39 @@
 | Новая заявка с сайта | Telegram + Email | — |
 | Счёт выставлен | — | Email / Telegram |
 
+## 2.7. Маршрутизация розничных заказов и заявок
+
+У юрлица есть `companies.manager_id` — его заказы закреплены за менеджером. У физлица компании нет, поэтому без отдельного правила розничный заказ «повисает» без ответственного:
+
+- Розничный заказ (`customer_company_id = NULL`) создаётся с `manager_id = NULL` и попадает в пул **«не назначено»**.
+- Заявка с сайта (`site_requests`) и лид (`leads`) без `assigned_manager_id` — в тот же пул.
+- Каждый менеджер видит пул в «Едином окне входящих» (S30) и берёт заявку/заказ в работу одним действием (проставляется `manager_id` / `assigned_manager_id`).
+- Уведомление о новом розничном заказе/заявке уходит всем менеджерам (2.6) — кто первым взял, того и заявка; админ может назначить/переназначить вручную.
+
+## 2.8. Словари статусов
+
+| Сущность | Поле | Значения |
+|---|---|---|
+| `companies` | `status` | `ACTIVE`, `INACTIVE` |
+| `leads` | `status` | `NEW`, `IN_PROGRESS`, `QUALIFIED`, `WON`, `LOST` |
+| `crm_tasks` | `status` | `OPEN`, `DONE`, `CANCELLED` |
+| `site_requests` | `type` | `CALLBACK`, `WHOLESALE`, `RETAIL`, `OTHER` |
+| `site_requests` | `status` | `NEW`, `IN_PROGRESS`, `CLOSED` |
+| `articles` | `status` | `DRAFT`, `PUBLISHED`, `ARCHIVED` |
+| `integration_files` | `status` | `UPLOADED`, `PROCESSING`, `DONE`, `FAILED` |
+
+CHECK-ограничения добавляются новыми миграциями в сессиях, где сущность впервые используется (лиды — S29, заявки — S31, статьи — S37), а не редактированием применённой `V1`.
+
 ---
 
 # ЧАСТЬ 3. СХЕМА БД (PostgreSQL)
 
 ## 3.1. Таблицы
+
+> Часть 3 — целевая схема (baseline + дополнения из плана). Фактическая схема живёт в
+> `backend/src/main/resources/db/migration`: V2–V7 уже добавили `password_reset_tokens`,
+> 2FA-поля, индексы каталога и ценообразования. Все дальнейшие изменения — только новые
+> миграции `V<N>__…` (правило Части 6).
 
 ```sql
 -- V1 начинается с расширений:
@@ -205,7 +233,8 @@ refresh_tokens (id UUID PK, user_id UUID FK, token_hash TEXT UNIQUE,
 -- Компании (юрлица)
 companies (id UUID PK, name TEXT, short_name TEXT, unp TEXT UNIQUE,
            legal_address TEXT, actual_address TEXT, bank_account TEXT, bank_name TEXT, bank_bic TEXT,
-           contact_phone TEXT, contact_email TEXT, status VARCHAR(20),
+           contact_phone TEXT, contact_email TEXT,
+           status VARCHAR(20) CHECK (status IN ('ACTIVE','INACTIVE')),   -- словарь 2.8
            manager_id UUID NULL REFERENCES users(id), created_at, updated_at)
 
 -- Каталог
@@ -213,7 +242,10 @@ categories (id UUID PK, parent_id UUID NULL, name TEXT, slug TEXT UNIQUE, sort I
 products (id UUID PK, sku TEXT UNIQUE, name TEXT, category_id UUID FK, description TEXT,
           unit TEXT DEFAULT 'кг', manufacturer TEXT, country TEXT DEFAULT 'РБ',
           tnved_code TEXT NULL, barcode TEXT NULL, vat_rate NUMERIC(4,2) DEFAULT 10,
-          weight_per_unit NUMERIC(10,3) NULL, is_active BOOLEAN, deleted_at NULL)
+          weight_per_unit NUMERIC(10,3) NULL,
+          is_hit BOOLEAN NOT NULL DEFAULT FALSE,   -- бейдж ХИТ, управление из админки (S19.1)
+          is_new BOOLEAN NOT NULL DEFAULT FALSE,   -- бейдж НОВИНКА (S19.1)
+          is_active BOOLEAN, deleted_at NULL)
 product_images (id UUID PK, product_id UUID FK, file_id UUID FK, sort INT)
 brands (id UUID PK, name TEXT UNIQUE, slug TEXT UNIQUE)
 
@@ -254,13 +286,25 @@ warehouse_documents (id UUID PK, number TEXT UNIQUE, type VARCHAR(15)
 warehouse_document_items (id UUID PK, document_id UUID FK, product_id UUID FK,
                           quantity NUMERIC(12,3), price NUMERIC(12,2) NULL)
 
--- Движения создаются ТОЛЬКО при CONFIRMED складского документа или заказа
+-- Движения создаются ТОЛЬКО при CONFIRMED складского документа или заказа.
+-- Это журнал/аудит-лог, а не источник остатка для блокировки (см. 1.6).
+-- Знаки: INCOMING +, OUTGOING −, ADJUSTMENT ± (со знаком),
+--        RESERVE/RELEASE меняют только резерв в stock_balances (quantity не трогают).
 stock_movements (id UUID PK, product_id UUID FK, location_id UUID FK,
                  type VARCHAR(10) CHECK (type IN ('INCOMING','OUTGOING','ADJUSTMENT','RESERVE','RELEASE')),
                  quantity NUMERIC(12,3), reference_type TEXT NULL, reference_id UUID NULL,
                  note TEXT, created_by UUID FK, created_at)
--- Остаток = SUM(quantity) по (product_id, location_id); доступно = остаток − резерв
 -- Индексы: (product_id, location_id), (created_at)
+
+-- Материализованный остаток: ЕДИНСТВЕННАЯ строка, которую лочит резерв (1.6).
+-- Обновляется в той же транзакции, что и движение; строка создаётся при первом
+-- движении по паре (продукт, склад). Вьюхи остатков строятся поверх неё.
+stock_balances (product_id UUID FK, location_id UUID FK,
+                quantity NUMERIC(12,3) NOT NULL DEFAULT 0,
+                reserved NUMERIC(12,3) NOT NULL DEFAULT 0 CHECK (reserved >= 0),
+                updated_at TIMESTAMPTZ,
+                PRIMARY KEY (product_id, location_id))
+-- Доступно = quantity − reserved. SELECT ... FOR UPDATE по этой строке в транзакции заказа.
 
 -- Отчёты склада (SQL-вьюхи, не таблицы):
 --   v_stock_balance   — остатки по складам/товарам
@@ -270,6 +314,8 @@ stock_movements (id UUID PK, product_id UUID FK, location_id UUID FK,
 products ... + min_stock NUMERIC(12,3) DEFAULT 0  -- минимальный остаток для уведомлений
 
 -- Заказы
+-- Розничный заказ физлица: customer_company_id = NULL, manager_id = NULL →
+-- попадает в пул «не назначено» (2.7), менеджер берёт в работу из «Единого окна входящих».
 orders (id UUID PK, number TEXT UNIQUE, customer_company_id UUID FK NULL,
         customer_user_id UUID FK, manager_id UUID FK NULL,
         status VARCHAR(20) CHECK (status IN ('NEW','CONFIRMED','PROCESSING','READY','SHIPPED','COMPLETED','CANCELLED')),
@@ -284,6 +330,13 @@ order_items (id UUID PK, order_id UUID FK, product_id UUID FK,
 carts (id UUID PK, user_id UUID FK UNIQUE, created_at, updated_at)
 cart_items (id UUID PK, cart_id UUID FK, product_id UUID FK, quantity NUMERIC(12,3),
             UNIQUE (cart_id, product_id))
+
+-- Идемпотентность (1.6): повторный запрос с тем же ключом возвращает сохранённый результат
+idempotency_keys (key TEXT PK, user_id UUID FK NULL, endpoint TEXT NOT NULL,
+                  request_hash TEXT NOT NULL, response JSONB,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                  expires_at TIMESTAMPTZ NOT NULL)   -- TTL 24 ч, чистит планировщик
+-- Индекс: (expires_at) для очистки просроченных
 
 -- Outbox: надёжная доставка уведомлений (email/Telegram)
 outbox_messages (id UUID PK, aggregate_type TEXT, aggregate_id UUID, type TEXT, payload JSONB,
@@ -317,19 +370,22 @@ waybill_items (id UUID PK, waybill_id UUID FK, product_snapshot JSONB,
 payments (id UUID PK, invoice_id UUID FK, amount NUMERIC(12,2), paid_at DATE,
           method TEXT, note TEXT, created_by UUID FK, created_at)
 
--- CRM
+-- CRM (словари статусов — 2.8; CHECK добавляются миграциями S29/S31/S37, не в V1)
 leads (id UUID PK, source TEXT, name TEXT, phone TEXT, email TEXT, company_name TEXT NULL,
-       message TEXT, status VARCHAR(20), assigned_manager_id UUID NULL, created_at, updated_at)
+       message TEXT, status VARCHAR(20) CHECK (status IN ('NEW','IN_PROGRESS','QUALIFIED','WON','LOST')),
+       assigned_manager_id UUID NULL, created_at, updated_at)
 crm_tasks (id UUID PK, assignee_id UUID FK, company_id UUID FK NULL, title TEXT, description TEXT,
-           due_date TIMESTAMPTZ, status VARCHAR(20), created_at)
+           due_date TIMESTAMPTZ, status VARCHAR(20) CHECK (status IN ('OPEN','DONE','CANCELLED')), created_at)
 crm_notes (id UUID PK, company_id UUID FK, author_id UUID FK, body TEXT, created_at)
 
 -- Заявки с сайта
 site_requests (id UUID PK, name TEXT, phone TEXT, email TEXT, message TEXT,
-               type VARCHAR(20), status VARCHAR(20), created_at)
+               type VARCHAR(20) CHECK (type IN ('CALLBACK','WHOLESALE','RETAIL','OTHER')),
+               status VARCHAR(20) CHECK (status IN ('NEW','IN_PROGRESS','CLOSED')), created_at)
 
 -- CMS
-articles (id UUID PK, slug TEXT UNIQUE, title TEXT, body TEXT, status VARCHAR(20),
+articles (id UUID PK, slug TEXT UNIQUE, title TEXT, body TEXT,
+          status VARCHAR(20) CHECK (status IN ('DRAFT','PUBLISHED','ARCHIVED')),
           published_at TIMESTAMPTZ NULL, created_by UUID FK, created_at, updated_at)
 
 -- Файлы
@@ -344,7 +400,9 @@ audit_log (id UUID PK, actor_id UUID FK, action TEXT, target_type TEXT, target_i
 -- Обмен с 1С (файлы)
 integration_files (id UUID PK, direction VARCHAR(10) CHECK (direction IN ('IMPORT','EXPORT')),
                    type VARCHAR(30) CHECK (type IN ('PRICES','STOCK','ORDERS','INVOICES','WAYBILLS')),
-                   file_id UUID FK, status VARCHAR(20), rows_total INT, rows_ok INT, rows_error INT,
+                   file_id UUID FK,
+                   status VARCHAR(20) CHECK (status IN ('UPLOADED','PROCESSING','DONE','FAILED')),
+                   rows_total INT, rows_ok INT, rows_error INT,
                    error_log_file_id UUID FK NULL, processed_by UUID FK NULL, created_at, processed_at NULL)
 
 -- Настройки
@@ -372,10 +430,11 @@ settings (key TEXT PK, value JSONB)
 ## 4.1. Группы эндпоинтов
 
 - `POST /auth/login|register|refresh|logout`, `GET /auth/me`, `POST /auth/2fa/enable|verify`, `POST /auth/password-reset/request|confirm`
-- `GET /catalog/categories|products|products/{sku}` — публично, розничные цены
+- `GET /catalog/categories|products|products/{sku}` — публично, розничные цены; флаги `isHit`/`isNew` и шаг весового товара в контракте (S19.1)
 - `GET /cabinet/catalog` — кабинет юрлица: компактный список с ценами клиента
-- `GET|DELETE /cart`, `PUT /cart/items/{productId}` — корзина авторизованного (юрист: quantity, 0 = удалить)
-- `GET|POST /orders`, `GET /orders/{id}`, `PATCH /orders/{id}/status` — создание идемпотентно по `Idempotency-Key`
+- `GET /cabinet/pricing/export` — выгрузка прайса клиента в xlsx (со своими ценами)
+- `GET|DELETE /cart`, `PUT /cart/items/{productId}` — персональная корзина авторизованного (юрист и физлицо; quantity, 0 = удалить); менеджер корзину клиента не использует — заказ от имени клиента создаётся сразу `POST /orders`
+- `GET|POST /orders`, `GET /orders/{id}`, `PATCH /orders/{id}/status` — создание идемпотентно по `Idempotency-Key`; в теле `POST /orders` менеджер может передать клиента (`customerCompanyId`) и позиции — заказ от имени клиента (1.6, 2.7)
 - `GET|POST /invoices`, `GET /invoices/{id}/pdf`
 - `GET|POST /waybills`, `GET /waybills/{id}/pdf`
 - `GET|POST /payments`
@@ -502,10 +561,11 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(users): companies and users crud [S11]`.
 
 ### S12 [A] Админка: пользователи и компании
+> ✅ Выполнено 2026-08-25 [A] — админка пользователей и компаний: openapi-контракт, UI, фильтры, формы, мок-режим; ветка `feature/a-s12-admin-users-companies`.
+> 🔧 Hotfix 2026-09-02 [A] — аудит: бухгалтер (ACCOUNTANT) редиректился в `/admin` и получал 403 на каждой странице (бэкенд `/api/v1/admin/**` — только ADMIN). Страницы `users`/`companies`/`products` закрыты постраничным RoleGuard'ом на ADMIN; бухгалтер попадает на `/admin/dashboard` (по матрице 2.1 у него есть дашборды; склад/документы появятся в S18.4/S27).
 - Таблицы с фильтрами/поиском, формы создания, назначение менеджера.
 - **Приёмка:** админ создаёт клиента через UI.
 - `GIT(STD)` — `feat(frontend): admin users and companies`.
-- > ✅ Выполнено 2026-08-25 [A] — админка пользователей и компаний: openapi-контракт, UI, фильтры, формы, мок-режим; ветка `feature/a-s12-admin-users-companies`.
 
 ## Неделя 3 — Каталог
 
@@ -538,6 +598,7 @@ settings (key TEXT PK, value JSONB)
 
 ### S16 [A] Кабинет юрлица: компактный каталог
 > ✅ Выполнено 2026-09-01 [A] — страница `/cabinet/catalog` с табличным каталогом (артикул, название, ед.изм., цена клиента, наличие, количество, кнопка «в корзину»); фильтры по категории/бренду и быстрый поиск; массовое добавление по списку артикулов; локальная корзина на Zustand + `localStorage`; API-клиент `/cabinet/catalog`; `npm run lint` и `npm run build` зелёные, backend compile зелёный, ручная проверка `/api/v1/cabinet/catalog` отдаёт товары с клиентской ценой.
+> ⚠️ Аудит 2026-09-02 — два осознанных временных упрощения: (1) колонка «Наличие» захардкожена строкой «В наличии» — реальные остатки придут в S18, замена на бейджи — в S19; (2) корзина локальная (общий ключ `gusto-cart` + `owner`) и чистится при разлогине — на серверную корзину `carts` мигрирует в S20/S21 (при логине локальные позиции переносятся в серверную корзину).
 - Таблица: артикул, название, ед.изм., цена клиента, наличие, поле количества, «в корзину».
 - Быстрый поиск, фильтр по категории/бренду, массовое добавление (вставка списка SKU).
 - **Приёмка:** клиент добавляет 20 позиций за минуту.
@@ -552,14 +613,25 @@ settings (key TEXT PK, value JSONB)
 - **Приёмка:** загрузка фото товара из админки, показ в каталоге.
 - `GIT(STD)` — `feat(files): storage module and product images`.
 
+### S17.1 [B] Hotfix-аудит: файлы и доступы
+> Аудит 2026-09-02 показал: проверка прав на приватные файлы уже была в `FileService.download` с тестом — «дыры» в доступе не оказалось. Реальные остатки меньше, но их закрываем до документов (S24+), когда через файлы пойдут PDF с реквизитами клиентов.
+
+- `GET /files/{storageKey}`: не-изображения отдаются с `Content-Disposition: attachment` (сейчас загружаются только картинки, но правило фиксируется до появления документов).
+- `DELETE /files/{storageKey}`: запрет удаления файла, на который ссылаются `product_images` (сейчас удаление оставляет битые превью).
+- Интеграционные тесты на оба случая.
+- **Приёмка:** тесты зелёные; публичное фото отдаётся `inline`, файл с привязкой к товару не удаляется.
+- `GIT(STD)` — `fix(files): attachment disposition and referenced-file protection [S17.1]`.
+
 ## Неделя 4 — Склад и заказы
 
 ### S18 [B] Склад: движения, остатки, резерв
-- `stock_movements`, расчёт остатка (`v_stock_balance`), доступно с резервом (`v_stock_available`).
+- Материализованная таблица `stock_balances(product_id, location_id, quantity, reserved)` (3.1): строка создаётся при первом движении по паре и обновляется в той же транзакции, что и движение.
+- `stock_movements` — журнал с фиксированными знаками (3.1); `RESERVE`/`RELEASE` меняют только `reserved`.
+- Вьюхи `v_stock_balance`/`v_stock_available` строятся поверх `stock_balances` (для отчётов и кабинета).
 - Статус для клиента: `IN_STOCK`/`PREORDER` из доступного остатка.
-- Резерв выполняется в транзакции заказа через `SELECT ... FOR UPDATE` строки остатка (product_id, location_id) — механизм из 1.6.
+- Резерв в транзакции заказа: `SELECT ... FOR UPDATE` строки `stock_balances` — механизм из 1.6.
 - Тест на параллельный резерв (oversell guard).
-- **Приёмка:** интеграционные тесты остатков.
+- **Приёмка:** интеграционные тесты остатков; параллельные заказы не продают сверх остатка.
 - `GIT(STD)` — `feat(inventory): stock movements and reservation`.
 
 ### S18.1 [B] Складские документы: приход, расход, списание
@@ -590,47 +662,65 @@ settings (key TEXT PK, value JSONB)
 
 ### S19 [A] Статусы наличия в UI
 - Бейджи «В наличии»/«Под заказ» в каталоге и кабинете.
+- Замена захардкоженной строки «В наличии» в кабинете (примечание к S16) на реальные данные `v_stock_available`.
 - `GIT(STD)` — `feat(frontend): stock badges`.
 
+### S19.1 [AB] Витрина: хиты, новинки, весовой шаг
+- Миграция: `products.is_hit`, `products.is_new` (3.1); CRUD флагов в админском каталоге (`/admin/catalog/products`).
+- Контракт каталога отдаёт `isHit`/`isNew` и шаг весового товара из `weight_per_unit` (4.1).
+- Бейджи ХИТ/НОВИНКА на карточках витрины; «Хиты недели» на главной выбираются по `is_hit`, а не «первые 6».
+- Корзина (и кабинет, и розница) соблюдает шаг количества весового товара.
+- **Приёмка:** админ отмечает хит — он появляется на главной; весовой товар в заказе имеет корректный шаг.
+- `GIT(STD)` — `feat(catalog): hit and new flags with weight step [S19.1]`.
+
 ### S20 [B] Заказы: создание
-- Корзина `carts`/`cart_items` (persist в БД для авторизованных), `POST /orders` идемпотентен по заголовку `Idempotency-Key` (24 ч) — двойной клик не создаёт второй заказ.
-- Транзакция: проверка остатков → резерв → снапшот цен → создание заказа с номером (sequence, см. 2.2).
+- Корзина `carts`/`cart_items` (persist в БД для авторизованных), `POST /orders` идемпотентен по заголовку `Idempotency-Key` — ключ и ответ хранятся в `idempotency_keys` (3.1), повтор возвращает сохранённый результат; двойной клик не создаёт второй заказ.
+- Транзакция: проверка остатков → резерв (`stock_balances` FOR UPDATE, 1.6) → снапшот цен (НДС-включённые, 2.3) → создание заказа с номером (sequence, см. 2.2).
+- Контракт для менеджера: в теле `customerCompanyId` + позиции — заказ от имени клиента без корзины (4.1).
+- Розничный заказ физлица создаётся без `manager_id` → пул «не назначено» (2.7).
 - Событие `OrderCreated` → `outbox_messages`.
-- **Приёмка:** тест полного цикла; цены не меняются при смене прайса после заказа.
+- **Приёмка:** тест полного цикла; цены не меняются при смене прайса после заказа; повторный `Idempotency-Key` не создаёт дубль.
 - `GIT(STD)` — `feat(orders): creation with price snapshot`.
 
 ### S21 [A] Корзина и оформление
 - Корзина в кабинете (таблица, изменение количества, итог с НДС).
+- Миграция локальной корзины (примечание к S16): при логине позиции из `gusto-cart` переносятся в серверную корзину, локальный ключ чистится.
 - Оформление: доставка/самовывоз, адрес, комментарий, подтверждение.
-- Розничная корзина на публичном сайте: оформление требует входа или короткой регистрации физлица (см. 1.6; гостевой checkout — post-MVP).
-- **Приёмка:** заказ создаётся из UI.
+- Розничная корзина на публичном сайте: оформление требует входа или короткой регистрации физлица (см. 1.6; гостевой checkout — post-MVP); розничный заказ уходит в пул «не назначено» (2.7).
+- Базовое SEO витрины: `title`/`description`/OG на публичных страницах, `sitemap.xml`.
+- **Приёмка:** заказ создаётся из UI (юрлицо и физлицо); мета-теги и sitemap на месте.
 - `GIT(STD)` — `feat(frontend): cart and checkout`.
 
 ### S22 [B] Жизненный цикл заказа
-- Смена статусов с правами (менеджер по своим клиентам), отмена с разблокировкой резерва.
-- `GET /manager/orders` с фильтрами.
-- **Приёмка:** статус-машина покрыта тестами.
+- Смена статусов с правами (менеджер по своим клиентам), отмена с разблокировкой резерва (`reserved` в `stock_balances`).
+- `GET /manager/orders` с фильтрами: свои заказы + пул «не назначено» (розница, 2.7); действие «взять в работу» проставляет `manager_id`.
+- Смена статуса, отмена и взятие в работу пишутся в `audit_log` (к S38 журнал уже наполняется).
+- **Приёмка:** статус-машина покрыта тестами; розничный заказ берётся в работу менеджером.
 - `GIT(STD)` — `feat(orders): status lifecycle`.
 
 ### S23 [A] Кабинет: заказы
 - История заказов клиента, детали, повтор заказа в 1 клик.
-- Менеджер: лента заказов своих клиентов, смена статусов.
-- **Приёмка:** цикл NEW→COMPLETED через UI.
+- Панель «Часто заказываемые» для юрлица: топ позиций компании из истории — ускоряет повторные заказы (приёмка S16 «20 позиций за минуту»).
+- Менеджер: лента заказов своих клиентов, смена статусов; пул «не назначено» с кнопкой «взять в работу» (2.7).
+- Менеджер: экран «Заказ от имени клиента» (компания → позиции → заказ, контракт S20).
+- **Приёмка:** цикл NEW→COMPLETED через UI; заказ от имени клиента создаётся менеджером.
 - `GIT(STD)` — `feat(frontend): orders cabinet and manager list`.
 
 ## Неделя 5 — Документы (счёт, ТН, ТТН)
 
 ### S24 [B] Счета: модель и генерация
 - `invoices`, `invoice_items`, нумерация `СЧ-N от ДД.ММ.ГГГГ`, статусы.
-- Создание из заказа (снапшоты продавца/покупателя/товаров).
+- Создание из заказа (снапшоты продавца/покупателя/товаров); суммы по правилам 2.3 (цены НДС-включённые, НДС выделяется расчётно).
+- Выпуск счёта пишется в `audit_log`.
 - **Приёмка:** тест неизменности снапшота после смены реквизитов.
 - `GIT(STD)` — `feat(invoices): model and creation`.
 
 ### S25 [B] PDF счёта (бренд)
 - Шаблон в фирменном стиле (бордо/сливки/графит, Russo One/Oswald).
+- Кириллические бренд-шрифты встраиваются в PDF-шаблон (файлы шрифтов в classpath) — проверить до вёрстки шаблона.
 - Реквизиты продавца из `settings('seller.requisites')`, покупателя из компании.
 - Места под печать/подпись (заглушки).
-- Flying Saucer/OpenPDF, сохранение в `files`.
+- Flying Saucer/OpenPDF, сохранение в `files` как `PRIVATE` (доступ только по правам, 1.6).
 - **Приёмка:** PDF сверен с бренд-буком, открывается и печатается.
 - `GIT(STD)` — `feat(invoices): branded pdf generation`.
 
@@ -642,8 +732,9 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(waybills): tn and ttn documents with pdf`.
 
 ### S27 [A] Документы в UI
-- Кабинет клиента: список счетов/накладных, скачивание PDF.
+- Кабинет клиента: список счетов/накладных, скачивание PDF (клиент-физлицо документов не имеет, матрица 2.1).
 - Менеджер/бухгалтер: выставить счёт из заказа, создать ТТН, список документов с фильтрами.
+- Для бухгалтера это первая рабочая раздел-страница бэк-офиса (роутинг из фикса S12): документы доступны в его навигации.
 - **Приёмка:** документы создаются и скачиваются из UI.
 - `GIT(STD)` — `feat(frontend): documents lists and download`.
 
@@ -656,22 +747,26 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 6 — CRM, заявки, уведомления
 
 ### S29 [B] CRM: лиды, задачи, заметки
-- `leads` из заявок сайта, назначение менеджеру, статусы воронки.
-- `crm_tasks` (срок, статус), `crm_notes`.
+- `leads` из заявок сайта, назначение менеджеру, статусы воронки по словарю 2.8 (миграция добавляет CHECK).
+- `crm_tasks` (срок, статус), `crm_notes`; комментарии по заявке/лиду — история взаимодействия с клиентом.
+- Розничные заказы без менеджера (2.7) видны менеджеру в пуле «не назначено».
 - Дашборд руководителя: выручка, топ-товары, топ-клиенты, долг, конверсия лидов.
 - **Приёмка:** интеграционные тесты CRM и отчётов.
 - `GIT(STD)` — `feat(crm): leads tasks notes and dashboards api`.
 
 ### S30 [A] CRM UI
 - Менеджер: мои клиенты, карточка компании (заказы, долг, задачи, заметки), воронка лидов.
+- Менеджер: «Единое окно входящих» (цель 3) — один список новых заявок/заказов/смен статусов, включая пул «не назначено» с кнопкой «взять в работу»; счётчики «без ответа > 24 ч» и просроченные задачи.
 - Руководитель: дашборд с графиками (Recharts).
-- **Приёмка:** менеджер ведёт клиента от лида до заказа через UI.
+- **Приёмка:** менеджер ведёт клиента от лида до заказа через UI; розничная заявка берётся в работу из единого окна.
 - `GIT(STD)` — `feat(frontend): crm pages and dashboard`.
 
 ### S31 [B] Заявки с сайта + outbox
-- `POST /site/requests`, сохранение → outbox → отправка.
+- `POST /site/requests`, сохранение → outbox → отправка; идемпотентно по `Idempotency-Key` (1.6).
 - Повторная отправка при сбое (retry + circuit breaker, Resilience4j).
-- **Приёмка:** при выключенном SMTP заявка не теряется.
+- Вводится планировщик (1.6): поллер `outbox_messages` на Spring `@Scheduled`; дальше на нём же очистка токенов/`idempotency_keys` и ротация sequences.
+- Заявка без менеджера попадает в пул «не назначено» (2.7), уведомление — всем менеджерам.
+- **Приёмка:** при выключенном SMTP заявка не теряется; поллер доставляет после восстановления.
 - `GIT(STD)` — `feat(requests): site requests with outbox`.
 
 ### S32 [B] Telegram-бот
@@ -682,7 +777,9 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(notifications): telegram bot`.
 
 ### S33 [B] Email
-- SMTP (настройки в `.env`), шаблоны писем в бренде (сливки/бордо).
+- SMTP-транспорт (host/port/user/password) — в `.env`; правила получателей и шаблоны — в `settings` (единообразие с S38: в админке транспорт не правится).
+- Ссылки в письмах (сброс пароля, статусы) строятся от `APP_BASE_URL` (новая переменная `.env`/compose).
+- Шаблоны писем в бренде (сливки/бордо).
 - Правило: клиенту — только если нет Telegram-подписки.
 - **Приёмка:** письма уходят на тестовый ящик.
 - `GIT(STD)` — `feat(notifications): email templates and sending`.
@@ -697,13 +794,15 @@ settings (key TEXT PK, value JSONB)
 
 ### S35 [B] Импорт прайсов/остатков из 1С (.xlsx)
 - `POST /admin/import/prices` и `/stock` (Apache POI).
-- Отчёт по строкам (ok/error с номером строки), `integration_files`.
+- Отчёт по строкам (ok/error с номером строки), `integration_files` (статусы — словарь 2.8).
 - Правило конфликтов: upsert по SKU; отсутствующие → архив (флаг).
+- Запуск импорта — только из админки (мастер загрузки в S38); результат импорта пишется в `audit_log`.
 - **Приёмка:** импорт файла 1000 строк < 30 сек, отчёт ошибок.
 - `GIT(STD)` — `feat(integration): xlsx import prices and stock`.
 
 ### S36 [B] Экспорт для 1С (.xlsx)
 - Выгрузка заказов/счетов/накладных за период.
+- `GET /cabinet/pricing/export` — прайс клиента со своими ценами (xlsx) для кабинета юрлица.
 - Колонки согласованы с бухгалтерией (шаблон в `docs/1c-export-format.md`).
 - **Приёмка:** файл открывается в Excel, все поля на месте.
 - `GIT(STD)` — `feat(integration): xlsx export orders invoices`.
@@ -714,18 +813,24 @@ settings (key TEXT PK, value JSONB)
 - **Приёмка:** статья публикуется и видна на сайте.
 - `GIT(STD)` — `feat(frontend): cms articles and static pages`.
 
-### S38 [AB] Админ-панель: финал
-- Настройки (реквизиты продавца, серии документов, НДС, SMTP, Telegram token).
-- Журнал аудита с фильтрами.
-- **Приёмка:** смена реквизитов отражается в новых PDF.
-- `GIT(STD)` — `feat(admin): settings and audit log`.
+### S38 [AB] Админ-панель: финал — операционный центр
+Админка — не только справочники, а управление процессами (цель 2).
+
+- Настройки: реквизиты продавца, серии документов, НДС по умолчанию, Telegram token и правила уведомлений; SMTP-транспорт остаётся в `.env` (S33).
+- Журнал аудита с фильтрами — к этой сессии записи уже пишут модули заказов (S22), документов (S24) и импорта (S35).
+- Дашборд процессов: новые заказы/заявки за сегодня, позиции ниже `min_stock`, неоплаченные счета, просроченные задачи менеджеров.
+- Мастер импорта/экспорта 1С (эндпоинты S35/S36): загрузка файла → предпросмотр строк → отчёт ошибок → применение; выгрузки за период.
+- Управление витриной: флаги хитов/новинок (S19.1) и редактируемые тексты лендинга (hero, блок доставки) — чтобы правка слов не требовала коммита.
+- **Приёмка:** смена реквизитов отражается в новых PDF; импорт проводится из админки без Bruno.
+- `GIT(STD)` — `feat(admin): settings audit and operations dashboard`.
 
 ## Неделя 8 — Качество и продакшен
 
 ### S39 [AB] Тестирование полным циклом
 - E2E Playwright: регистрация клиента админом → вход → каталог → заказ → счёт → ТТН → оплата.
+- Публичные страницы (витрина) дополнительно прогоняются в мобильном вьюпорте (375px): розница приходит с телефона.
 - Нагрузочное k6: каталог 100 RPS, создание заказа 20 RPS.
-- **Приёмка:** E2E зелёный, p95 каталога < 300 мс.
+- **Приёмка:** E2E зелёный (десктоп + мобильный вьюпорт витрины), p95 каталога < 300 мс.
 - `GIT(STD)` — `test: e2e and load tests`.
 
 ### S40 [AB] Харденинг безопасности
@@ -737,10 +842,10 @@ settings (key TEXT PK, value JSONB)
 
 ### S41 [AB] Продакшен-деплой
 - VPS (Ubuntu LTS), `docker-compose.prod.yml`, Nginx + Let's Encrypt, домен `gustomeat.by`.
-- Бэкапы: ежедневный pg_dump + WAL → внешнее хранилище, шифрование (age/gpg), restore-test.
+- Бэкапы: ежедневный pg_dump + WAL **и volume `filedata`** (фото товаров, PDF документов клиентов) → внешнее хранилище, шифрование (age/gpg), restore-test.
 - Uptime-мониторинг `/healthz`.
 - Runbook в `docs/runbooks.md`.
-- **Приёмка:** сайт доступен по HTTPS, бэкап восстанавливается.
+- **Приёмка:** сайт доступен по HTTPS, бэкап восстанавливается (БД и файлы).
 - `GIT(STD)` — `feat(infra): production deployment`.
 
 ### S42 [AB] Заполнение и запуск
@@ -773,6 +878,9 @@ git checkout -b feature/<dev>-s<номер>-<кратко>   # пример: fea
 
 # 4. Перед пушем (те же команды, что в 6.3 и AGENTS.md)
 mvn -B verify -f backend/pom.xml                                    # backend: unit + интеграционные
+#   после hotfix'а S08 («падать без env») для локального запуска нужны переменные —
+#   тестовые значения те же, что в .github/workflows/ci.yml:
+#   export JWT_SECRET=<64+ символов> ADMIN_PASSWORD=change-me
 npm --prefix frontend run lint && npm --prefix frontend run build   # frontend
 # `npm run test` добавляется сюда, когда в frontend появится Vitest
 
