@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { to: "/catalog", label: "Каталог" },
   { to: "/delivery", label: "Доставка" },
   { to: "/about", label: "О нас" },
+  { to: "/contacts", label: "Контакты" },
 ];
 
 export function PublicHeader() {

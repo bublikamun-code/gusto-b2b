@@ -1,0 +1,102 @@
+@use "../../styles/tokens" as *;
+
+.contacts {
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.contacts__header {
+  margin-bottom: 2.5rem;
+}
+
+.contacts__eyebrow {
+  display: block;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  color: $color-bordeaux;
+  margin-bottom: 0.5rem;
+}
+
+.contacts__title {
+  font-family: $font-display;
+  font-size: 2.75rem;
+  color: $color-graphite;
+  margin: 0;
+}
+
+.contacts__layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.contacts__block {
+  background-color: $color-card;
+  padding: 1.5rem;
+  border-top: 4px solid $color-bordeaux;
+}
+
+.contacts__subtitle {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+.contacts__list {
+  margin: 0;
+
+  div {
+    margin-bottom: 0.75rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  dt {
+    font-size: 0.85rem;
+    color: rgba($color-graphite, 0.6);
+    margin-bottom: 0.15rem;
+  }
+
+  dd {
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.contacts__link {
+  color: $color-bordeaux;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.contacts__note {
+  background-color: $color-bordeaux;
+  color: $color-cream;
+  padding: 1.5rem 2rem;
+
+  p {
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 900px) {
+  .contacts__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .contacts__title {
+    font-size: 2rem;
+  }
+}

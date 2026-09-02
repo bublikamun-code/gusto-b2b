@@ -20,6 +20,8 @@ import CatalogPage from "./pages/public/CatalogPage";
 import ProductPage from "./pages/public/ProductPage";
 import DeliveryPage from "./pages/public/DeliveryPage";
 import AboutPage from "./pages/public/AboutPage";
+import ContactsPage from "./pages/public/ContactsPage";
+import PrivacyPage from "./pages/public/PrivacyPage";
 
 export default function App() {
   return (
@@ -59,6 +61,8 @@ export default function App() {
             <Route path="/products/:sku" element={<ProductPage />} />
             <Route path="/delivery" element={<DeliveryPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
           </Route>
 
           <Route path="/ui-kit" element={<UiKitPage />} />
