@@ -51,3 +51,19 @@ export function AuthRedirect({ children }: { children: React.ReactNode }) {
 
   return children;
 }
+
+// Индекс админки: ADMIN попадает в пользователей, остальные роли — на дашборд
+// (разделы пользователей/компаний/товаров закрыты постраничным RoleGuard'ом, см. App).
+export function AdminIndexRedirect() {
+  const { user, isLoading } = useAuthStore();
+
+  if (isLoading) {
+    return <div className="auth-loading">Загрузка…</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={user.role === "ADMIN" ? "/admin/users" : "/admin/dashboard"} replace />;
+}

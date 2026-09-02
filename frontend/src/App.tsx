@@ -1,6 +1,6 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthInit } from "./components/auth/AuthInit";
-import { AuthRedirect, ProtectedRoute, RoleGuard } from "./components/auth/AuthGuards";
+import { AdminIndexRedirect, AuthRedirect, ProtectedRoute, RoleGuard } from "./components/auth/AuthGuards";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { PublicLayout } from "./components/public/PublicLayout";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -41,11 +41,14 @@ export default function App() {
 
           <Route element={<RoleGuard allowed={["ADMIN", "ACCOUNTANT"]} />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+              <Route path="/admin" element={<AdminIndexRedirect />} />
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              <Route path="/admin/companies" element={<AdminCompaniesPage />} />
-              <Route path="/admin/products" element={<AdminProductsPage />} />
+              {/* CRUD-разделы только для ADMIN: у других ролей бэкенд на /admin/** отдаёт 403 */}
+              <Route element={<RoleGuard allowed={["ADMIN"]} />}>
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/companies" element={<AdminCompaniesPage />} />
+                <Route path="/admin/products" element={<AdminProductsPage />} />
+              </Route>
             </Route>
           </Route>
 
