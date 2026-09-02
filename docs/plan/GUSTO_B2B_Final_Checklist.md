@@ -699,6 +699,7 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(integration): xlsx export orders invoices`.
 
 ### S37 [A] CMS + страницы
+> 🚧 Прогресс 2026-09-02 [A] — публичные страницы «Контакты» (`/contacts`, связь + реквизиты) и «Политика конфиденциальности» (`/privacy`), ссылки в шапке/футере, email приведён к `info@gustomeat.by`; админка статей (draft/published) — ждёт backend.
 - Админка статей (draft/published), публичные страницы «О нас», «Доставка», «Контакты», «Политика конфиденциальности».
 - **Приёмка:** статья публикуется и видна на сайте.
 - `GIT(STD)` — `feat(frontend): cms articles and static pages`.

@@ -1,0 +1,64 @@
+@use "../../styles/tokens" as *;
+
+.privacy {
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.privacy__header {
+  margin-bottom: 2.5rem;
+}
+
+.privacy__eyebrow {
+  display: block;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  color: $color-bordeaux;
+  margin-bottom: 0.5rem;
+}
+
+.privacy__title {
+  font-family: $font-display;
+  font-size: 2.75rem;
+  color: $color-graphite;
+  margin: 0;
+}
+
+.privacy__content {
+  max-width: 50rem;
+}
+
+.privacy__section {
+  background-color: $color-card;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    font-family: $font-heading;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 1.1rem;
+    margin: 0 0 0.75rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.6;
+    color: rgba($color-graphite, 0.85);
+  }
+}
+
+.privacy__updated {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: rgba($color-graphite, 0.6);
+}
+
+@media (max-width: 600px) {
+  .privacy__title {
+    font-size: 2rem;
+  }
+}

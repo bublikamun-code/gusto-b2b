@@ -6,7 +6,10 @@ const NAV_LINKS = [
   { to: "/catalog", label: "Каталог" },
   { to: "/delivery", label: "Доставка" },
   { to: "/about", label: "О нас" },
+  { to: "/contacts", label: "Контакты" },
 ];
+
+const LEGAL_LINKS = [{ to: "/privacy", label: "Политика конфиденциальности" }];
 
 export function PublicFooter() {
   return (
@@ -38,7 +41,7 @@ export function PublicFooter() {
         <div className={styles.footer__contacts}>
           <h4 className={styles.footer__title}>Контакты</h4>
           <p>+375 29 123-45-67</p>
-          <p>priwet@gustomeat.by</p>
+          <p>info@gustomeat.by</p>
           <p>Ежедневно 9:00–21:00</p>
           <p>Минск, доставка по городу</p>
         </div>
@@ -46,6 +49,13 @@ export function PublicFooter() {
 
       <div className={styles.footer__bottom}>
         <span>© 2026 ГУСТО</span>
+        <span>
+          {LEGAL_LINKS.map((link) => (
+            <Link key={link.to} to={link.to}>
+              {link.label}
+            </Link>
+          ))}
+        </span>
         <span>gustomeat.by</span>
       </div>
     </footer>
