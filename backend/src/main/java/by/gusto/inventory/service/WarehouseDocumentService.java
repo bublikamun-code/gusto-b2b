@@ -48,6 +48,7 @@ public class WarehouseDocumentService {
     private final WarehouseDocumentItemRepository itemRepository;
     private final StockService stockService;
     private final ProductRepository productRepository;
+    private final PurchaseOrderService purchaseOrderService;
     private final JdbcTemplate jdbcTemplate;
 
     @Transactional
@@ -111,6 +112,10 @@ public class WarehouseDocumentService {
         document.setStatus(WarehouseDocument.Status.CONFIRMED);
         document.setConfirmedAt(Instant.now());
         documentRepository.save(document);
+        // Приход по заказу поставщику: накопление received_quantity (S18.2)
+        if (document.getPurchaseOrderId() != null) {
+            purchaseOrderService.registerReceipt(document.getPurchaseOrderId(), items);
+        }
         return toResponse(document, items);
     }
 

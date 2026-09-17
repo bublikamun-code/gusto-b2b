@@ -1,0 +1,24 @@
+meta {
+  name: Suppliers CRUD
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{host}}/api/v1/warehouse/suppliers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Мясокомбинат Минский",
+    "unp": "191536521",
+    "phone": "+375 17 000-00-00",
+    "contactPerson": "Иван Иванов"
+  }
+}

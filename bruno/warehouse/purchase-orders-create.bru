@@ -1,0 +1,29 @@
+meta {
+  name: Create purchase order
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{host}}/api/v1/warehouse/purchase-orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "supplierId": "<supplier-uuid>",
+    "expectedDate": "2026-10-01",
+    "items": [
+      {
+        "productId": "<product-uuid>",
+        "quantity": 100,
+        "purchasePrice": 20
+      }
+    ]
+  }
+}

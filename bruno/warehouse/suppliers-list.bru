@@ -1,0 +1,14 @@
+meta {
+  name: Suppliers list
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/api/v1/warehouse/suppliers?page=0&size=20&search=&active=
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
