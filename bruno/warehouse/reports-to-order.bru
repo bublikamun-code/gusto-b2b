@@ -1,0 +1,14 @@
+meta {
+  name: Stock to-order report
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{host}}/api/v1/warehouse/reports/to-order
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

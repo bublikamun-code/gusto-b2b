@@ -1651,6 +1651,116 @@ paths:
               schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /warehouse/reports/balance:
+    get:
+      tags: [warehouse]
+      summary: Отчёт «Остатки по складам» (v_stock_balance; S18.3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: locationId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Строки остатков (quantity/reserved/available)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/StockBalanceRow" }
+  /warehouse/reports/turnover:
+    get:
+      tags: [warehouse]
+      summary: Отчёт «Оборачиваемость за период» (S18.3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: locationId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Приход/расход по товарам за период
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/StockTurnoverRow" }
+  /warehouse/reports/movements:
+    get:
+      tags: [warehouse]
+      summary: Журнал движений за период (S18.3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: productId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: locationId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 200, maximum: 500 }
+      responses:
+        "200":
+          description: Движения (новые сверху)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/StockMovementRow" }
+  /warehouse/reports/to-order:
+    get:
+      tags: [warehouse]
+      summary: «Что заказать» — товары ниже min_stock (v_stock_to_order; S18.3)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Товары с доступным остатком ниже минимума
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/StockToOrderRow" }
+
   /files:
     post:
       tags: [files]
@@ -2465,6 +2575,46 @@ components:
             data:
               type: array
               items: { $ref: "#/components/schemas/PurchaseOrder" }
+    StockBalanceRow:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        productName: { type: string }
+        locationId: { type: string, format: uuid }
+        locationName: { type: string }
+        quantity: { type: number }
+        reserved: { type: number }
+        available: { type: number, description: "quantity − reserved" }
+    StockTurnoverRow:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        productName: { type: string }
+        incoming: { type: number, description: "Суммарный приход за период" }
+        outgoing: { type: number, description: "Суммарный расход за период (положительное число)" }
+    StockMovementRow:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        productName: { type: string }
+        locationId: { type: string, format: uuid }
+        locationName: { type: string }
+        type: { type: string, enum: [INCOMING, OUTGOING, ADJUSTMENT, RESERVE, RELEASE] }
+        quantity: { type: number, description: "Знаковое: OUTGOING/минус-ADJUSTMENT отрицательные" }
+        referenceType: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    StockToOrderRow:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        productName: { type: string }
+        minStock: { type: number }
+        available: { type: number, description: "Доступно сейчас (ниже minStock)" }
     CatalogProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"

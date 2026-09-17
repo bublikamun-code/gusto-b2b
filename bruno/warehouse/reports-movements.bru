@@ -1,0 +1,14 @@
+meta {
+  name: Stock movements report
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{host}}/api/v1/warehouse/reports/movements?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z&limit=200
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

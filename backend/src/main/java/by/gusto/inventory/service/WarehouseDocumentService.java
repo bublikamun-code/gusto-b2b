@@ -46,6 +46,7 @@ public class WarehouseDocumentService {
 
     private final WarehouseDocumentRepository documentRepository;
     private final WarehouseDocumentItemRepository itemRepository;
+    private final by.gusto.inventory.repository.StockBalanceRepository balanceRepository;
     private final StockService stockService;
     private final ProductRepository productRepository;
     private final PurchaseOrderService purchaseOrderService;
@@ -94,20 +95,15 @@ public class WarehouseDocumentService {
                     "Подтвердить можно только черновик, текущий статус: " + document.getStatus());
         }
         List<WarehouseDocumentItem> items = itemRepository.findAllByDocumentId(documentId);
-        for (WarehouseDocumentItem item : items) {
-            UUID locationId = switch (document.getType()) {
-                case INCOMING -> document.getLocationToId();
-                case OUTGOING, WRITE_OFF -> document.getLocationFromId();
-                default -> throw new GustoException(ErrorCode.STOCK_DOCUMENT_INVALID,
-                        "Тип документа обрабатывается в S18.3: " + document.getType());
-            };
-            StockMovement.Type movementType = switch (document.getType()) {
-                case INCOMING -> StockMovement.Type.INCOMING;
-                case OUTGOING, WRITE_OFF -> StockMovement.Type.OUTGOING;
-                default -> throw new GustoException(ErrorCode.STOCK_DOCUMENT_INVALID);
-            };
-            stockService.applyMovement(item.getProductId(), locationId, movementType, item.getQuantity(),
-                    "WAREHOUSE_DOCUMENT", documentId, document.getNumber(), userId);
+        switch (document.getType()) {
+            case INCOMING -> items.forEach(item -> stockService.applyMovement(item.getProductId(),
+                    document.getLocationToId(), StockMovement.Type.INCOMING, item.getQuantity(),
+                    "WAREHOUSE_DOCUMENT", documentId, document.getNumber(), userId));
+            case OUTGOING, WRITE_OFF -> items.forEach(item -> stockService.applyMovement(item.getProductId(),
+                    document.getLocationFromId(), StockMovement.Type.OUTGOING, item.getQuantity(),
+                    "WAREHOUSE_DOCUMENT", documentId, document.getNumber(), userId));
+            case TRANSFER -> confirmTransfer(document, items, userId);
+            case INVENTORY -> confirmInventory(document, items, userId);
         }
         document.setStatus(WarehouseDocument.Status.CONFIRMED);
         document.setConfirmedAt(Instant.now());
@@ -117,6 +113,41 @@ public class WarehouseDocumentService {
             purchaseOrderService.registerReceipt(document.getPurchaseOrderId(), items);
         }
         return toResponse(document, items);
+    }
+
+    /** Перемещение: списание со склада-источника, затем приход на склад-приёмник. */
+    private void confirmTransfer(WarehouseDocument document, List<WarehouseDocumentItem> items, UUID userId) {
+        for (WarehouseDocumentItem item : items) {
+            stockService.applyMovement(item.getProductId(), document.getLocationFromId(),
+                    StockMovement.Type.OUTGOING, item.getQuantity(),
+                    "WAREHOUSE_DOCUMENT", document.getId(), document.getNumber(), userId);
+            stockService.applyMovement(item.getProductId(), document.getLocationToId(),
+                    StockMovement.Type.INCOMING, item.getQuantity(),
+                    "WAREHOUSE_DOCUMENT", document.getId(), document.getNumber(), userId);
+        }
+    }
+
+    /**
+     * Инвентаризация: item.quantity — фактическое (пересчитанное) количество;
+     * расхождение с учётным закрывается знаковым ADJUSTMENT (3.1).
+     */
+    private void confirmInventory(WarehouseDocument document, List<WarehouseDocumentItem> items, UUID userId) {
+        for (WarehouseDocumentItem item : items) {
+            BigDecimal counted = item.getQuantity();
+            BigDecimal booked = balanceRepository
+                    .findById(new by.gusto.inventory.entity.StockBalance.StockBalanceId(
+                            item.getProductId(), document.getLocationFromId()))
+                    .map(by.gusto.inventory.entity.StockBalance::getQuantity)
+                    .orElse(BigDecimal.ZERO);
+            BigDecimal delta = counted.subtract(booked);
+            if (delta.signum() != 0) {
+                stockService.applyMovement(item.getProductId(), document.getLocationFromId(),
+                        StockMovement.Type.ADJUSTMENT, delta,
+                        "WAREHOUSE_DOCUMENT", document.getId(),
+                        "Инвентаризация " + document.getNumber() + ": факт " + counted + ", учёт " + booked,
+                        userId);
+            }
+        }
     }
 
     /** Отмена черновика; отмена CONFIRMED запрещена — только сторно-документом (S18.3). */
@@ -154,8 +185,16 @@ public class WarehouseDocumentService {
             case INCOMING -> requireLocation(request.getLocationToId(), "locationToId обязателен для прихода");
             case OUTGOING, WRITE_OFF ->
                     requireLocation(request.getLocationFromId(), "locationFromId обязателен для расхода/списания");
-            case TRANSFER, INVENTORY -> throw new GustoException(ErrorCode.STOCK_DOCUMENT_INVALID,
-                    "Тип документа вводится в S18.3: " + request.getType());
+            case TRANSFER -> {
+                requireLocation(request.getLocationFromId(), "locationFromId обязателен для перемещения");
+                requireLocation(request.getLocationToId(), "locationToId обязателен для перемещения");
+                if (request.getLocationFromId().equals(request.getLocationToId())) {
+                    throw new GustoException(ErrorCode.VALIDATION_FAILED,
+                            "Склад-источник и склад-приёмник должны различаться");
+                }
+            }
+            case INVENTORY ->
+                    requireLocation(request.getLocationFromId(), "locationFromId обязателен для инвентаризации");
         }
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new GustoException(ErrorCode.VALIDATION_FAILED, "Документ обязан иметь хотя бы одну позицию");

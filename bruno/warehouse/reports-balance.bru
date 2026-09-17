@@ -1,0 +1,14 @@
+meta {
+  name: Stock balance report
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{host}}/api/v1/warehouse/reports/balance?locationId=&search=
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
