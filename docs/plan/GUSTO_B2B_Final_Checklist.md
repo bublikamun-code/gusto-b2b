@@ -554,6 +554,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(auth): jwt access and refresh flow`.
 
 ### S08.1 [AB] Подтверждение email при саморегистрации
+> ✅ Выполнено 2026-09-17 [AB] — миграция V8 (`users.email_confirmed_at`, `email_confirmation_tokens`, настройка-гейт `auth.require_email_confirmation`); `POST /auth/email/confirm|resend` (токен SHA-256, TTL 24 ч, resend обезличен и под rate limit); письмо со ссылкой — через новый модуль `outbox` (поллер — S31); логин физлица с неподтверждённым email при включённом гейте → 403 `AUTH_EMAIL_NOT_CONFIRMED` (заведённые админом не блокируются); `UserResponse.emailConfirmed`; фронт: страница `/confirm-email` + «Отправить письмо повторно» на логине; OpenAPI + Bruno; 6 интеграционных тестов (гейт вкл/выкл, повтор токена, resend, rate limit).
+
 Закрывает дыру: зарегистрироваться можно на любой адрес и получать на него письма/уведомления о заказах.
 
 - Миграция: `users.email_confirmed_at`, таблица `email_confirmation_tokens` (3.1).

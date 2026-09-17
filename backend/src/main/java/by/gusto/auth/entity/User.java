@@ -58,6 +58,10 @@ public class User {
     @Builder.Default
     private boolean totpEnabled = false;
 
+    /** NULL = email не подтверждён (S08.1). Админ-заведённые пользователи подтверждения не проходят. */
+    @Column(name = "email_confirmed_at")
+    private Instant emailConfirmedAt;
+
     @Column(name = "company_id")
     private UUID companyId;
 

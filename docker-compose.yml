@@ -36,6 +36,7 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gustomeat.by}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       APP_STORAGE_PATH: /app/data/files
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
     volumes:
       - filedata:/app/data/files
     ports:

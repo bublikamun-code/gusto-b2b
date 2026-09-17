@@ -10,6 +10,7 @@ import by.gusto.auth.mapper.UserMapper;
 import by.gusto.auth.repository.UserRepository;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
+import by.gusto.common.settings.SettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,6 +31,8 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetService passwordResetService;
     private final TotpService totpService;
+    private final EmailConfirmationService emailConfirmationService;
+    private final SettingsService settingsService;
     private final UserMapper userMapper;
 
     @Transactional
@@ -48,6 +51,14 @@ public class AuthService {
 
         User user = userRepository.findByEmailIgnoreCase(principal.getUsername())
                 .orElseThrow(() -> new GustoException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+
+        // Гейт подтверждения email (S08.1): касается только саморегистрации физлиц.
+        // Заведённые админом пользователи (юрлица, сотрудники) подтверждения не проходят.
+        if (user.getRole() == Role.CUSTOMER_INDIVIDUAL
+                && user.getEmailConfirmedAt() == null
+                && settingsService.getBoolean(SettingsService.REQUIRE_EMAIL_CONFIRMATION, false)) {
+            throw new GustoException(ErrorCode.AUTH_EMAIL_NOT_CONFIRMED);
+        }
 
         if (user.isTotpEnabled()) {
             String totpCode = request.getTotpCode();
@@ -81,7 +92,21 @@ public class AuthService {
         user.setRole(Role.CUSTOMER_INDIVIDUAL);
         user.setActive(true);
         User saved = userRepository.save(user);
+        if (settingsService.getBoolean(SettingsService.REQUIRE_EMAIL_CONFIRMATION, false)) {
+            emailConfirmationService.sendConfirmation(saved);
+        }
         return userMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public void resendEmailConfirmation(String email) {
+        emailConfirmationService.resendByEmail(email);
+    }
+
+    @Transactional
+    public void confirmEmail(String rawToken) {
+        emailConfirmationService.confirm(rawToken)
+                .orElseThrow(() -> new GustoException(ErrorCode.AUTH_EMAIL_CONFIRM_TOKEN_INVALID));
     }
 
     @Transactional

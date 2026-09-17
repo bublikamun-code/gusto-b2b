@@ -39,6 +39,8 @@ management:
         include: health,info
 
 app:
+  # База для ссылок в письмах (подтверждение email — S08.1; сброс пароля, статусы — S33)
+  base-url: ${APP_BASE_URL:http://localhost:5173}
   jwt:
     # Без дефолта: секрет обязан приходить из env (.env / CI), иначе контекст не поднимется
     secret: ${JWT_SECRET}
