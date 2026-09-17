@@ -2017,10 +2017,15 @@ components:
         unit: { type: string }
         description: { type: string, nullable: true }
         retailPrice: { type: number }
+        stockStatus: { $ref: "#/components/schemas/StockStatus" }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
         imageUrls:
           type: array
           items: { type: string }
+    StockStatus:
+      type: string
+      enum: [IN_STOCK, PREORDER]
+      description: "Наличие по доступному остатку склада по умолчанию (S18)"
     CatalogProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -2176,6 +2181,7 @@ components:
         description: { type: string, nullable: true }
         retailPrice: { type: number }
         customerPrice: { type: number }
+        stockStatus: { $ref: "#/components/schemas/StockStatus" }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
         imageUrls:
           type: array

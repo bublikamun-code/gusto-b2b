@@ -16,6 +16,8 @@ import by.gusto.catalog.repository.ProductSpecification;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
 import by.gusto.file.service.ProductImageUrlResolver;
+import by.gusto.inventory.dto.StockStatus;
+import by.gusto.inventory.service.StockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,6 +42,7 @@ public class CatalogService {
     private final CategoryMapper categoryMapper;
     private final BrandMapper brandMapper;
     private final ProductImageUrlResolver imageUrlResolver;
+    private final StockService stockService;
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> getActiveCategoryTree() {
@@ -68,10 +71,12 @@ public class CatalogService {
                 products.stream().map(Product::getId).collect(Collectors.toSet()));
         Map<UUID, List<String>> imageUrls = imageUrlResolver.resolveUrls(
                 products.stream().map(Product::getId).toList());
+        Map<UUID, StockStatus> stockStatuses = stockStatuses(products.stream().map(Product::getId).toList());
 
         return page.map(product -> toCatalogResponse(
                 product, prices.get(product.getId()),
-                imageUrls.getOrDefault(product.getId(), List.of())));
+                imageUrls.getOrDefault(product.getId(), List.of()),
+                stockStatuses.get(product.getId())));
     }
 
     @Transactional(readOnly = true)
@@ -80,10 +85,24 @@ public class CatalogService {
                 .filter(Product::isActive)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Товар не найден"));
         BigDecimal price = retailPriceService.getRetailPrice(product.getId()).orElse(null);
-        return toCatalogResponse(product, price, imageUrlResolver.resolveUrls(product.getId()));
+        Map<UUID, StockStatus> statuses = stockStatuses(List.of(product.getId()));
+        return toCatalogResponse(product, price, imageUrlResolver.resolveUrls(product.getId()),
+                statuses.get(product.getId()));
     }
 
-    private CatalogProductResponse toCatalogResponse(Product product, BigDecimal retailPrice, List<String> imageUrls) {
+    /** Статус наличия из доступного остатка склада по умолчанию (S18). */
+    private Map<UUID, StockStatus> stockStatuses(List<UUID> productIds) {
+        UUID locationId = stockService.defaultLocationId();
+        Map<UUID, BigDecimal> available = stockService.availableByProduct(locationId, productIds);
+        return productIds.stream().collect(Collectors.toMap(
+                id -> id,
+                id -> available.getOrDefault(id, BigDecimal.ZERO).signum() > 0
+                        ? StockStatus.IN_STOCK
+                        : StockStatus.PREORDER));
+    }
+
+    private CatalogProductResponse toCatalogResponse(Product product, BigDecimal retailPrice, List<String> imageUrls,
+                                                     StockStatus stockStatus) {
         Category category = product.getCategoryId() != null
                 ? categoryRepository.findById(product.getCategoryId()).orElse(null)
                 : null;
@@ -100,6 +119,7 @@ public class CatalogService {
                 .unit(product.getUnit())
                 .description(product.getDescription())
                 .retailPrice(retailPrice)
+                .stockStatus(stockStatus)
                 .imageUrls(imageUrls)
                 .build();
     }
