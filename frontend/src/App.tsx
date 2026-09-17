@@ -1,7 +1,8 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthInit } from "./components/auth/AuthInit";
 import { AdminIndexRedirect, AuthRedirect, ProtectedRoute, RoleGuard } from "./components/auth/AuthGuards";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import { WarehouseLayout } from "./components/warehouse/WarehouseLayout";
 import { PublicLayout } from "./components/public/PublicLayout";
 import NotFoundPage from "./pages/NotFoundPage";
 import UiKitPage from "./pages/UiKitPage";
@@ -23,6 +24,11 @@ import DeliveryPage from "./pages/public/DeliveryPage";
 import AboutPage from "./pages/public/AboutPage";
 import ContactsPage from "./pages/public/ContactsPage";
 import PrivacyPage from "./pages/public/PrivacyPage";
+import WarehouseBalancePage from "./pages/warehouse/WarehouseBalancePage";
+import WarehouseDocumentsPage from "./pages/warehouse/WarehouseDocumentsPage";
+import WarehouseSuppliersPage from "./pages/warehouse/WarehouseSuppliersPage";
+import WarehousePurchaseOrdersPage from "./pages/warehouse/WarehousePurchaseOrdersPage";
+import WarehouseReportsPage from "./pages/warehouse/WarehouseReportsPage";
 
 export default function App() {
   return (
@@ -58,6 +64,18 @@ export default function App() {
             <Route path="/manager" element={<ManagerDashboardPage />} />
             <Route path="/cabinet" element={<CabinetDashboardPage />} />
             <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
+          </Route>
+
+          {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}
+          <Route element={<RoleGuard allowed={["ADMIN", "ACCOUNTANT", "MANAGER"]} />}>
+            <Route path="/warehouse" element={<WarehouseLayout />}>
+              <Route index element={<Navigate to="/warehouse/balance" replace />} />
+              <Route path="balance" element={<WarehouseBalancePage />} />
+              <Route path="documents" element={<WarehouseDocumentsPage />} />
+              <Route path="suppliers" element={<WarehouseSuppliersPage />} />
+              <Route path="purchase-orders" element={<WarehousePurchaseOrdersPage />} />
+              <Route path="reports" element={<WarehouseReportsPage />} />
+            </Route>
           </Route>
 
           <Route element={<PublicLayout />}>
