@@ -1,0 +1,14 @@
+meta {
+  name: Warehouse documents list
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/api/v1/warehouse/documents?page=0&size=20&type=&status=&locationId=
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

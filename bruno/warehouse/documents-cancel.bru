@@ -1,0 +1,19 @@
+meta {
+  name: Cancel warehouse document draft
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/api/v1/warehouse/documents/:id/cancel
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:id {
+  id: document-uuid
+}

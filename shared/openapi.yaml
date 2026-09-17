@@ -1369,6 +1369,113 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /warehouse/documents:
+    get:
+      tags: [warehouse]
+      summary: Список складских документов (S18.1; ADMIN/ACCOUNTANT/MANAGER)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: type
+          in: query
+          schema: { $ref: "#/components/schemas/WarehouseDocumentType" }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/WarehouseDocumentStatus" }
+        - name: locationId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Страница документов с позициями
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WarehouseDocumentListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [warehouse]
+      summary: Создать черновик документа (приход/расход/списание)
+      description: |
+        Номер вида `ПН-17`/`РС-4`/`СП-2` выдаётся sequence (2.2). Движения не создаются,
+        пока документ не подтверждён `POST /warehouse/documents/{id}/confirm` —
+        единственная точка создания движений.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WarehouseDocumentCreateRequest" }
+      responses:
+        "201":
+          description: Черновик создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WarehouseDocumentResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /warehouse/documents/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [warehouse]
+      summary: Документ с позициями
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Документ
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WarehouseDocumentResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /warehouse/documents/{id}/confirm:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [warehouse]
+      summary: Подтвердить черновик (создаёт движения по всем позициям)
+      description: |
+        Не-черновик → 409 `STOCK_DOCUMENT_INVALID`; нехватка остатка → 400 `STOCK_INSUFFICIENT`
+        (документ остаётся черновиком, транзакция откатывается).
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Документ подтверждён, движения записаны
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WarehouseDocumentResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /warehouse/documents/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [warehouse]
+      summary: Отменить черновик (подтверждённый нельзя — только сторно)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Документ отменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WarehouseDocumentResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /files:
     post:
       tags: [files]
@@ -2026,6 +2133,72 @@ components:
       type: string
       enum: [IN_STOCK, PREORDER]
       description: "Наличие по доступному остатку склада по умолчанию (S18)"
+    WarehouseDocumentType:
+      type: string
+      enum: [INCOMING, OUTGOING, TRANSFER, WRITE_OFF, INVENTORY]
+      description: "TRANSFER/INVENTORY вводятся в S18.3"
+    WarehouseDocumentStatus:
+      type: string
+      enum: [DRAFT, CONFIRMED, CANCELLED]
+    WarehouseDocumentCreateRequest:
+      type: object
+      required: [type, items]
+      properties:
+        type: { $ref: "#/components/schemas/WarehouseDocumentType" }
+        locationToId: { type: string, format: uuid, description: "Обязателен для INCOMING" }
+        locationFromId: { type: string, format: uuid, description: "Обязателен для OUTGOING/WRITE_OFF" }
+        supplierId: { type: string, format: uuid, nullable: true }
+        purchaseOrderId: { type: string, format: uuid, nullable: true }
+        customerOrderId: { type: string, format: uuid, nullable: true, description: "Расход по заказу клиента" }
+        note: { type: string, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId: { type: string, format: uuid }
+              quantity: { type: number, description: "Положительное количество" }
+              price: { type: number, nullable: true, description: "Цена закупки/себестоимость" }
+    WarehouseDocument:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string, example: "ПН-17" }
+        type: { $ref: "#/components/schemas/WarehouseDocumentType" }
+        status: { $ref: "#/components/schemas/WarehouseDocumentStatus" }
+        locationFromId: { type: string, format: uuid, nullable: true }
+        locationToId: { type: string, format: uuid, nullable: true }
+        supplierId: { type: string, format: uuid, nullable: true }
+        customerOrderId: { type: string, format: uuid, nullable: true }
+        documentDate: { type: string, format: date }
+        note: { type: string, nullable: true }
+        createdBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        confirmedAt: { type: string, format: date-time, nullable: true }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: string, format: uuid }
+              sku: { type: string }
+              productName: { type: string }
+              quantity: { type: number }
+              price: { type: number, nullable: true }
+    WarehouseDocumentResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/WarehouseDocument" }
+    WarehouseDocumentListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/WarehouseDocument" }
     CatalogProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
