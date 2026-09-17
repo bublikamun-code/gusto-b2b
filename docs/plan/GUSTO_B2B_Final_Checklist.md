@@ -584,6 +584,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): auth pages and routing`.
 
 ### S10.1 [A] Vitest: инфраструктура фронтенд-тестов
+> ✅ Выполнено 2026-09-17 [A] — Vitest + Testing Library + jsdom (`npm run test`, шаг в CI после lint); первые тесты самого рискового: `AuthGuards` (11 — ProtectedRoute/RoleGuard/AuthRedirect/AdminIndexRedirect, включая роутинг бухгалтера из аудита S12), `cartStore` (8 — owner-изоляция, накопление количества, селекторы итогов), `formatMoney` вынесен в `src/lib/format.ts` (3). Итого 22, зелёные.
+
 Закрывает дыру: фронтенд заявлен с тестами (1.5), но ни одна сессия их не вводил — логика гвардов/редиректов/корзины пока без автотестов.
 
 - Подключить Vitest + Testing Library + jsdom; `npm run test` и шаг в CI.
