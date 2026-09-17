@@ -679,6 +679,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(inventory): stock movements and reservation`.
 
 ### S18.1 [B] Складские документы: приход, расход, списание
+> ✅ Выполнено 2026-09-17 [B] — миграция V10 (sequences нумерации `ПН-N`/`РС-N`/`СП-N` по 2.2); сущности `WarehouseDocument`/`Item`; API `/warehouse/documents` (создание черновика, `confirm` — единственная точка создания движений, `cancel` только черновика, список с фильтрами; роли ADMIN/ACCOUNTANT/MANAGER по 2.1); OpenAPI + Bruno `warehouse/`; 5 интеграционных тестов: цикл +100/−30/−10 на остатке 25, отмена черновика без движений, повторное подтверждение и отмена CONFIRMED → 409, нехватка на подтверждении → 400 STOCK_INSUFFICIENT с откатом, 403 для клиента.
+
 - `warehouse_documents` + `warehouse_document_items` (DRAFT → CONFIRMED → движения).
 - Приход (от поставщика / без заказа), расход (по заказу клиента), списание (порча/бой).
 - Подтверждение документа — единственная точка создания движений.

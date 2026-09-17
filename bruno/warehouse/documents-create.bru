@@ -1,0 +1,30 @@
+meta {
+  name: Create warehouse document
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/warehouse/documents
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "type": "INCOMING",
+    "locationToId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "note": "Приход от поставщика",
+    "items": [
+      {
+        "productId": "<product-uuid>",
+        "quantity": 100,
+        "price": 25.5
+      }
+    ]
+  }
+}
