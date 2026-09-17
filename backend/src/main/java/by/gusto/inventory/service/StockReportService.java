@@ -24,19 +24,22 @@ public class StockReportService {
     @Transactional(readOnly = true)
     public List<BalanceRow> balance(UUID locationId, String search) {
         StringBuilder sql = new StringBuilder(
-                "select product_id, sku, product_name, location_id, location_name, quantity, reserved "
-                        + "from v_stock_balance where true");
+                "select b.product_id, b.sku, b.product_name, b.location_id, b.location_name, "
+                        + "b.quantity, b.reserved, coalesce(p.min_stock, 0) as min_stock "
+                        + "from v_stock_balance b "
+                        + "left join products p on p.id = b.product_id "
+                        + "where true");
         List<Object> params = new ArrayList<>();
         if (locationId != null) {
-            sql.append(" and location_id = ?");
+            sql.append(" and b.location_id = ?");
             params.add(locationId);
         }
         if (search != null && !search.isBlank()) {
-            sql.append(" and (product_name ilike ? or sku ilike ?)");
+            sql.append(" and (b.product_name ilike ? or b.sku ilike ?)");
             params.add("%" + search + "%");
             params.add("%" + search + "%");
         }
-        sql.append(" order by product_name asc");
+        sql.append(" order by b.product_name asc");
         return jdbcTemplate.query(sql.toString(), params.toArray(), (rs, i) -> {
             BalanceRow row = new BalanceRow();
             row.setProductId(rs.getObject("product_id", UUID.class));
@@ -47,6 +50,7 @@ public class StockReportService {
             row.setQuantity(rs.getBigDecimal("quantity"));
             row.setReserved(rs.getBigDecimal("reserved"));
             row.setAvailable(row.getQuantity().subtract(row.getReserved()));
+            row.setMinStock(rs.getBigDecimal("min_stock"));
             return row;
         });
     }
@@ -145,6 +149,7 @@ public class StockReportService {
         private BigDecimal quantity;
         private BigDecimal reserved;
         private BigDecimal available;
+        private BigDecimal minStock;
 
         public UUID getProductId() { return productId; }
         public void setProductId(UUID productId) { this.productId = productId; }
@@ -162,6 +167,8 @@ public class StockReportService {
         public void setReserved(BigDecimal reserved) { this.reserved = reserved; }
         public BigDecimal getAvailable() { return available; }
         public void setAvailable(BigDecimal available) { this.available = available; }
+        public BigDecimal getMinStock() { return minStock; }
+        public void setMinStock(BigDecimal minStock) { this.minStock = minStock; }
     }
 
     public static class TurnoverRow {

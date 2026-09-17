@@ -2586,6 +2586,7 @@ components:
         quantity: { type: number }
         reserved: { type: number }
         available: { type: number, description: "quantity − reserved" }
+        minStock: { type: number, description: "Минимальный остаток товара (подсветка дефицита в UI)" }
     StockTurnoverRow:
       type: object
       properties:
