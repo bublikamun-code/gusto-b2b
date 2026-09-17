@@ -49,5 +49,7 @@ jobs:
         run: npm run generate-api --prefix frontend   # заодно валидирует shared/openapi.yaml
       - name: Lint
         run: npm run lint --prefix frontend
+      - name: Test
+        run: npm run test --prefix frontend
       - name: Build
         run: npm run build --prefix frontend

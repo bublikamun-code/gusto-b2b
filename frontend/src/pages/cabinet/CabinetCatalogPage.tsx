@@ -7,17 +7,10 @@ import { listCabinetProducts, type CabinetProduct } from "../../api/cabinetCatal
 import { useCartStore, selectCartTotalCount, selectCartTotalSum } from "../../store/cartStore";
 import { useAuthStore } from "../../store/authStore";
 import { logout } from "../../api/auth";
+import { formatMoney } from "../../lib/format";
 import styles from "./CabinetCatalogPage.module.scss";
 
 const PAGE_SIZE = 20;
-
-function formatMoney(value: number): string {
-  return new Intl.NumberFormat("ru-BY", {
-    style: "currency",
-    currency: "BYN",
-    minimumFractionDigits: 2,
-  }).format(value);
-}
 
 function splitSkuList(value: string): string[] {
   return value
