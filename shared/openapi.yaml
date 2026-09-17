@@ -225,6 +225,47 @@ paths:
         "400": { $ref: "#/components/responses/ValidationFailed" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /auth/email/confirm:
+    post:
+      tags: [auth]
+      summary: Подтверждение email по одноразовой ссылке из письма (S08.1)
+      description: |
+        Токен живёт 24 ч и используется один раз. Поведение включается настройкой
+        `auth.require_email_confirmation` (по умолчанию выкл.).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailConfirmRequest" }
+      responses:
+        "200":
+          description: Email подтверждён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "400":
+          description: Токен недействителен/истёк/использован (`AUTH_EMAIL_CONFIRM_TOKEN_INVALID`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /auth/email/resend:
+    post:
+      tags: [auth]
+      summary: Повторная отправка письма с подтверждением (S08.1)
+      description: Всегда 200, даже если email не существует — не раскрываем базу.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailResendRequest" }
+      responses:
+        "200":
+          description: Если email существует и не подтверждён — письмо отправлено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
   /admin/users:
     get:
       tags: [admin]
@@ -1612,6 +1653,8 @@ components:
         - AUTH_REFRESH_INVALID     # refresh-токен недействителен/отсутствует
         - AUTH_REFRESH_REUSED      # повтор использованного refresh → ревок цепочки
         - AUTH_RESET_TOKEN_INVALID # токен восстановления просрочен/неверен
+        - AUTH_EMAIL_NOT_CONFIRMED # вход до подтверждения email (гейт S08.1)
+        - AUTH_EMAIL_CONFIRM_TOKEN_INVALID # токен подтверждения просрочен/неверен/использован
         # доступ
         - ACCESS_DENIED            # 403 по роли/ownership
         - NOT_FOUND                # 404 сущность не найдена
@@ -1642,6 +1685,7 @@ components:
         companyId: { type: string, format: uuid, nullable: true, description: "Заполнен у CUSTOMER_LEGAL" }
         isActive: { type: boolean }
         totpEnabled: { type: boolean }
+        emailConfirmed: { type: boolean, description: "Подтверждён ли email; требование — только для саморегистрации физлиц (S08.1)" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     LoginRequest:
@@ -1659,6 +1703,16 @@ components:
         phone: { type: string, nullable: true }
         password: { type: string, format: password, minLength: 8 }
         fullName: { type: string }
+    EmailConfirmRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, description: "Одноразовый токен из ссылки в письме (24 ч)" }
+    EmailResendRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
     AccessToken:
       type: object
       required: [accessToken, tokenType, expiresIn]

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Input, useToast } from "../components/ui";
-import { login } from "../api/auth";
+import { login, resendEmailConfirmation } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
 import styles from "./AuthPages.module.scss";
@@ -25,6 +25,8 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [needsTotp, setNeedsTotp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { push } = useToast();
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -65,11 +68,29 @@ export default function LoginPage() {
         setNeedsTotp(true);
         setValue("totpCode", "");
         push("Введите код из приложения аутентификации", "info");
+      } else if (error.code === "AUTH_EMAIL_NOT_CONFIRMED") {
+        setEmailNotConfirmed(true);
+        push(error.message ?? "Email не подтверждён", "error");
       } else {
         push(error.message ?? "Не удалось войти", "error");
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const onResendConfirmation = async () => {
+    const email = getValues("email");
+    if (!email) return;
+    setIsResending(true);
+    try {
+      await resendEmailConfirmation(email);
+      push("Если email существует и не подтверждён, письмо отправлено", "success");
+    } catch (err) {
+      const error = err as { message?: string };
+      push(error.message ?? "Не удалось отправить письмо", "error");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -135,6 +156,23 @@ export default function LoginPage() {
             )}
           </div>
         </form>
+
+        {emailNotConfirmed && !needsTotp && (
+          <div className={styles["auth-hint"]}>
+            Email не подтверждён. Проверьте почту или запросите письмо повторно.
+            <div className={styles["auth-actions"]}>
+              <Button
+                type="button"
+                variant="secondary"
+                block
+                loading={isResending}
+                onClick={onResendConfirmation}
+              >
+                Отправить письмо повторно
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className={styles["auth-links"]}>
           <Link to="/request-password-reset">Забыли пароль?</Link>

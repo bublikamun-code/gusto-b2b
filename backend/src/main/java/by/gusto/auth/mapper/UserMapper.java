@@ -11,6 +11,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
+    @Mapping(target = "emailConfirmed", expression = "java(user.getEmailConfirmedAt() != null)")
     UserResponse toResponse(User user);
 
     List<UserResponse> toResponseList(List<User> users);
@@ -22,6 +23,7 @@ public interface UserMapper {
     @Mapping(target = "totpEnabled", ignore = true)
     @Mapping(target = "totpSecret", ignore = true)
     @Mapping(target = "companyId", ignore = true)
+    @Mapping(target = "emailConfirmedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)

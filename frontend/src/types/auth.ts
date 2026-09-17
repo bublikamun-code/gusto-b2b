@@ -14,6 +14,7 @@ export interface User {
   companyId?: string | null;
   isActive: boolean;
   totpEnabled?: boolean;
+  emailConfirmed?: boolean;
 }
 
 export interface ApiError {

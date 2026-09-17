@@ -39,6 +39,14 @@ export function confirmPasswordReset(body: PasswordResetConfirm): Promise<void> 
   return apiRequest<void>("/auth/password-reset/confirm", { method: "POST", body });
 }
 
+export function confirmEmail(token: string): Promise<void> {
+  return apiRequest<void>("/auth/email/confirm", { method: "POST", body: { token } });
+}
+
+export function resendEmailConfirmation(email: string): Promise<void> {
+  return apiRequest<void>("/auth/email/resend", { method: "POST", body: { email } });
+}
+
 export function enable2FA(): Promise<TotpSetupPayload> {
   const token = useAuthStore.getState().accessToken ?? undefined;
   return apiRequest<TotpSetupPayload>("/auth/2fa/enable", { method: "POST", token });

@@ -30,6 +30,10 @@ public class UserResponse {
     @JsonProperty("totpEnabled")
     private boolean totpEnabled;
 
+    /** Подтверждён ли email. Требование действует только для саморегистрации физлиц (S08.1). */
+    @JsonProperty("emailConfirmed")
+    private boolean emailConfirmed;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

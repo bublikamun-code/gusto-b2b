@@ -8,6 +8,7 @@ import UiKitPage from "./pages/UiKitPage";
 import LoginPage from "./pages/LoginPage";
 import RequestPasswordResetPage from "./pages/RequestPasswordResetPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ConfirmEmailPage from "./pages/ConfirmEmailPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
@@ -38,6 +39,7 @@ export default function App() {
           />
           <Route path="/request-password-reset" element={<RequestPasswordResetPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
 
           <Route element={<RoleGuard allowed={["ADMIN", "ACCOUNTANT"]} />}>
             <Route element={<AdminLayout />}>

@@ -1,0 +1,17 @@
+meta {
+  name: Email confirmation resend
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{host}}/api/v1/auth/email/resend
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "individual@example.com"
+  }
+}

@@ -10,6 +10,8 @@ public enum ErrorCode {
     AUTH_REFRESH_INVALID("AUTH_REFRESH_INVALID", "Refresh-токен недействителен"),
     AUTH_REFRESH_REUSED("AUTH_REFRESH_REUSED", "Refresh-токен уже использован. Выполните повторный вход."),
     AUTH_RESET_TOKEN_INVALID("AUTH_RESET_TOKEN_INVALID", "Ссылка для восстановления пароля недействительна или истекла"),
+    AUTH_EMAIL_NOT_CONFIRMED("AUTH_EMAIL_NOT_CONFIRMED", "Email не подтверждён. Перейдите по ссылке из письма."),
+    AUTH_EMAIL_CONFIRM_TOKEN_INVALID("AUTH_EMAIL_CONFIRM_TOKEN_INVALID", "Ссылка подтверждения недействительна или истекла"),
     AUTH_UNAUTHORIZED("AUTH_UNAUTHORIZED", "Требуется авторизация"),
 
     // Access / business
