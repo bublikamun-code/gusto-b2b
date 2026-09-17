@@ -696,6 +696,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(inventory): suppliers and purchase orders`.
 
 ### S18.3 [B] Перемещение, инвентаризация, отчёты склада
+> ✅ Выполнено 2026-09-18 [B] — TRANSFER (подтверждение = OUTGOING с источника + INCOMING на приёмник в одной транзакции; нехватка откатывает всё) и INVENTORY (item.quantity = факт, расхождение закрывается знаковым ADJUSTMENT, `ПР-N`/`ИН-N`); миграция V12 (вьюха `v_stock_to_order`); отчёты `/warehouse/reports/balance|turnover|movements|to-order` (S18.3); OpenAPI + Bruno; 3 интеграционных теста (75 зелёные).
+
 - Перемещение между складами (TRANSFER), инвентаризация (INVENTORY: факт vs учётный → ADJUSTMENT).
 - `min_stock` на товаре + отчёт `v_stock_to_order` (что заказать у поставщиков).
 - Отчёты: остатки по складам, оборачиваемость, движения за период.
