@@ -33,6 +33,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import by.gusto.inventory.repository.StockBalanceRepository;
+import by.gusto.inventory.repository.StockMovementRepository;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -61,6 +63,12 @@ class CabinetCatalogIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private StockMovementRepository stockMovementRepository;
+
+    @Autowired
+    private StockBalanceRepository stockBalanceRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -109,6 +117,9 @@ class CabinetCatalogIntegrationTest {
         customerDiscountRepository.deleteAll();
         productPriceRepository.deleteAll();
         priceListRepository.deleteAll();
+        // V9: остатки/движения ссылаются на products — чистим раньше них
+        stockMovementRepository.deleteAll();
+        stockBalanceRepository.deleteAll();
         productRepository.deleteAll();
         brandRepository.deleteAll();
         categoryRepository.deleteAll();

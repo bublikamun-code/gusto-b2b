@@ -667,6 +667,8 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 4 — Склад и заказы
 
 ### S18 [B] Склад: движения, остатки, резерв
+> ✅ Выполнено 2026-09-17 [B] — миграция V9 (таблица `stock_balances`, вьюхи `v_stock_balance`/`v_stock_available`, склад по умолчанию + настройка `stock.default_location`, демо-остатки согласованно с журналом); модуль `by.gusto.inventory`: `StockService` (резерв `FOR UPDATE` → `STOCK_INSUFFICIENT`, release, applyMovement с фиксированными знаками 3.1); статус наличия `stockStatus: IN_STOCK|PREORDER` в публичном каталоге и кабинете из доступного остатка склада по умолчанию (openapi + фронтенд-типы через generate-api); 7 интеграционных тестов, включая параллельный резерв 8×20 при остатке 120 (oversell guard: ровно 6 успешных). Чистка складских таблиц добавлена в cleanup существующих тестов каталога/файлов (FK из V9).
+
 - Материализованная таблица `stock_balances(product_id, location_id, quantity, reserved)` (3.1): строка создаётся при первом движении по паре и обновляется в той же транзакции, что и движение.
 - `stock_movements` — журнал с фиксированными знаками (3.1); `RESERVE`/`RELEASE` меняют только `reserved`.
 - Вьюхи `v_stock_balance`/`v_stock_available` строятся поверх `stock_balances` (для отчётов и кабинета).

@@ -7,6 +7,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+import java.util.UUID;
+
 /**
  * Чтение ключей из таблицы settings (value — JSONB).
  * Значения либо скаляры ('false', '10', '"A"'), либо объекты (реквизиты).
@@ -39,5 +42,19 @@ public class SettingsService {
         var values = jdbcTemplate.queryForList(
                 "select value::text from settings where key = ?", String.class, key);
         return values.isEmpty() ? null : values.get(0);
+    }
+
+    /** Скалярная строка из JSONB (кавычки снимаются). */
+    @Transactional(readOnly = true)
+    public Optional<UUID> getUuid(String key) {
+        String json = getString(key);
+        if (json == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(UUID.fromString(objectMapper.readTree(json).asText()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }

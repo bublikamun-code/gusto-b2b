@@ -1,5 +1,6 @@
 package by.gusto.catalog.dto;
 
+import by.gusto.inventory.dto.StockStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,6 +26,7 @@ public class CabinetProductResponse {
     private String description;
     private BigDecimal retailPrice;
     private BigDecimal customerPrice;
+    private StockStatus stockStatus;
 
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
