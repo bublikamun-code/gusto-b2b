@@ -1,0 +1,19 @@
+meta {
+  name: Send purchase order
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{host}}/api/v1/warehouse/purchase-orders/:id/send
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:id {
+  id: purchase-order-uuid
+}

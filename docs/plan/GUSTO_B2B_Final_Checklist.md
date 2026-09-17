@@ -688,6 +688,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(inventory): warehouse documents incoming outgoing writeoff`.
 
 ### S18.2 [B] Поставщики и заказы поставщикам
+> ✅ Выполнено 2026-09-17 [B] — миграция V11 (sequence `ЗП-N`); сущности Supplier/PurchaseOrder/Item; API `/warehouse/suppliers` (CRUD, деактивация вместо удаления) и `/warehouse/purchase-orders` (создание DRAFT, send → SENT, cancel, список/детали); частичный приём: confirm приходного документа с `purchaseOrderId` накапливает `received_quantity` и переводит PARTIAL/RECEIVED; приём сверх заказа/чужой товар → 409 с полным откатом транзакции; OpenAPI + Bruno; 3 интеграционных теста (72 зелёные), включая цикл «заказал 100 → принял 60 → принял 40 → RECEIVED».
+
 - `suppliers` CRUD, `purchase_orders` + items, статусы DRAFT→SENT→PARTIAL→RECEIVED.
 - Частичный приём: приходной документ ссылается на заказ поставщику, `received_quantity` накапливается.
 - **Приёмка:** цикл «заказал 100 → принял 60 → принял 40 → RECEIVED».

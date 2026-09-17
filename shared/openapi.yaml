@@ -1476,6 +1476,181 @@ paths:
               schema: { $ref: "#/components/schemas/WarehouseDocumentResponse" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /warehouse/suppliers:
+    get:
+      tags: [warehouse]
+      summary: Список поставщиков (S18.2; ADMIN/ACCOUNTANT/MANAGER)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: active
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Страница поставщиков
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierListResponse" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [warehouse]
+      summary: Создать поставщика
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierRequest" }
+      responses:
+        "201":
+          description: Поставщик создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierResponse" }
+  /warehouse/suppliers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [warehouse]
+      summary: Поставщик
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Поставщик
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [warehouse]
+      summary: Обновить поставщика
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierRequest" }
+      responses:
+        "200":
+          description: Обновлён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierResponse" }
+    delete:
+      tags: [warehouse]
+      summary: Деактивировать поставщика (история заказов сохраняется)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Деактивирован
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+
+  /warehouse/purchase-orders:
+    get:
+      tags: [warehouse]
+      summary: Список заказов поставщикам (S18.2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/PurchaseOrderStatus" }
+        - name: supplierId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Страница заказов
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderListResponse" }
+    post:
+      tags: [warehouse]
+      summary: Создать черновик заказа (номер ЗП-N по sequence)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseOrderCreateRequest" }
+      responses:
+        "201":
+          description: Черновик создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+  /warehouse/purchase-orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [warehouse]
+      summary: Заказ с позициями и received_quantity
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Заказ
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+  /warehouse/purchase-orders/{id}/send:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [warehouse]
+      summary: Отправить заказ поставщику (DRAFT → SENT)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Отправлен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /warehouse/purchase-orders/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [warehouse]
+      summary: Отменить заказ (DRAFT/SENT → CANCELLED)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Отменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /files:
     post:
       tags: [files]
@@ -2199,6 +2374,97 @@ components:
             data:
               type: array
               items: { $ref: "#/components/schemas/WarehouseDocument" }
+    SupplierRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        unp: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        contactPerson: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        active: { type: boolean }
+    Supplier:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        unp: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        contactPerson: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    SupplierResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Supplier" }
+    SupplierListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Supplier" }
+    PurchaseOrderStatus:
+      type: string
+      enum: [DRAFT, SENT, PARTIAL, RECEIVED, CANCELLED]
+    PurchaseOrderCreateRequest:
+      type: object
+      required: [supplierId, items]
+      properties:
+        supplierId: { type: string, format: uuid }
+        expectedDate: { type: string, format: date, nullable: true }
+        note: { type: string, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [productId, quantity, purchasePrice]
+            properties:
+              productId: { type: string, format: uuid }
+              quantity: { type: number }
+              purchasePrice: { type: number }
+    PurchaseOrder:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string, example: "ЗП-17" }
+        supplierId: { type: string, format: uuid }
+        supplierName: { type: string }
+        status: { $ref: "#/components/schemas/PurchaseOrderStatus" }
+        expectedDate: { type: string, format: date, nullable: true }
+        totalAmount: { type: number }
+        note: { type: string, nullable: true }
+        createdBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: string, format: uuid }
+              sku: { type: string }
+              productName: { type: string }
+              quantity: { type: number }
+              purchasePrice: { type: number }
+              receivedQuantity: { type: number }
+    PurchaseOrderResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/PurchaseOrder" }
+    PurchaseOrderListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/PurchaseOrder" }
     CatalogProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
