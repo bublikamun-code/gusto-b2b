@@ -1,0 +1,18 @@
+meta {
+  name: Issue invoice
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/api/v1/invoices/:id/issue
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: invoice-uuid
+}

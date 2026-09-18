@@ -1,0 +1,14 @@
+meta {
+  name: Cabinet invoices
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/api/v1/cabinet/invoices?page=0&size=20
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

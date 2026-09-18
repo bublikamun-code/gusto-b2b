@@ -1,0 +1,18 @@
+meta {
+  name: Cancel invoice
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{host}}/api/v1/invoices/:id/cancel
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: invoice-uuid
+}

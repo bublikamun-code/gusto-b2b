@@ -1,0 +1,22 @@
+meta {
+  name: Create invoice from order
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/invoices
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"orderId": "order-uuid"}
+}
