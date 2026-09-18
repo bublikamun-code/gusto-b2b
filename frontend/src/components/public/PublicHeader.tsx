@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui";
 import { DASHBOARD_BY_ROLE } from "../auth/dashboardByRole";
 import { useAuthStore } from "../../store/authStore";
-import { useCartStore } from "../../store/cartStore";
+import { useCartStore, selectCartTotalCount } from "../../store/cartStore";
 import { logout } from "../../api/auth";
 import styles from "./PublicHeader.module.scss";
 
@@ -18,6 +18,7 @@ export function PublicHeader() {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const localCartCount = useCartStore((s) => selectCartTotalCount(s.items));
 
   function handleLogout() {
     logout().finally(() => {
@@ -68,9 +69,12 @@ export function PublicHeader() {
             Войти
           </Link>
         )}
-        <Button variant="primary" size="sm">
-          Корзина
-        </Button>
+        {/* Оформление требует входа: аноним уйдёт на /login, после входа локальная корзина переедет в серверную */}
+        <Link to="/cabinet/cart" className={styles.actions__cartLink}>
+          <Button variant="primary" size="sm">
+            Корзина{localCartCount > 0 ? ` (${localCartCount})` : ""}
+          </Button>
+        </Link>
       </div>
     </header>
   );

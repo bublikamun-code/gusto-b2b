@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "../../components/ui";
 import { getProduct } from "../../api/catalog";
 import { stockStatusBadge } from "../../lib/stockStatus";
+import { useCartStore } from "../../store/cartStore";
 import styles from "./ProductPage.module.scss";
 
 export default function ProductPage() {
@@ -66,7 +67,23 @@ export default function ProductPage() {
           <div className={styles.product__priceRow}>
             <span className={styles.product__price}>{priceLabel}</span>
             {stockStatusBadge(product.stockStatus)}
-            <Button variant="primary" size="lg">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() =>
+                useCartStore.getState().addItem(
+                  {
+                    productId: product.id,
+                    sku: product.sku,
+                    name: product.name,
+                    unit: product.unit,
+                    price: product.retailPrice,
+                    step: product.weightStep ?? null,
+                  },
+                  1,
+                )
+              }
+            >
               В корзину
             </Button>
           </div>

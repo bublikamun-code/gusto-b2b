@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Badge, Button } from "../ui";
 import type { CatalogProduct } from "../../api/catalog";
 import { stockStatusLabel } from "../../lib/stockStatus";
+import { useCartStore } from "../../store/cartStore";
 import styles from "./ProductCard.module.scss";
 
 interface ProductCardProps {
@@ -52,7 +53,23 @@ export function ProductCard({ product, badge }: ProductCardProps) {
         </p>
         <div className={styles.card__footer}>
           <span className={styles.card__price}>{priceLabel}</span>
-          <Button variant="secondary" size="sm">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              useCartStore.getState().addItem(
+                {
+                  productId: product.id,
+                  sku: product.sku,
+                  name: product.name,
+                  unit: product.unit,
+                  price: product.retailPrice,
+                  step: product.weightStep ?? null,
+                },
+                1,
+              )
+            }
+          >
             В корзину
           </Button>
         </div>

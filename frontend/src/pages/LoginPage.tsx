@@ -5,8 +5,10 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Input, useToast } from "../components/ui";
 import { login, resendEmailConfirmation } from "../api/auth";
+import { putCartItem } from "../api/cart";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
+import { mergeLocalCartItems } from "../lib/cartMerge";
 import styles from "./AuthPages.module.scss";
 
 const loginSchema = z
@@ -52,6 +54,14 @@ export default function LoginPage() {
       });
       setAuth(payload.accessToken, payload.user);
       useCartStore.getState().setOwner(payload.user.id);
+      // Перенос локальной корзины витрины в серверную (S21)
+      const localItems = useCartStore.getState().items;
+      if (localItems.length > 0) {
+        for (const line of mergeLocalCartItems(localItems)) {
+          await putCartItem(line.productId, line.quantity).catch(() => undefined);
+        }
+        useCartStore.getState().clear();
+      }
       push("Вход выполнен", "success");
 
       const dashboardByRole: Record<string, string> = {
@@ -176,6 +186,7 @@ export default function LoginPage() {
 
         <div className={styles["auth-links"]}>
           <Link to="/request-password-reset">Забыли пароль?</Link>
+          <Link to="/register">Регистрация</Link>
         </div>
       </Card>
     </div>
