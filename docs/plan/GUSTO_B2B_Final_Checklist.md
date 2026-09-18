@@ -730,6 +730,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(catalog): hit and new flags with weight step [S19.1]`.
 
 ### S20 [B] Заказы: создание
+> ✅ Выполнено 2026-09-18 [B] — миграция V14 (`orders.stock_location_id`/`recipient_name`/`recipient_phone`, sequence `order_seq_<год>` → номера `З-2026-NNNNN`, таблица `idempotency_keys`, индексы); модуль `by.gusto.order`: серверная корзина `carts`/`cart_items` (GET/PUT/DELETE `/cart`, цены клиента на момент чтения), `POST /orders` идемпотентен по `Idempotency-Key` (повтор → сохранённый ответ, другой body → `IDEMPOTENCY_CONFLICT`); транзакция: склад по умолчанию → резерв FOR UPDATE (`STOCK_INSUFFICIENT` откатывает всё) → снапшот цен и product_snapshot JSONB → заказ; розница без `manager_id` (пул «не назначено»), контакты получателя обязательны для розницы и доставки; заказ от имени клиента (`customerCompanyId`+items) для менеджера/админа; `OrderCreated` → outbox; пустой `items` → позиции из корзины (очищается); OpenAPI + Bruno `orders/`; 5 интеграционных тестов (83 зелёные).
+
 - Миграция: в существующую `orders` добавить `stock_location_id`, `recipient_name`, `recipient_phone` (3.1; в V1 этих колонок нет).
 - Корзина `carts`/`cart_items` (persist в БД для авторизованных), `POST /orders` идемпотентен по заголовку `Idempotency-Key` — ключ и ответ хранятся в `idempotency_keys` (3.1), повтор возвращает сохранённый результат; двойной клик не создаёт второй заказ.
 - Транзакция: выбор склада по умолчанию `settings('stock.default_location')` (1.6 «Склад и заказ») → проверка остатков → резерв (`stock_balances` FOR UPDATE, 1.6) → снапшот цен (НДС-включённые, 2.3) → создание заказа с номером (sequence, см. 2.2). Нехватка на складе — `STOCK_INSUFFICIENT`, заказ не создаётся.

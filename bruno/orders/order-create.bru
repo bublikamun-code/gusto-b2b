@@ -1,0 +1,29 @@
+meta {
+  name: Create order
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/api/v1/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Idempotency-Key: unique-key-per-order
+}
+
+body:json {
+  {
+    "deliveryType": "DELIVERY",
+    "deliveryAddress": "г. Минск, ул. Тестовая, 1",
+    "recipientName": "Иван Покупатель",
+    "recipientPhone": "+375 29 111-22-33",
+    "note": "Позвонить за час"
+  }
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Put cart item
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{host}}/api/v1/cart/items/:productId
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:productId {
+  productId: product-uuid
+}
+
+body:json {
+  {
+    "quantity": 2
+  }
+}
