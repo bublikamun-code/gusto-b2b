@@ -30,10 +30,13 @@ export interface Order {
   id: string;
   number: string;
   status: string;
+  customerCompanyId?: string | null;
+  managerId?: string | null;
   deliveryType: "PICKUP" | "DELIVERY";
   deliveryAddress?: string | null;
   recipientName?: string | null;
   recipientPhone?: string | null;
+  note?: string | null;
   totalAmount: number;
   totalVat: number;
   createdAt: string;

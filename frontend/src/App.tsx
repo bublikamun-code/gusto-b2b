@@ -18,8 +18,11 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
+import ManagerOrdersPage from "./pages/manager/ManagerOrdersPage";
+import ManagerOrderCreatePage from "./pages/manager/ManagerOrderCreatePage";
 import CabinetDashboardPage from "./pages/cabinet/CabinetDashboardPage";
 import CabinetCatalogPage from "./pages/cabinet/CabinetCatalogPage";
+import CabinetOrdersPage from "./pages/cabinet/CabinetOrdersPage";
 import HomePage from "./pages/public/HomePage";
 import CatalogPage from "./pages/public/CatalogPage";
 import ProductPage from "./pages/public/ProductPage";
@@ -70,6 +73,18 @@ export default function App() {
             <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
             <Route path="/cabinet/cart" element={<CabinetCartPage />} />
             <Route path="/cabinet/profile" element={<CabinetProfilePage />} />
+          </Route>
+
+          {/* Заказы клиента (S23): только клиенты, у персонала свои разделы */}
+          <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL", "CUSTOMER_INDIVIDUAL"]} />}>
+            <Route path="/cabinet/orders" element={<CabinetOrdersPage />} />
+          </Route>
+
+          {/* Заказы в работе (S22/S23): лента, пул «не назначено», заказ от имени клиента.
+              Роль проверяет и бэкенд (2.1) — для глубоких ссылок. */}
+          <Route element={<RoleGuard allowed={["MANAGER", "ADMIN"]} />}>
+            <Route path="/manager/orders" element={<ManagerOrdersPage />} />
+            <Route path="/manager/orders/new" element={<ManagerOrderCreatePage />} />
           </Route>
 
           {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}

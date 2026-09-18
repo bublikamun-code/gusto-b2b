@@ -26,6 +26,9 @@ export default function CabinetDashboardPage() {
         <h1>Личный кабинет</h1>
         <p>Пользователь: {user?.fullName ?? user?.email}</p>
         <div className="actions">
+          <Link to="/cabinet/orders">
+            <Button>Мои заказы</Button>
+          </Link>
           <Link to="/cabinet/catalog">
             <Button>Перейти в каталог</Button>
           </Link>

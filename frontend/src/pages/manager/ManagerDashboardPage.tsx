@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "../../components/ui";
 import { logout } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
@@ -24,7 +25,17 @@ export default function ManagerDashboardPage() {
       <main className="card">
         <h1>Кабинет менеджера</h1>
         <p>Пользователь: {user?.fullName ?? user?.email}</p>
-        <Button onClick={handleLogout}>Выйти</Button>
+        <div className="actions">
+          <Link to="/manager/orders">
+            <Button>Заказы</Button>
+          </Link>
+          <Link to="/manager/orders/new">
+            <Button variant="accent">Заказ от имени клиента</Button>
+          </Link>
+          <Button variant="secondary" onClick={handleLogout}>
+            Выйти
+          </Button>
+        </div>
       </main>
     </div>
   );
