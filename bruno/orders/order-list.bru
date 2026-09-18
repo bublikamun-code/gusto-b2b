@@ -1,0 +1,14 @@
+meta {
+  name: List orders
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/api/v1/orders?page=0&size=20
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

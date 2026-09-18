@@ -1,0 +1,14 @@
+meta {
+  name: Clear cart
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{host}}/api/v1/cart
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
