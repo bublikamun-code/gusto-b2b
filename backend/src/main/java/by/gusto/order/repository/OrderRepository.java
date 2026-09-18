@@ -19,4 +19,19 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
             + "(o.customerUserId = :userId or o.managerId = :userId) "
             + "order by o.createdAt desc")
     Page<OrderEntity> findAllVisibleTo(@Param("userId") UUID userId, Pageable pageable);
+
+    // S22: менеджерский список — свои + пул «не назначено» (2.7), опциональный фильтр по статусу
+    Page<OrderEntity> findAllByManagerIdOrderByCreatedAtDesc(UUID managerId, Pageable pageable);
+
+    Page<OrderEntity> findAllByManagerIdAndStatusOrderByCreatedAtDesc(UUID managerId,
+            OrderEntity.Status status, Pageable pageable);
+
+    Page<OrderEntity> findAllByManagerIdIsNullOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<OrderEntity> findAllByManagerIdIsNullAndStatusOrderByCreatedAtDesc(
+            OrderEntity.Status status, Pageable pageable);
+
+    Page<OrderEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<OrderEntity> findAllByStatusOrderByCreatedAtDesc(OrderEntity.Status status, Pageable pageable);
 }

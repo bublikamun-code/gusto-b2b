@@ -25,6 +25,10 @@ public enum ErrorCode {
     STOCK_INSUFFICIENT("STOCK_INSUFFICIENT", "Недостаточно остатка"),
     STOCK_DOCUMENT_INVALID("STOCK_DOCUMENT_INVALID", "Неверный переход статуса документа"),
 
+    // Orders
+    ORDER_STATUS_TRANSITION("ORDER_STATUS_TRANSITION", "Недопустимый переход статуса заказа"),
+    ORDER_ALREADY_TAKEN("ORDER_ALREADY_TAKEN", "Заказ уже взят в работу другим менеджером"),
+
     // Validation
     VALIDATION_FAILED("VALIDATION_FAILED", "Ошибка валидации запроса"),
 

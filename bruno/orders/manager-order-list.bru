@@ -1,0 +1,21 @@
+meta {
+  name: Manager orders (scope)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{host}}/api/v1/manager/orders?scope=unassigned&status=NEW&page=0&size=20
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:query {
+  scope: unassigned
+  status: NEW
+  page: 0
+  size: 20
+}

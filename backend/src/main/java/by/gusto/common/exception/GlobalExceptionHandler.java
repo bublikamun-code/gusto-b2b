@@ -65,7 +65,8 @@ public class GlobalExceptionHandler {
             case AUTH_EMAIL_CONFIRM_TOKEN_INVALID, VALIDATION_FAILED, STOCK_INSUFFICIENT -> HttpStatus.BAD_REQUEST;
             case ACCESS_DENIED -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case CONFLICT, IDEMPOTENCY_CONFLICT, STOCK_DOCUMENT_INVALID -> HttpStatus.CONFLICT;
+            case CONFLICT, IDEMPOTENCY_CONFLICT, STOCK_DOCUMENT_INVALID,
+                 ORDER_STATUS_TRANSITION, ORDER_ALREADY_TAKEN -> HttpStatus.CONFLICT;
             case RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
             case INTERNAL -> HttpStatus.INTERNAL_SERVER_ERROR;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;
