@@ -12,6 +12,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ConfirmEmailPage from "./pages/ConfirmEmailPage";
 import RegisterPage from "./pages/RegisterPage";
 import CabinetCartPage from "./pages/cabinet/CabinetCartPage";
+import CabinetProfilePage from "./pages/cabinet/CabinetProfilePage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="/cabinet" element={<CabinetDashboardPage />} />
             <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
             <Route path="/cabinet/cart" element={<CabinetCartPage />} />
+            <Route path="/cabinet/profile" element={<CabinetProfilePage />} />
           </Route>
 
           {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}
