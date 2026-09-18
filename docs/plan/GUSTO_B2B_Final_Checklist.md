@@ -769,6 +769,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): orders cabinet and manager list`.
 
 ### S23.1 [AB] Кабинет: профиль и смена пароля
+> ✅ Выполнено 2026-09-19 [AB] — backend: `GET/PATCH /cabinet/profile` и `POST /cabinet/profile/password` (проверка текущего пароля → 401 `AUTH_INVALID_CREDENTIALS`, новый не совпадает со старым; после смены ревок всех refresh-токенов), OpenAPI дополнен, 2 интеграционных теста (85 зелёных); фронт: страница `/cabinet/profile` (правка имени/телефона + смена пароля с разлогином и редиректом на `/login`), `npm run generate-api`, lint/test (51)/build зелёные.
+
 Закрывает дыру: клиенту негде поменять пароль и данные, кроме сброса через почту.
 
 - Бэкенд: `PATCH /cabinet/profile` (имя, телефон; для юрлица — контактные данные пользователя), `POST /cabinet/password` (текущий пароль + новый, с валидацией).
