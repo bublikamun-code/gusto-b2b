@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Input, Modal, Pagination, Table, useToast } from "../../components/ui";
-import { listAdminProducts, type AdminProduct } from "../../api/adminCatalog";
+import { Badge, Button, Input, Modal, Pagination, Table, useToast } from "../../components/ui";
+import {
+  listAdminProducts,
+  updateShowcaseFlags,
+  type AdminProduct,
+} from "../../api/adminCatalog";
 import { listBrands, listCategories } from "../../api/catalog";
 import { deleteProductImage, listProductImages, uploadProductImage } from "../../api/productImages";
 import styles from "./AdminPages.module.scss";
@@ -113,10 +117,23 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [managingProduct, setManagingProduct] = useState<AdminProduct | null>(null);
+  const queryClient = useQueryClient();
+  const { push } = useToast();
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ["admin", "products", { page: page - 1, search }],
     queryFn: () => listAdminProducts({ page: page - 1, size: PAGE_SIZE, search: search || undefined }),
+  });
+
+  const showcaseMutation = useMutation({
+    mutationFn: ({ id, isHit, isNew }: { id: string; isHit: boolean; isNew: boolean }) =>
+      updateShowcaseFlags(id, { isHit, isNew }),
+    onSuccess: (product) => {
+      push(`Витрина обновлена: ${product.name}`, "success");
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+    },
+    onError: (err: { message?: string }) =>
+      push(err.message ?? "Не удалось обновить витрину", "error"),
   });
 
   const { data: categories = [] } = useQuery({
@@ -177,6 +194,21 @@ export default function AdminProductsPage() {
             key: "isActive",
             title: "Активен",
             render: (row) => (row.isActive ? "Да" : "Нет"),
+          },
+          {
+            // Витрина (S19.1): клик по бейджу переключает флаг точечным PATCH
+            key: "showcase",
+            title: "Витрина",
+            render: (row) => (
+              <div style={{ display: "flex", gap: "0.3rem" }}>
+                <button type="button" onClick={() => showcaseMutation.mutate({ id: row.id, isHit: !row.isHit, isNew: row.isNew })}>
+                  <Badge variant={row.isHit ? "accent" : "outline"}>ХИТ</Badge>
+                </button>
+                <button type="button" onClick={() => showcaseMutation.mutate({ id: row.id, isHit: row.isHit, isNew: !row.isNew })}>
+                  <Badge variant={row.isNew ? "success" : "outline"}>НОВИНКА</Badge>
+                </button>
+              </div>
+            ),
           },
           {
             key: "image",

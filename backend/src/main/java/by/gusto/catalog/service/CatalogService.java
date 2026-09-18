@@ -120,6 +120,9 @@ public class CatalogService {
                 .description(product.getDescription())
                 .retailPrice(retailPrice)
                 .stockStatus(stockStatus)
+                .hit(product.isHit())
+                .newProduct(product.isNewProduct())
+                .weightStep(product.getWeightPerUnit())
                 .imageUrls(imageUrls)
                 .build();
     }

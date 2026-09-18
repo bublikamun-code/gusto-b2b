@@ -720,6 +720,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): stock badges`.
 
 ### S19.1 [AB] Витрина: хиты, новинки, весовой шаг
+> ✅ Выполнено 2026-09-18 [AB] — миграция V13 (`products.is_hit`/`is_new`, демо-флаги и шаг 0.5 фаршу); `PATCH /admin/catalog/products/{id}/showcase` (точечные флаги, только ADMIN) + флаги в ProductRequest; контракт каталога и кабинета дополнен `isHit`/`isNew`/`weightStep`; админка: кликабельные бейджи ХИТ/НОВИНКА в списке товаров; витрина: бейджи из данных (ХИТ приоритетнее), «Хиты недели» на главной по `isHit`; шаг весового товара: `roundToStep` в `lib/units.ts`, корзина и кабинет выравнивают количество и input step; Vitest: units + cartStore-шаг; 3 интеграционных теста (78 зелёные).
+
 - Миграция: `products.is_hit`, `products.is_new` (3.1); CRUD флагов в админском каталоге (`/admin/catalog/products`).
 - Контракт каталога отдаёт `isHit`/`isNew` и шаг весового товара из `weight_per_unit` (4.1).
 - Бейджи ХИТ/НОВИНКА на карточках витрины; «Хиты недели» на главной выбираются по `is_hit`, а не «первые 6».

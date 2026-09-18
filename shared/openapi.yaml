@@ -861,6 +861,26 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [admin]
+      summary: Витринные флаги ХИТ/НОВИНКА (S19.1)
+      description: Точечное обновление флагов витрины без правки карточки товара.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShowcaseFlagsRequest" }
+      responses:
+        "200":
+          description: Флаги обновлены
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /admin/pricing/price-lists:
     get:
@@ -2360,6 +2380,8 @@ components:
         weightPerUnit: { type: number, nullable: true }
         minStock: { type: number, default: 0 }
         isActive: { type: boolean, default: true }
+        isHit: { type: boolean, default: false, description: "Бейдж «ХИТ» на витрине (S19.1)" }
+        isNew: { type: boolean, default: false, description: "Бейдж «НОВИНКА» на витрине (S19.1)" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
@@ -2384,6 +2406,14 @@ components:
         weightPerUnit: { type: number, nullable: true }
         minStock: { type: number, default: 0 }
         active: { type: boolean, default: true }
+        isHit: { type: boolean, description: "Необязательно; витринный флаг (S19.1)" }
+        isNew: { type: boolean, description: "Необязательно; витринный флаг (S19.1)" }
+    ShowcaseFlagsRequest:
+      type: object
+      required: [isHit, isNew]
+      properties:
+        isHit: { type: boolean }
+        isNew: { type: boolean }
     ProductResponse:
       allOf:
         - $ref: "#/components/schemas/Envelope"
@@ -2410,6 +2440,9 @@ components:
         description: { type: string, nullable: true }
         retailPrice: { type: number }
         stockStatus: { $ref: "#/components/schemas/StockStatus" }
+        isHit: { type: boolean, description: "Бейдж «ХИТ» (S19.1)" }
+        isNew: { type: boolean, description: "Бейдж «НОВИНКА» (S19.1)" }
+        weightStep: { type: number, nullable: true, description: "Шаг количества весового товара из weight_per_unit" }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
         imageUrls:
           type: array
@@ -2772,6 +2805,9 @@ components:
         retailPrice: { type: number }
         customerPrice: { type: number }
         stockStatus: { $ref: "#/components/schemas/StockStatus" }
+        isHit: { type: boolean, description: "Бейдж «ХИТ» (S19.1)" }
+        isNew: { type: boolean, description: "Бейдж «НОВИНКА» (S19.1)" }
+        weightStep: { type: number, nullable: true, description: "Шаг количества весового товара" }
         imageUrl: { type: string, nullable: true, description: "URL главного фото товара" }
         imageUrls:
           type: array

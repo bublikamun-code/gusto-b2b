@@ -6,18 +6,27 @@ import styles from "./ProductCard.module.scss";
 
 interface ProductCardProps {
   product: CatalogProduct;
+  /** Переопределяет витринный бейдж (isHit/isNew). */
   badge?: string;
+}
+
+// Бейджи из данных: ХИТ приоритетнее НОВИНКА (S19.1)
+function showcaseBadge(product: CatalogProduct): string | undefined {
+  if (product.isHit) return "ХИТ";
+  if (product.isNew) return "НОВИНКА";
+  return undefined;
 }
 
 export function ProductCard({ product, badge }: ProductCardProps) {
   const priceLabel = `${product.retailPrice.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} р./${product.unit}`;
+  const effectiveBadge = badge ?? showcaseBadge(product);
 
   return (
     <article className={styles.card}>
       <Link to={`/products/${product.sku}`} className={styles.card__media}>
-        {badge && (
+        {effectiveBadge && (
           <Badge variant="accent" className={styles.card__badge}>
-            {badge}
+            {effectiveBadge}
           </Badge>
         )}
         {product.imageUrl ? (

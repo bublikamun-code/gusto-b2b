@@ -113,6 +113,9 @@ public class CabinetCatalogService {
                 .retailPrice(retailPrice)
                 .customerPrice(customerPrice)
                 .stockStatus(stockStatus)
+                .hit(product.isHit())
+                .newProduct(product.isNewProduct())
+                .weightStep(product.getWeightPerUnit())
                 .imageUrls(imageUrls)
                 .build();
     }

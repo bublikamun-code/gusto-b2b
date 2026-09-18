@@ -50,9 +50,13 @@ export default function HomePage() {
     queryFn: listCategories,
   });
 
+  // «Хиты недели» — по флагу isHit из админки (S19.1), а не «первые 6»
   const { data: hits, isError: hitsError } = useQuery({
     queryKey: ["products", "hits"],
-    queryFn: () => listProducts({ page: 0, size: 6 }),
+    queryFn: async () => {
+      const page = await listProducts({ page: 0, size: 50 });
+      return { ...page, items: page.items.filter((product) => product.isHit).slice(0, 6) };
+    },
   });
 
   return (

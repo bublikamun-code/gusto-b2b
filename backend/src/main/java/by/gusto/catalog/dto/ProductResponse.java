@@ -36,6 +36,12 @@ public class ProductResponse {
     @JsonProperty("isActive")
     private boolean active;
 
+    @JsonProperty("isHit")
+    private boolean hit;
+
+    @JsonProperty("isNew")
+    private boolean newProduct;
+
     private Instant createdAt;
     private Instant updatedAt;
 
