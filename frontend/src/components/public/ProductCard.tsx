@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge, Button } from "../ui";
 import type { CatalogProduct } from "../../api/catalog";
+import { stockStatusLabel } from "../../lib/stockStatus";
 import styles from "./ProductCard.module.scss";
 
 interface ProductCardProps {
@@ -34,7 +35,12 @@ export function ProductCard({ product, badge }: ProductCardProps) {
         <Link to={`/products/${product.sku}`} className={styles.card__name}>
           {product.name}
         </Link>
-        <p className={styles.card__desc}>{product.description}</p>
+        <p className={styles.card__desc}>
+          {product.stockStatus && product.stockStatus !== "IN_STOCK"
+            ? `${stockStatusLabel(product.stockStatus)} · `
+            : ""}
+          {product.description}
+        </p>
         <div className={styles.card__footer}>
           <span className={styles.card__price}>{priceLabel}</span>
           <Button variant="secondary" size="sm">

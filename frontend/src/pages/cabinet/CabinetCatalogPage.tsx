@@ -8,6 +8,7 @@ import { useCartStore, selectCartTotalCount, selectCartTotalSum } from "../../st
 import { useAuthStore } from "../../store/authStore";
 import { logout } from "../../api/auth";
 import { formatMoney } from "../../lib/format";
+import { stockStatusBadge } from "../../lib/stockStatus";
 import styles from "./CabinetCatalogPage.module.scss";
 
 const PAGE_SIZE = 20;
@@ -174,7 +175,7 @@ export default function CabinetCatalogPage() {
       key: "availability",
       title: "Наличие",
       width: "12%",
-      render: () => "В наличии",
+      render: (row: CabinetProduct) => stockStatusBadge(row.stockStatus),
     },
     {
       key: "quantity",

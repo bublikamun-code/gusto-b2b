@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "../../components/ui";
 import { getProduct } from "../../api/catalog";
+import { stockStatusBadge } from "../../lib/stockStatus";
 import styles from "./ProductPage.module.scss";
 
 export default function ProductPage() {
@@ -62,9 +63,9 @@ export default function ProductPage() {
           {product.brand && <span className={styles.product__brand}>{product.brand.name}</span>}
           <h1 className={styles.product__name}>{product.name}</h1>
           <p className={styles.product__desc}>{product.description}</p>
-
           <div className={styles.product__priceRow}>
             <span className={styles.product__price}>{priceLabel}</span>
+            {stockStatusBadge(product.stockStatus)}
             <Button variant="primary" size="lg">
               В корзину
             </Button>
