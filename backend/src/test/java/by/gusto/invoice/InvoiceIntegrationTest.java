@@ -356,4 +356,50 @@ class InvoiceIntegrationTest {
                 Map.of("orderId", retailOrderId.toString()));
         assertThat(retailInvoice.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
+
+    // ----- PDF (S25) -------------------------------------------------------------
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void pdfIsGeneratedBrandedAndCached() throws Exception {
+        String admin = login("admin@gustomeat.by", "change-me");
+        Company company = createCompanyWithClient("ООО «ПДФ»", "190000005", email -> { });
+        Map<String, Object> order = createLegalOrder(admin, company.getId());
+        UUID orderId = UUID.fromString(order.get("id").toString());
+
+        // выпущенный счёт: PDF формируется при issue
+        Map<String, Object> draft = createInvoice(admin, orderId, HttpStatus.CREATED);
+        String invoiceId = draft.get("id").toString();
+        exchange(admin, HttpMethod.POST, "/api/v1/invoices/" + invoiceId + "/issue", null);
+
+        ResponseEntity<byte[]> pdf = downloadPdf(admin, "/api/v1/invoices/" + invoiceId + "/pdf");
+        assertThat(pdf.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(pdf.getHeaders().getContentType()).isEqualTo(org.springframework.http.MediaType.APPLICATION_PDF);
+        // %PDF-магия + встроенные шрифты (кириллица) дают значимый размер
+        assertThat(pdf.getBody()[0]).isEqualTo((byte) '%');
+        assertThat(new String(pdf.getBody(), 0, 5, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
+        assertThat(pdf.getBody().length).isGreaterThan(20_000);
+        assertThat(pdf.getHeaders().getFirst("Content-Disposition")).contains(".pdf");
+
+        // кэш: второй запрос не создаёт новый файл
+        Integer filesBefore = jdbcTemplate.queryForObject("select count(*) from files", Integer.class);
+        downloadPdf(admin, "/api/v1/invoices/" + invoiceId + "/pdf");
+        Integer filesAfter = jdbcTemplate.queryForObject("select count(*) from files", Integer.class);
+        assertThat(filesAfter).isEqualTo(filesBefore);
+
+        // клиент юрлица скачивает PDF своего счёта (кабинетный эндпоинт)
+        String legalEmail = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == Role.CUSTOMER_LEGAL && company.getId().equals(u.getCompanyId()))
+                .map(u -> u.getEmail()).findFirst().orElseThrow();
+        ResponseEntity<byte[]> byClient = downloadPdf(login(legalEmail, "password123"),
+                "/api/v1/cabinet/invoices/" + invoiceId + "/pdf");
+        assertThat(byClient.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(byClient.getBody()[0]).isEqualTo((byte) '%');
+    }
+
+    private ResponseEntity<byte[]> downloadPdf(String token, String path) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        return restTemplate.exchange(path, HttpMethod.GET, new HttpEntity<>(headers), byte[].class);
+    }
 }

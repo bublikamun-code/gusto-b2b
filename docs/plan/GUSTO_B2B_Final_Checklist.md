@@ -794,6 +794,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(invoices): model and creation`.
 
 ### S25 [B] PDF счёта (бренд)
+> ✅ Выполнено 2026-09-19 [B] — зависимость `flying-saucer-pdf-openpdf:9.4.0`; бренд-шрифты Russo One/Oswald/Rubik (OFL) в classpath `backend/src/main/resources/fonts/`, кириллица проверена (fontTools, cmap), встраиваются через `BaseFont.IDENTITY_H`; XHTML-шаблон в фирменном стиле (бордо #7C2D24, сливки #F5EDDE, графит, Russo One — номер/итог, Oswald — заголовки/колонтитул, Rubik — текст): реквизиты сторон из снапшотов, таблица позиций, НДС расчётно, места под печать/подпись; `InvoicePdfService.ensurePdf` — ленивая генерация и кэш в `files` (PRIVATE, 1.6, `invoices.pdf_file_id`), вызывается при `issue` и по запросу; `GET /invoices/{id}/pdf` (персонал) и `GET /cabinet/invoices/{id}/pdf` (юрлицо) стримят с правами счёта, `Content-Disposition: attachment` (правило S17.1); OpenAPI + Bruno; тест: %PDF-магия, размер >20 КБ (встроенные шрифты), кэш, доступ клиента (94 зелёных).
+
 - Шаблон в фирменном стиле (бордо/сливки/графит, Russo One/Oswald).
 - Кириллические бренд-шрифты встраиваются в PDF-шаблон (файлы шрифтов в classpath) — проверить до вёрстки шаблона.
 - Реквизиты продавца из `settings('seller.requisites')`, покупателя из компании.

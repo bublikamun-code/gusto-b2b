@@ -2135,6 +2135,29 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
 
+  /invoices/{id}/pdf:
+    get:
+      tags: [invoices]
+      summary: PDF счёта в фирменном стиле (S25)
+      description: |
+        Генерируется лениво и кэшируется в files (PRIVATE, 1.6). Отдаётся с
+        `Content-Disposition: attachment` (правило S17.1 для не-изображений).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: PDF-документ
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /cabinet/invoices:
     get:
       tags: [cabinet]
@@ -2158,6 +2181,27 @@ paths:
                         type: array
                         items: { $ref: "#/components/schemas/Invoice" }
         "403": { $ref: "#/components/responses/Forbidden" }
+
+  /cabinet/invoices/{id}/pdf:
+    get:
+      tags: [cabinet]
+      summary: PDF своего счёта (S25; юрлицо)
+      description: Приватный файл стримится backend'ом после проверки компании (1.6).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: PDF-документ
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /cabinet/profile:
     get:
