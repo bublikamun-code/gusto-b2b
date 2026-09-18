@@ -10,6 +10,8 @@ import LoginPage from "./pages/LoginPage";
 import RequestPasswordResetPage from "./pages/RequestPasswordResetPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ConfirmEmailPage from "./pages/ConfirmEmailPage";
+import RegisterPage from "./pages/RegisterPage";
+import CabinetCartPage from "./pages/cabinet/CabinetCartPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
@@ -46,6 +48,7 @@ export default function App() {
           <Route path="/request-password-reset" element={<RequestPasswordResetPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           <Route element={<RoleGuard allowed={["ADMIN", "ACCOUNTANT"]} />}>
             <Route element={<AdminLayout />}>
@@ -64,6 +67,7 @@ export default function App() {
             <Route path="/manager" element={<ManagerDashboardPage />} />
             <Route path="/cabinet" element={<CabinetDashboardPage />} />
             <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
+            <Route path="/cabinet/cart" element={<CabinetCartPage />} />
           </Route>
 
           {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}

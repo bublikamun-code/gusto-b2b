@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Button, Input, Pagination, Select, Table, Textarea } from "../../components/ui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Input, Pagination, Select, Table, Textarea, useToast } from "../../components/ui";
 import { listBrands, listCategories } from "../../api/catalog";
 import { listCabinetProducts, type CabinetProduct } from "../../api/cabinetCatalog";
-import { useCartStore, selectCartTotalCount, selectCartTotalSum } from "../../store/cartStore";
+import { putCartItem as putServerCartItem, getCart as getServerCart } from "../../api/cart";
 import { useAuthStore } from "../../store/authStore";
 import { logout } from "../../api/auth";
 import { formatMoney } from "../../lib/format";
@@ -35,11 +35,19 @@ export default function CabinetCatalogPage() {
   const [skuListError, setSkuListError] = useState<string | null>(null);
   const [skuListSuccess, setSkuListSuccess] = useState<string | null>(null);
   const [rowQuantities, setRowQuantities] = useState<Record<string, number>>({});
+  const queryClient = useQueryClient();
+  const { push: pushToast } = useToast();
 
-  const cartItems = useCartStore((s) => s.items);
-  const addItem = useCartStore((s) => s.addItem);
-  const cartCount = useMemo(() => selectCartTotalCount(cartItems), [cartItems]);
-  const cartSum = useMemo(() => selectCartTotalSum(cartItems), [cartItems]);
+  // S21: корзина серверная — счётчик подтягиваем из /cart
+  const { data: serverCart } = useQuery({
+    queryKey: ["cart"],
+    queryFn: getServerCart,
+  });
+  const cartCount = useMemo(
+    () => serverCart?.items.reduce((acc, item) => acc + item.quantity, 0) ?? 0,
+    [serverCart],
+  );
+  const cartSum = serverCart?.totalAmount ?? 0;
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -82,8 +90,6 @@ export default function CabinetCatalogPage() {
 
   function handleLogout() {
     logout().finally(() => {
-      useCartStore.getState().clear();
-      useCartStore.getState().setOwner(null);
       clearAuth();
       window.location.href = "/login";
     });
@@ -94,23 +100,18 @@ export default function CabinetCatalogPage() {
     setRowQuantities((prev) => ({ ...prev, [sku]: quantity }));
   }
 
-  function handleAddToCart(product: CabinetProduct) {
+  async function handleAddToCart(product: CabinetProduct) {
     const quantity = rowQuantities[product.sku] || 1;
-    addItem(
-      {
-        productId: product.id,
-        sku: product.sku,
-        name: product.name,
-        unit: product.unit,
-        price: product.customerPrice,
-        step: product.weightStep ?? null,
-      },
-      quantity,
-    );
-    setRowQuantities((prev) => ({ ...prev, [product.sku]: 0 }));
+    try {
+      await putServerCartItem(product.id, quantity);
+      await queryClient.invalidateQueries({ queryKey: ["cart"] });
+      setRowQuantities((prev) => ({ ...prev, [product.sku]: 0 }));
+    } catch (err) {
+      pushToast((err as Error).message, "error");
+    }
   }
 
-  function handleBulkAdd() {
+  async function handleBulkAdd() {
     setSkuListError(null);
     setSkuListSuccess(null);
 
@@ -123,25 +124,16 @@ export default function CabinetCatalogPage() {
     const notFound: string[] = [];
     let added = 0;
 
-    skus.forEach((sku) => {
+    for (const sku of skus) {
       const product = allProductsBySku.get(sku);
       if (!product) {
         notFound.push(sku);
-        return;
+        continue;
       }
-      addItem(
-        {
-          productId: product.id,
-          sku: product.sku,
-          name: product.name,
-          unit: product.unit,
-          price: product.customerPrice,
-          step: product.weightStep ?? null,
-        },
-        1,
-      );
+      await putServerCartItem(product.id, 1).catch(() => undefined);
       added++;
-    });
+    }
+    await queryClient.invalidateQueries({ queryKey: ["cart"] });
 
     if (notFound.length > 0) {
       setSkuListError(`Не найдены: ${notFound.join(", ")}`);
@@ -218,11 +210,11 @@ export default function CabinetCatalogPage() {
           <span className={styles.header__sub}>Каталог</span>
         </div>
         <div className={styles.header__right}>
-          <div className={styles.header__cart}>
+          <Link to="/cabinet/cart" className={styles.header__cart}>
             <span className={styles.header__cartLabel}>Корзина</span>
             <span className={styles.header__cartCount}>{cartCount}</span>
             <span className={styles.header__cartSum}>{formatMoney(cartSum)}</span>
-          </div>
+          </Link>
           <span className={styles.header__user}>{user?.fullName ?? user?.email}</span>
           <Link to="/cabinet" className={styles.header__link}>
             Кабинет

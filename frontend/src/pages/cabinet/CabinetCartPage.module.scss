@@ -1,0 +1,60 @@
+@use "../../styles/tokens" as *;
+
+.page {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.quantityInput {
+  width: 5rem;
+}
+
+.totals {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  font-size: 1.05rem;
+}
+
+.vat {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.checkout {
+  border-top: 1px solid var(--color-border, #e5e5e0);
+  padding-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+
+  h2 {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.hint {
+  grid-column: 1 / -1;
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0;
+}
