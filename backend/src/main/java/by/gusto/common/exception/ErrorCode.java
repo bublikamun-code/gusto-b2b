@@ -29,6 +29,10 @@ public enum ErrorCode {
     ORDER_STATUS_TRANSITION("ORDER_STATUS_TRANSITION", "Недопустимый переход статуса заказа"),
     ORDER_ALREADY_TAKEN("ORDER_ALREADY_TAKEN", "Заказ уже взят в работу другим менеджером"),
 
+    // Invoices
+    INVOICE_INVALID_STATE("INVOICE_INVALID_STATE", "Недопустимый переход статуса счёта"),
+    INVOICE_ALREADY_EXISTS("INVOICE_ALREADY_EXISTS", "Активный счёт по этому заказу уже существует"),
+
     // Validation
     VALIDATION_FAILED("VALIDATION_FAILED", "Ошибка валидации запроса"),
 

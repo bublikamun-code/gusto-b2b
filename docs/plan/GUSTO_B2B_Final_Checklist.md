@@ -785,6 +785,8 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 5 — Документы (счёт, ТН, ТТН)
 
 ### S24 [B] Счета: модель и генерация
+> ✅ Выполнено 2026-09-19 [B] — миграция V15 (sequence `doc_seq_invoice_2026`, уникальность номера, частичный уникальный индекс «один активный счёт на заказ», `invoices.customer_company_id`); модуль `by.gusto.invoice`: `POST /invoices` из заказа (снапшоты продавца из `settings('seller.requisites')`, покупателя из компании, позиций из заказа; НДС расчётно 2.3; номер `СЧ-N`; розница и отменённые заказы → 400), `GET /invoices` (ADMIN/ACCOUNTANT — все, MANAGER — своих клиентов), `GET /invoices/{id}`, `POST .../issue` (DRAFT→ISSUED, audit + outbox `INVOICE_ISSUED`), `POST .../cancel` (DRAFT/ISSUED→CANCELLED; повторное выставление по заказу разблокируется), `GET /cabinet/invoices` (юрлицо — свои); переходы валидирует статус-машина → 409 `INVOICE_INVALID_STATE`/`INVOICE_ALREADY_EXISTS` (каталог ошибок дополнен); жизненный цикл PARTIALLY_PAID/PAID — S28; OpenAPI + Bruno `invoices/`; 4 интеграционных теста, включая приёмку «снапшот не меняется после смены реквизитов» (93 зелёных).
+
 - `invoices`, `invoice_items`, нумерация `СЧ-N от ДД.ММ.ГГГГ`, статусы.
 - Создание из заказа (снапшоты продавца/покупателя/товаров); суммы по правилам 2.3 (цены НДС-включённые, НДС выделяется расчётно).
 - Выпуск счёта пишется в `audit_log`.

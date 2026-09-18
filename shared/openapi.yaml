@@ -38,6 +38,9 @@ tags:
   - name: files
   - name: manager
   - name: cabinet
+  - name: orders
+  - name: warehouse
+  - name: invoices
 
 paths:
   /healthz:
@@ -2006,6 +2009,156 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
 
+  /invoices:
+    post:
+      tags: [invoices]
+      summary: Создать счёт из заказа (S24; ADMIN/ACCOUNTANT/MANAGER)
+      description: |
+        Снапшоты продавца (settings seller.requisites), покупателя (компания) и товаров
+        фиксируются на момент создания и не меняются после. Номер СЧ-N по sequence (2.2),
+        НДС выделяется расчётно (2.3). Один активный счёт на заказ: повтор →
+        409 `INVOICE_ALREADY_EXISTS`; после отмены счёта можно выставить новый.
+        Розничным заказам (физлицам) счета не выставляются → 400.
+        Создаётся в статусе DRAFT; выпуск — отдельно (audit_log + событие INVOICE_ISSUED).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvoiceCreateRequest" }
+      responses:
+        "201":
+          description: Счёт создан (черновик)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Активный счёт уже существует (`INVOICE_ALREADY_EXISTS`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    get:
+      tags: [invoices]
+      summary: Список счетов бэк-офиса (ADMIN/ACCOUNTANT — все; MANAGER — своих клиентов)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница счетов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Invoice" }
+
+  /invoices/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [invoices]
+      summary: Счёт с позициями (персонал или клиент своей компании)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Счёт
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceResponse" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /invoices/{id}/issue:
+    post:
+      tags: [invoices]
+      summary: Выпустить счёт (DRAFT → ISSUED; S24)
+      description: |
+        Выпуск пишется в audit_log и создаёт событие INVOICE_ISSUED (уведомление
+        клиенту — 2.6, доставка с S31). Не из DRAFT → 409 `INVOICE_INVALID_STATE`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Счёт выпущен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Недопустимый переход (`INVOICE_INVALID_STATE`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /invoices/{id}/cancel:
+    post:
+      tags: [invoices]
+      summary: Отменить счёт (DRAFT/ISSUED → CANCELLED; S24)
+      description: После отмены по заказу можно выставить новый счёт.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Счёт отменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Недопустимый переход (`INVOICE_INVALID_STATE`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /cabinet/invoices:
+    get:
+      tags: [cabinet]
+      summary: Счета компании клиента (S24; юрлицо — свои, матрица 2.1)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница счетов компании
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Invoice" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /cabinet/profile:
     get:
       tags: [cabinet]
@@ -2359,6 +2512,9 @@ components:
         # заказы
         - ORDER_STATUS_TRANSITION  # недопустимый переход статуса заказа (S22)
         - ORDER_ALREADY_TAKEN      # заказ уже взят другим менеджером (S22)
+        # счета
+        - INVOICE_INVALID_STATE    # недопустимый переход статуса счёта (S24)
+        - INVOICE_ALREADY_EXISTS   # активный счёт по заказу уже есть (S24)
         # общие
         - INTERNAL                 # непредвиденная ошибка сервера
 
@@ -2939,6 +3095,57 @@ components:
       required: [status]
       properties:
         status: { $ref: "#/components/schemas/OrderStatus" }
+
+    # ----- Счета (S24) ------------------------------------------------------------
+    InvoiceStatus:
+      type: string
+      enum: [DRAFT, ISSUED, PARTIALLY_PAID, PAID, CANCELLED]
+      description: PARTIALLY_PAID/PAID — платежами в S28
+    InvoiceCreateRequest:
+      type: object
+      required: [orderId]
+      properties:
+        orderId: { type: string, format: uuid }
+    Invoice:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        displayNumber: { type: string, example: "СЧ-1 от 24.08.2026" }
+        number: { type: string, example: "СЧ-1" }
+        issueDate: { type: string, format: date }
+        orderId: { type: string, format: uuid }
+        customerCompanyId: { type: string, format: uuid, nullable: true }
+        sellerSnapshot:
+          type: object
+          description: Реквизиты продавца на момент счёта (2.4); после выпуска не меняются
+          additionalProperties: true
+        buyerSnapshot:
+          type: object
+          description: Реквизиты покупателя (компании) на момент счёта
+          additionalProperties: true
+        totalAmount: { type: number, description: "Σ позиций; цены НДС-включённые (2.3)" }
+        totalVat: { type: number, description: "НДС выделен расчётно: Σ total × rate / (100 + rate)" }
+        status: { $ref: "#/components/schemas/InvoiceStatus" }
+        createdAt: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sku: { type: string }
+              productName: { type: string }
+              unit: { type: string, nullable: true }
+              quantity: { type: number }
+              unitPrice: { type: number }
+              vatRate: { type: number }
+              vat: { type: number }
+              total: { type: number }
+    InvoiceResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Invoice" }
+
     DeliveryType:
       type: string
       enum: [PICKUP, DELIVERY]
