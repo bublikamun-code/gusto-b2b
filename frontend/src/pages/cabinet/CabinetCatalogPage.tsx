@@ -103,6 +103,7 @@ export default function CabinetCatalogPage() {
         name: product.name,
         unit: product.unit,
         price: product.customerPrice,
+        step: product.weightStep ?? null,
       },
       quantity,
     );
@@ -135,6 +136,7 @@ export default function CabinetCatalogPage() {
           name: product.name,
           unit: product.unit,
           price: product.customerPrice,
+          step: product.weightStep ?? null,
         },
         1,
       );
@@ -186,7 +188,7 @@ export default function CabinetCatalogPage() {
         <Input
           type="number"
           min={0}
-          step={1}
+          step={row.weightStep ?? 1}
           value={rowQuantities[row.sku] ?? 1}
           onChange={(event) => handleRowQuantityChange(row.sku, event.target.value)}
           className={styles.quantityInput}

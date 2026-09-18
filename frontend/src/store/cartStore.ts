@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { roundToStep } from "../lib/units";
 
 export interface CartItem {
   productId: string;
@@ -8,6 +9,8 @@ export interface CartItem {
   unit: string;
   price: number;
   quantity: number;
+  /** Шаг количества весового товара (weight_per_unit, S19.1); без шага — свободное. */
+  step?: number | null;
 }
 
 interface CartState {
@@ -30,13 +33,16 @@ export const useCartStore = create<CartState>()(
       ownerId: null,
 
       addItem(product, quantity = 1) {
-        if (!Number.isFinite(quantity) || quantity <= 0) return;
+        const step = product.step ?? null;
+        const stepped = roundToStep(quantity, step);
+        if (!Number.isFinite(stepped) || stepped <= 0) return;
         const items = [...get().items];
         const index = items.findIndex((item) => item.sku === product.sku);
         if (index >= 0) {
-          items[index] = { ...items[index], quantity: items[index].quantity + quantity };
+          const merged = roundToStep(items[index].quantity + stepped, step);
+          items[index] = { ...items[index], quantity: merged };
         } else {
-          items.push({ ...product, quantity });
+          items.push({ ...product, step, quantity: stepped });
         }
         set({ items });
       },
@@ -45,10 +51,11 @@ export const useCartStore = create<CartState>()(
         const items = [...get().items];
         const index = items.findIndex((item) => item.sku === sku);
         if (index < 0) return;
-        if (quantity <= 0) {
+        const stepped = roundToStep(quantity, items[index].step ?? null);
+        if (stepped <= 0) {
           items.splice(index, 1);
         } else {
-          items[index] = { ...items[index], quantity };
+          items[index] = { ...items[index], quantity: stepped };
         }
         set({ items });
       },

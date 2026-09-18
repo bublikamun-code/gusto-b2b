@@ -41,6 +41,17 @@ export function updateAdminProduct(id: string, body: AdminProductRequest): Promi
   });
 }
 
+/** Витринные флаги ХИТ/НОВИНКА (S19.1). */
+export function updateShowcaseFlags(
+  id: string,
+  body: { isHit: boolean; isNew: boolean },
+): Promise<AdminProduct> {
+  return apiRequest<AdminProduct>(`/admin/catalog/products/${encodeURIComponent(id)}/showcase`, {
+    method: "PATCH",
+    body,
+  });
+}
+
 export function deleteAdminProduct(id: string): Promise<void> {
   return apiRequest<void>(`/admin/catalog/products/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

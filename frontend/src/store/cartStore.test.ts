@@ -91,4 +91,28 @@ describe("cartStore", () => {
     expect(selectCartTotalSum([])).toBe(0);
     expect(selectCartTotalCount([])).toBe(0);
   });
+
+  it("weight step: quantities snap to multiples of the step (S19.1)", () => {
+    // фарш по 0.5 кг
+    useCartStore.getState().addItem(product({ sku: "F-1", productId: "p-3", step: 0.5 }), 0.7);
+    expect(useCartStore.getState().items[0].quantity).toBeCloseTo(0.5, 10);
+
+    // повторное добавление суммируется и снова выравнивается по шагу
+    useCartStore.getState().addItem(product({ sku: "F-1", productId: "p-3", step: 0.5 }), 0.2);
+    expect(useCartStore.getState().items[0].quantity).toBeCloseTo(0.5, 10);
+    useCartStore.getState().addItem(product({ sku: "F-1", productId: "p-3", step: 0.5 }), 0.3);
+    expect(useCartStore.getState().items[0].quantity).toBeCloseTo(1, 10);
+
+    // шаг сохраняется в позиции и применяется в setQuantity
+    useCartStore.getState().setQuantity("F-1", 0.9);
+    expect(useCartStore.getState().items[0].quantity).toBeCloseTo(1, 10);
+
+    // ниже шага после уменьшения — позиция удаляется
+    useCartStore.getState().setQuantity("F-1", 0.2);
+    expect(useCartStore.getState().items.find((item) => item.sku === "F-1")).toBeUndefined();
+
+    // товары без шага не затрагиваются
+    useCartStore.getState().addItem(product(), 1.23);
+    expect(useCartStore.getState().items.find((item) => item.sku === "A-100")?.quantity).toBeCloseTo(1.23, 10);
+  });
 });

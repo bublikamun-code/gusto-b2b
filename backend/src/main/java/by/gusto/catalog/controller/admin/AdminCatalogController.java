@@ -7,6 +7,7 @@ import by.gusto.catalog.dto.CategoryResponse;
 import by.gusto.catalog.dto.ProductFilterRequest;
 import by.gusto.catalog.dto.ProductRequest;
 import by.gusto.catalog.dto.ProductResponse;
+import by.gusto.catalog.dto.ShowcaseFlagsRequest;
 import by.gusto.catalog.service.BrandService;
 import by.gusto.catalog.service.CategoryService;
 import by.gusto.catalog.service.ProductService;
@@ -18,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -146,5 +148,15 @@ public class AdminCatalogController {
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable UUID id) {
         productService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** Витринные флаги «ХИТ»/«НОВИНКА» (S19.1) — точечно, без правки карточки товара. */
+    @PatchMapping("/products/{id}/showcase")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> updateShowcaseFlags(
+            @PathVariable UUID id,
+            @Valid @RequestBody ShowcaseFlagsRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(productService.updateShowcaseFlags(
+                id, request.getIsHit(), request.getIsNew())));
     }
 }

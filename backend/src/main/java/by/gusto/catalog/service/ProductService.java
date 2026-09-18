@@ -94,6 +94,15 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    /** Витринные флаги (S19.1): админка отмечает хит/новинку — они появляются на витрине. */
+    @Transactional
+    public ProductResponse updateShowcaseFlags(UUID id, boolean hit, boolean newProduct) {
+        Product product = findActiveProduct(id);
+        product.setHit(hit);
+        product.setNewProduct(newProduct);
+        return productMapper.toResponse(productRepository.save(product));
+    }
+
     private Product findActiveProduct(UUID id) {
         return productRepository.findById(id)
                 .filter(p -> p.getDeletedAt() == null)
@@ -124,6 +133,12 @@ public class ProductService {
     private void applyFlags(Product product, ProductRequest request) {
         if (request.getActive() != null) {
             product.setActive(request.getActive());
+        }
+        if (request.getHit() != null) {
+            product.setHit(request.getHit());
+        }
+        if (request.getNewProduct() != null) {
+            product.setNewProduct(request.getNewProduct());
         }
     }
 }

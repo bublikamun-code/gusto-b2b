@@ -62,4 +62,10 @@ public class ProductRequest {
     @JsonProperty("isActive")
     @Builder.Default
     private Boolean active = true;
+
+    @JsonProperty("isHit")
+    private Boolean hit;
+
+    @JsonProperty("isNew")
+    private Boolean newProduct;
 }

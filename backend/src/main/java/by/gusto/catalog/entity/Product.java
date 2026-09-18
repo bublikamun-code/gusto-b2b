@@ -72,6 +72,16 @@ public class Product {
     @Builder.Default
     private BigDecimal minStock = BigDecimal.ZERO;
 
+    /** «Хит недели» на витрине (S19.1), управление в админке. */
+    @Column(name = "is_hit", nullable = false)
+    @Builder.Default
+    private boolean hit = false;
+
+    /** «Новинка» на витрине (S19.1). */
+    @Column(name = "is_new", nullable = false)
+    @Builder.Default
+    private boolean newProduct = false;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean active = true;
