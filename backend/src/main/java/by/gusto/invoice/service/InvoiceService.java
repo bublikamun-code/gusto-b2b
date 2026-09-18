@@ -59,6 +59,7 @@ public class InvoiceService {
     private final SettingsService settingsService;
     private final AuditService auditService;
     private final OutboxService outboxService;
+    private final InvoicePdfService invoicePdfService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
@@ -145,6 +146,9 @@ public class InvoiceService {
         }
         invoice.setStatus(Status.ISSUED);
         invoice = invoiceRepository.save(invoice);
+
+        // PDF формируется при выпуске (S25): снапшоты уже зафиксированы
+        invoicePdfService.ensurePdf(invoice.getId(), actor.getId());
 
         auditService.append(actor.getId(), "INVOICE_ISSUE", "invoice", invoice.getId(),
                 Map.of("status", Status.DRAFT.name()),
