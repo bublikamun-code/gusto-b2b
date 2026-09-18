@@ -1,0 +1,135 @@
+@use "../../styles/tokens" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 62rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.frequent {
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+  }
+}
+
+.frequentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.frequentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.frequentMeta {
+  display: block;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.rowActions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(38, 32, 28, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 40rem;
+  width: 100%;
+  max-height: 85vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modalHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    flex: 1;
+  }
+}
+
+.meta {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  th:nth-child(n + 2),
+  td:nth-child(n + 2) {
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.sku {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.total {
+  margin: 0;
+  text-align: right;
+}

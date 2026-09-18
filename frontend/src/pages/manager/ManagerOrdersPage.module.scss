@@ -1,0 +1,50 @@
+@use "../../styles/tokens" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.statusFilter {
+  min-width: 12rem;
+}
+
+.rowActions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.terminal {
+  color: #9ca3af;
+}
