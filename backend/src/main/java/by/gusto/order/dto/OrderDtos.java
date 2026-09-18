@@ -119,6 +119,14 @@ public final class OrderDtos {
         private long total;
     }
 
+    /** S22: целевой статус заказа (переходы валидирует статус-машина). */
+    @Data
+    public static class StatusUpdateRequest {
+
+        @NotNull
+        private OrderEntity.Status status;
+    }
+
     public static Response toResponse(OrderEntity order, List<OrderItem> items) {
         Response response = new Response();
         response.setId(order.getId());

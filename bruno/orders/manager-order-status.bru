@@ -1,0 +1,26 @@
+meta {
+  name: Manager order change status
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{host}}/api/v1/manager/orders/:id/status
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: order-uuid
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"status": "CONFIRMED"}
+}

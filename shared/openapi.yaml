@@ -1904,6 +1904,108 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /manager/orders:
+    get:
+      tags: [orders]
+      summary: Список заказов в работе (S22; MANAGER/ADMIN)
+      description: |
+        scope=mine — заказы, взятые менеджером в работу (по умолчанию);
+        scope=unassigned — пул «не назначено» (розница и заявки без менеджера, 2.7);
+        scope=all — только ADMIN. MANAGER с scope=all → 400 `VALIDATION_FAILED`.
+        Опциональный фильтр по статусу. Бухгалтеру заказы недоступны (матрица 2.1).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scope
+          in: query
+          schema: { type: string, enum: [mine, unassigned, all], default: mine }
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/OrderStatus" }
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница заказов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Order" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /manager/orders/{id}/take:
+    post:
+      tags: [orders]
+      summary: Взять заказ в работу (S22; проставляет managerId, 2.7)
+      description: |
+        Только для заказов из пула «не назначено» (managerId = null) в нетерминальном
+        статусе. Уже взятый → 409 `ORDER_ALREADY_TAKEN`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Заказ назначен текущему менеджеру
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Заказ уже взят (`ORDER_ALREADY_TAKEN`) или в терминальном статусе (`ORDER_STATUS_TRANSITION`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /manager/orders/{id}/status:
+    put:
+      tags: [orders]
+      summary: Сменить статус заказа (S22; статус-машина)
+      description: |
+        Допустимые переходы: NEW→CONFIRMED|CANCELLED, CONFIRMED→PROCESSING|CANCELLED,
+        PROCESSING→READY|CANCELLED, READY→SHIPPED|CANCELLED, SHIPPED→COMPLETED.
+        COMPLETED и CANCELLED терминальные; недопустимый переход → 409 `ORDER_STATUS_TRANSITION`.
+        Отмена (→ CANCELLED) разблокирует резерв остатков (stock_balances.reserved).
+        Права: ADMIN — любые заказы; MANAGER — свои и заказы своих компаний (2.1).
+        Смена статуса и отмена пишутся в audit_log.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrderStatusUpdateRequest" }
+      responses:
+        "200":
+          description: Статус изменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Недопустимый переход (`ORDER_STATUS_TRANSITION`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
   /cabinet/profile:
     get:
       tags: [cabinet]
@@ -2254,6 +2356,9 @@ components:
         # склад
         - STOCK_INSUFFICIENT       # недостаточно остатка для заказа/резерва
         - STOCK_DOCUMENT_INVALID   # неверный переход статуса складского документа
+        # заказы
+        - ORDER_STATUS_TRANSITION  # недопустимый переход статуса заказа (S22)
+        - ORDER_ALREADY_TAKEN      # заказ уже взят другим менеджером (S22)
         # общие
         - INTERNAL                 # непредвиденная ошибка сервера
 
@@ -2829,6 +2934,11 @@ components:
     OrderStatus:
       type: string
       enum: [NEW, CONFIRMED, PROCESSING, READY, SHIPPED, COMPLETED, CANCELLED]
+    OrderStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: "#/components/schemas/OrderStatus" }
     DeliveryType:
       type: string
       enum: [PICKUP, DELIVERY]

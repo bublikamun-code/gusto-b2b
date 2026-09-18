@@ -754,6 +754,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): cart and checkout`.
 
 ### S22 [B] Жизненный цикл заказа
+> ✅ Выполнено 2026-09-19 [B] — статус-машина (`NEW→CONFIRMED→PROCESSING→READY→SHIPPED→COMPLETED`, отмена из NEW…READY; недопустимый переход → 409 `ORDER_STATUS_TRANSITION`); права: ADMIN — все, MANAGER — взятые им и заказы закреплённых компаний (клиенты — 403); отмена разблокирует резерв `stock_balances.reserved` через `StockService.release`; `GET /manager/orders?scope=mine|unassigned|all` (+фильтр статуса; менеджеру `all` запрещён), `POST /manager/orders/{id}/take` (повтор → 409 `ORDER_ALREADY_TAKEN`), `PUT /manager/orders/{id}/status`; смена/отмена/взятие пишутся в `audit_log` (новый минимальный модуль `by.gusto.audit` — фундамент S24/S35/S38), смена статуса пишет `ORDER_STATUS_CHANGED` в outbox (доставка — S31+); OpenAPI (+`ORDER_ALREADY_TAKEN` в каталог) + Bruno `orders/manager-order-*`; 4 интеграционных теста (89 зелёных).
+
 - Смена статусов с правами (менеджер по своим клиентам), отмена с разблокировкой резерва (`reserved` в `stock_balances`).
 - `GET /manager/orders` с фильтрами: свои заказы + пул «не назначено» (розница, 2.7); действие «взять в работу» проставляет `manager_id`.
 - Смена статуса, отмена и взятие в работу пишутся в `audit_log` (к S38 журнал уже наполняется).
