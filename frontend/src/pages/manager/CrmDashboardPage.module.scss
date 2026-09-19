@@ -1,0 +1,64 @@
+@use "../../styles/tokens" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.period {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.kpiLabel {
+  color: #6b7280;
+  font-size: 0.8rem;
+  letter-spacing: 0.5pt;
+  text-transform: uppercase;
+}
+
+.kpiValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #7c2d24;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  gap: 1rem;
+}
+
+.chart {
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+}

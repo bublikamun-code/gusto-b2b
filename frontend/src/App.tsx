@@ -22,6 +22,10 @@ import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import ManagerOrdersPage from "./pages/manager/ManagerOrdersPage";
 import ManagerOrderCreatePage from "./pages/manager/ManagerOrderCreatePage";
+import CrmInboxPage from "./pages/manager/CrmInboxPage";
+import CrmLeadsPage from "./pages/manager/CrmLeadsPage";
+import CrmClientsPage from "./pages/manager/CrmClientsPage";
+import CrmDashboardPage from "./pages/manager/CrmDashboardPage";
 import CabinetDashboardPage from "./pages/cabinet/CabinetDashboardPage";
 import CabinetCatalogPage from "./pages/cabinet/CabinetCatalogPage";
 import CabinetOrdersPage from "./pages/cabinet/CabinetOrdersPage";
@@ -95,6 +99,11 @@ export default function App() {
             <Route path="/manager/orders" element={<ManagerOrdersPage />} />
             <Route path="/manager/orders/new" element={<ManagerOrderCreatePage />} />
             <Route path="/manager/documents" element={<DocumentsPage />} />
+            {/* CRM UI (S30): единое окно, воронка, клиенты, дашборд */}
+            <Route path="/manager/inbox" element={<CrmInboxPage />} />
+            <Route path="/manager/leads" element={<CrmLeadsPage />} />
+            <Route path="/manager/clients" element={<CrmClientsPage />} />
+            <Route path="/manager/dashboard" element={<CrmDashboardPage />} />
           </Route>
 
           {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}
