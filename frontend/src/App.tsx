@@ -36,6 +36,8 @@ import DeliveryPage from "./pages/public/DeliveryPage";
 import AboutPage from "./pages/public/AboutPage";
 import ContactsPage from "./pages/public/ContactsPage";
 import PrivacyPage from "./pages/public/PrivacyPage";
+import BecomeClientPage from "./pages/public/BecomeClientPage";
+import { initChat } from "./chat";
 import WarehouseBalancePage from "./pages/warehouse/WarehouseBalancePage";
 import WarehouseDocumentsPage from "./pages/warehouse/WarehouseDocumentsPage";
 import WarehouseSuppliersPage from "./pages/warehouse/WarehouseSuppliersPage";
@@ -43,6 +45,8 @@ import WarehousePurchaseOrdersPage from "./pages/warehouse/WarehousePurchaseOrde
 import WarehouseReportsPage from "./pages/warehouse/WarehouseReportsPage";
 
 export default function App() {
+  // Чат-виджет (S34): Crisp при наличии VITE_CRISP_WEBSITE_ID, иначе no-op
+  initChat();
   return (
     <BrowserRouter>
       <AuthInit>
@@ -125,6 +129,7 @@ export default function App() {
             <Route path="/delivery" element={<DeliveryPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/become-client" element={<BecomeClientPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
           </Route>
 
