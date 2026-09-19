@@ -901,6 +901,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(integration): xlsx import prices and stock`.
 
 ### S36 [B] Экспорт для 1С (.xlsx)
+> ✅ Выполнено 2026-09-19 [B] — `XlsxExportService` (POI): `GET /admin/export/orders|invoices|waybills?from&to` (ADMIN/ACCOUNTANT/MANAGER — матрица 2.1 «выгрузка для 1С»; колонки по `docs/1c-export-format.md`; розница без компании → «Розница»), каждая выгрузка фиксируется в `integration_files` (EXPORT/DONE, rowsTotal) + `audit_log`; `GET /cabinet/pricing/export` (юрлицо) — прайс со своими ценами (персональная цена → базовая, `customer_prices`/`product_prices` lateral-join), файл PRIVATE; исправление: у экспортных методов снят `readOnly` (запись в integration_files откатывалась); 2 интеграционных теста (115 зелёных): заказ в выгрузке с клиентом и EXPORT-записью, персональная цена 50.00 в прайсе клиента.
+
 - Выгрузка заказов/счетов/накладных за период.
 - `GET /cabinet/pricing/export` — прайс клиента со своими ценами (xlsx) для кабинета юрлица.
 - Колонки согласованы с бухгалтерией (шаблон в `docs/1c-export-format.md`).
