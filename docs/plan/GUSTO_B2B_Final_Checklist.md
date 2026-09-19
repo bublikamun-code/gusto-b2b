@@ -852,6 +852,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): crm pages and dashboard`.
 
 ### S31 [B] Заявки с сайта + outbox
+> ✅ Выполнено 2026-09-19 [B] — миграция V18 (CHECK `site_requests.type`/`status` по 2.8, `lead_id`); планировщик введён (@EnableScheduling): `OutboxPoller` @Scheduled 10 с — выборка PENDING `for update skip locked`, доставка через `OutboxChannel` + Resilience4j CircuitBreaker, ретраи backoff 1/5/15/60 мин → FAILED после 5 попыток; `LoggingOutboxChannel` — канал по умолчанию (низший приоритет; реальные EMAIL_*/TG_* — S32/S33); `CleanupJob` (просроченные токены подтверждения/сброса, `idempotency_keys`) и `SequenceRotationJob` (ежедневно создаёт sequences текущего года для СЧ/ТН/ТТН по сериям из settings); `POST /site/requests` (публично, permitAll + rate limit Redis 10/час на IP + `Idempotency-Key`) — заявка сразу конвертируется в лид пул «не назначено» (2.7) + событие `SITE_REQUEST_CREATED` (уведомление менеджерам — каналы); менеджерские `GET /crm/site-requests?status=`, `POST .../{id}/status` (NEW→IN_PROGRESS→CLOSED, иначе 409); OpenAPI (3 пути, схемы) + Bruno `site/`; 3 интеграционных теста (106 зелёных): лид в пуле + доставка поллером + статусы, идемпотентность, полный ретрай-цикл с «падающим» каналом до FAILED.
+
 - `POST /site/requests`, сохранение → outbox → отправка; идемпотентно по `Idempotency-Key` (1.6).
 - Повторная отправка при сбое (retry + circuit breaker, Resilience4j).
 - Вводится планировщик (1.6): поллер `outbox_messages` на Spring `@Scheduled`; дальше на нём же очистка токенов/`idempotency_keys` и ротация sequences.

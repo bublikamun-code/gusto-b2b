@@ -2280,6 +2280,98 @@ paths:
                         type: array
                         items: { $ref: "#/components/schemas/DebtRow" }
 
+  /site/requests:
+    post:
+      tags: [crm]
+      summary: Публичная заявка с сайта (S31; без авторизации)
+      description: |
+        Rate limit по IP (10/час → 429 `RATE_LIMITED`), идемпотентность по
+        заголовку Idempotency-Key (повтор → сохранённый ответ). Заявка сразу
+        конвертируется в лид в пул «не назначено» (2.7); событие
+        SITE_REQUEST_CREATED уходит в outbox (уведомление менеджерам, 2.6).
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, maxLength: 200 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SiteRequestCreate" }
+      responses:
+        "201":
+          description: Заявка принята (лид создан)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteRequestResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "409":
+          description: Повтор с тем же ключом и другим телом (`IDEMPOTENCY_CONFLICT`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "429":
+          description: Превышен лимит (`RATE_LIMITED`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /crm/site-requests:
+    get:
+      tags: [crm]
+      summary: Список заявок с сайта (S31; MANAGER/ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/SiteRequestStatus" }
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница заявок
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/SiteRequest" }
+
+  /crm/site-requests/{id}/status:
+    post:
+      tags: [crm]
+      summary: Сменить статус заявки (NEW→IN_PROGRESS→CLOSED; S31)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/SiteRequestStatus" }
+      responses:
+        "200":
+          description: Статус изменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteRequestResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Недопустимый переход (`CONFLICT`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
   /crm/leads:
     post:
       tags: [crm]
@@ -3747,6 +3839,37 @@ components:
         paid: { type: number, description: "Оплачено по активным счетам" }
         debt: { type: number, description: "Остаток долга (> 0)" }
         oldestActiveAt: { type: string, format: date-time, nullable: true }
+
+    # ----- Заявки с сайта (S31) ---------------------------------------------------
+    SiteRequestStatus:
+      type: string
+      enum: [NEW, IN_PROGRESS, CLOSED]
+    SiteRequestCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        message: { type: string, nullable: true }
+        type: { type: string, enum: [CALLBACK, WHOLESALE, RETAIL, OTHER] }
+    SiteRequest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        message: { type: string, nullable: true }
+        type: { type: string, enum: [CALLBACK, WHOLESALE, RETAIL, OTHER] }
+        status: { $ref: "#/components/schemas/SiteRequestStatus" }
+        leadId: { type: string, format: uuid, nullable: true, description: "Лид, созданный из заявки (2.7)" }
+        createdAt: { type: string, format: date-time }
+    SiteRequestResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/SiteRequest" }
 
     # ----- CRM (S29) --------------------------------------------------------------
     LeadStatus:

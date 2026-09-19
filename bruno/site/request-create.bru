@@ -1,0 +1,18 @@
+meta {
+  name: Create site request
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/site/requests
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"name": "Посетитель", "phone": "+375 29 000-00-00", "type": "WHOLESALE", "message": "Оптовые поставки"}
+}
