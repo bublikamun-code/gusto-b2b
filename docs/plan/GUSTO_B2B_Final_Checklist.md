@@ -910,7 +910,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(integration): xlsx export orders invoices`.
 
 ### S37 [A] CMS + страницы
-> 🚧 Прогресс 2026-09-02 [A] — публичные страницы «Контакты» (`/contacts`, связь + реквизиты) и «Политика конфиденциальности» (`/privacy`), ссылки в шапке/футере, email приведён к `info@gustomeat.by`; админка статей (draft/published) — ждёт backend.
+> ✅ Выполнено 2026-09-19 [AB] (завершение прогресса от 2026-09-02) — модуль `by.gusto.cms` (таблица `articles` из V1): `POST/PUT/DELETE /admin/cms/articles` + `/{id}/publish` (только ADMIN, матрица 2.1; уникальность slug → 409; публикация DRAFT→PUBLISHED с published_at, повторная → 409; DELETE = архив, словарь 2.8; всё в audit_log); публично `GET /cms/pages/{slug}` (только PUBLISHED, 404 для черновика/архива) + список; фронт: `CmsPageView` — страницы «О нас» и «Доставка» теперь из БД по slug (fallback-заголовок, «Раздел готовится к публикации» при отсутствии), админка `/admin/cms` (список со статусами, создание с slug, правка, публикация, архив) + пункт «Страницы» в AdminLayout; публичные эндпоинты permitAll; 1 интеграционный тест полного цикла (116 зелёных), фронт lint/build зелёные (70 тестов).
+
 - Админка статей (draft/published), публичные страницы «О нас», «Доставка», «Контакты», «Политика конфиденциальности».
 - **Приёмка:** статья публикуется и видна на сайте.
 - `GIT(STD)` — `feat(frontend): cms articles and static pages`.
