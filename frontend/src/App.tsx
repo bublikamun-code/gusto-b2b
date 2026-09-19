@@ -13,6 +13,8 @@ import ConfirmEmailPage from "./pages/ConfirmEmailPage";
 import RegisterPage from "./pages/RegisterPage";
 import CabinetCartPage from "./pages/cabinet/CabinetCartPage";
 import CabinetProfilePage from "./pages/cabinet/CabinetProfilePage";
+import CabinetDocumentsPage from "./pages/cabinet/CabinetDocumentsPage";
+import DocumentsPage from "./pages/documents/DocumentsPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
@@ -58,6 +60,8 @@ export default function App() {
             <Route element={<AdminLayout />}>
               <Route path="/admin" element={<AdminIndexRedirect />} />
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              {/* Документы (S27): счета/накладные, создание из заказа — первая раздел-страница бухгалтера */}
+              <Route path="/admin/documents" element={<DocumentsPage />} />
               {/* CRUD-разделы только для ADMIN: у других ролей бэкенд на /admin/** отдаёт 403 */}
               <Route element={<RoleGuard allowed={["ADMIN"]} />}>
                 <Route path="/admin/users" element={<AdminUsersPage />} />
@@ -80,11 +84,17 @@ export default function App() {
             <Route path="/cabinet/orders" element={<CabinetOrdersPage />} />
           </Route>
 
+          {/* Документы юрлица (S27): счета и накладные; физлицо документов не имеет (2.1) */}
+          <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL"]} />}>
+            <Route path="/cabinet/documents" element={<CabinetDocumentsPage />} />
+          </Route>
+
           {/* Заказы в работе (S22/S23): лента, пул «не назначено», заказ от имени клиента.
               Роль проверяет и бэкенд (2.1) — для глубоких ссылок. */}
           <Route element={<RoleGuard allowed={["MANAGER", "ADMIN"]} />}>
             <Route path="/manager/orders" element={<ManagerOrdersPage />} />
             <Route path="/manager/orders/new" element={<ManagerOrderCreatePage />} />
+            <Route path="/manager/documents" element={<DocumentsPage />} />
           </Route>
 
           {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}

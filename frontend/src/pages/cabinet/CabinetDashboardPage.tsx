@@ -29,6 +29,9 @@ export default function CabinetDashboardPage() {
           <Link to="/cabinet/orders">
             <Button>Мои заказы</Button>
           </Link>
+          <Link to="/cabinet/documents">
+            <Button>Документы</Button>
+          </Link>
           <Link to="/cabinet/catalog">
             <Button>Перейти в каталог</Button>
           </Link>
