@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Map;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.Optional;
@@ -28,6 +29,9 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final by.gusto.outbox.service.OutboxService outboxService;
+    @org.springframework.beans.factory.annotation.Value("${app.base-url}")
+    private String appBaseUrl;
 
     @Transactional
     public String createToken(String email) {
@@ -45,6 +49,11 @@ public class PasswordResetService {
                 .used(false)
                 .build();
         tokenRepository.save(token);
+        outboxService.append("user", user.getId(), "EMAIL_PASSWORD_RESET", Map.of(
+                "to", user.getEmail(),
+                "subject", "Восстановление пароля — Густо",
+                "resetUrl", appBaseUrl + "/reset-password?token=" + raw
+        ));
         return raw;
     }
 

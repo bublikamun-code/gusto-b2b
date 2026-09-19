@@ -1,4 +1,10 @@
 spring:
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+
   application:
     name: gusto-b2b-backend
   datasource:
@@ -60,3 +66,7 @@ app:
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
+
+
+email:
+  from: ${EMAIL_FROM:no-reply@gustomeat.by}
