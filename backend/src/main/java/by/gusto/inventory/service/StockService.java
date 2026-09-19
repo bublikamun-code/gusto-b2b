@@ -38,6 +38,14 @@ public class StockService {
     private final StockLocationRepository locationRepository;
     private final SettingsService settingsService;
 
+    /** Текущее количество на складе (0, если записи нет) — для сверки при импорте (S35). */
+    @Transactional(readOnly = true)
+    public BigDecimal balanceOf(UUID productId, UUID locationId) {
+        return balanceRepository.findById(new StockBalance.StockBalanceId(productId, locationId))
+                .map(StockBalance::getQuantity)
+                .orElse(BigDecimal.ZERO);
+    }
+
     /** Склад резерва заказа (1.6 «Склад и заказ»). */
     @Transactional(readOnly = true)
     public UUID defaultLocationId() {
