@@ -1,0 +1,18 @@
+meta {
+  name: Download waybill pdf
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/api/v1/waybills/:id/pdf
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: waybill-uuid
+}

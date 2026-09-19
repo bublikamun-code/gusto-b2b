@@ -2203,6 +2203,139 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /waybills:
+    post:
+      tags: [invoices]
+      summary: Оформить ТН/ТТН из заказа (S26; ADMIN/ACCOUNTANT/MANAGER)
+      description: |
+        Документ создаётся окончательным снапшотом (по V1 статусов нет): стороны,
+        транспорт (ТТН), позиции с массой (кол-во × вес единицы), НДС расчётно (2.3).
+        PDF формируется сразу и хранится в files как PRIVATE (1.6).
+        Номер ТН-<серия>-N / ТТН-<серия>-N по sequence (2.2), серия из settings.
+        Розница и отменённые заказы → 400.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WaybillCreateRequest" }
+      responses:
+        "201":
+          description: Накладная оформлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WaybillResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    get:
+      tags: [invoices]
+      summary: Список накладных (ADMIN/ACCOUNTANT — все; MANAGER — своих клиентов)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница накладных
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Waybill" }
+
+  /waybills/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [invoices]
+      summary: Накладная с позициями (персонал или клиент своей компании)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Накладная
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WaybillResponse" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /waybills/{id}/pdf:
+    get:
+      tags: [invoices]
+      summary: PDF накладной (S26)
+      description: PRIVATE-файл; attachment по правилу S17.1.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: PDF-документ
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /cabinet/waybills:
+    get:
+      tags: [cabinet]
+      summary: Накладные компании клиента (S26; юрлицо — свои)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница накладных компании
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Waybill" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /cabinet/waybills/{id}/pdf:
+    get:
+      tags: [cabinet]
+      summary: PDF своей накладной (S26; юрлицо)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: PDF-документ
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /cabinet/profile:
     get:
       tags: [cabinet]
@@ -3189,6 +3322,59 @@ components:
         - $ref: "#/components/schemas/Envelope"
         - properties:
             data: { $ref: "#/components/schemas/Invoice" }
+
+    # ----- ТН/ТТН (S26) -----------------------------------------------------------
+    WaybillType:
+      type: string
+      enum: [TN, TTN]
+    WaybillCreateRequest:
+      type: object
+      required: [orderId, type]
+      properties:
+        orderId: { type: string, format: uuid }
+        type: { $ref: "#/components/schemas/WaybillType" }
+        invoiceId: { type: string, format: uuid, nullable: true, description: "Счёт, к которому привязана накладная" }
+        consigneeName: { type: string, nullable: true, description: "Грузополучатель, если отличается от покупателя" }
+        consigneeAddress: { type: string, nullable: true }
+        vehicle: { type: string, nullable: true, description: "Автомобиль (ТТН)" }
+        driver: { type: string, nullable: true, description: "Водитель (ТТН)" }
+        carrierCompany: { type: string, nullable: true, description: "Организация-перевозчик (ТТН)" }
+    Waybill:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: "#/components/schemas/WaybillType" }
+        displayNumber: { type: string, example: "ТТН-A-1 от 12.08.2026" }
+        number: { type: string, example: "ТТН-A-1" }
+        series: { type: string, example: "A" }
+        issueDate: { type: string, format: date }
+        orderId: { type: string, format: uuid }
+        invoiceId: { type: string, format: uuid, nullable: true }
+        sellerSnapshot: { type: object, additionalProperties: true, description: "Грузоотправитель" }
+        buyerSnapshot: { type: object, additionalProperties: true, description: "Заказчик (плательщик); при отличии — вложенный consignee" }
+        carrierSnapshot: { type: object, additionalProperties: true, nullable: true, description: "Авто/водитель/перевозчик (ТТН)" }
+        totalAmount: { type: number }
+        totalVat: { type: number, description: "НДС выделен расчётно (2.3)" }
+        totalWeight: { type: number, description: "Масса груза, кг" }
+        createdAt: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sku: { type: string }
+              productName: { type: string }
+              unit: { type: string, nullable: true }
+              quantity: { type: number }
+              unitPrice: { type: number }
+              vatRate: { type: number }
+              total: { type: number }
+              weight: { type: number, nullable: true }
+    WaybillResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Waybill" }
 
     DeliveryType:
       type: string

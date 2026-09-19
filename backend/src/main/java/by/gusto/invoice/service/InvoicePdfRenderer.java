@@ -1,26 +1,21 @@
 package by.gusto.invoice.service;
 
+import by.gusto.common.pdf.BrandPdfSupport;
 import by.gusto.invoice.entity.InvoiceEntity;
 import by.gusto.invoice.entity.InvoiceItem;
-import com.lowagie.text.pdf.BaseFont;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
  * Рендер счёта в PDF (S25): XHTML-шаблон в фирменном стиле (бордо #7C2D24,
  * сливки #F5EDDE, графит #26201C; Russo One / Oswald / Rubik — бренд-бук 1.7).
- * Кириллические TTF лежат в classpath (fonts/) и встраиваются в документ
- * (BaseFont.IDENTITY_H); шрифты OFL, кириллица проверена при подключении.
+ * Шрифты — в classpath fonts/, встраиваются (IDENTITY_H), см. BrandPdfSupport.
  */
 @Service
 @RequiredArgsConstructor
@@ -28,18 +23,12 @@ public class InvoicePdfRenderer {
 
     private static final DateTimeFormatter RU_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    private static final String[][] FONTS = {
-            {"fonts/RussoOne-Regular.ttf", "Russo One"},
-            {"fonts/Oswald-Regular.ttf", "Oswald"},
-            {"fonts/Rubik-Regular.ttf", "Rubik"},
-    };
+    private final BrandPdfSupport brand;
 
     public byte[] render(InvoiceEntity invoice, List<InvoiceItem> items) {
         try {
             ITextRenderer renderer = new ITextRenderer();
-            for (String[] font : FONTS) {
-                renderer.getFontResolver().addFont(tempCopy(font[0]), BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            }
+            brand.registerFonts(renderer);
             renderer.setDocumentFromString(xhtml(invoice, items));
             renderer.layout();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -54,13 +43,13 @@ public class InvoicePdfRenderer {
         StringBuilder rows = new StringBuilder();
         for (InvoiceItem item : items) {
             rows.append("<tr>")
-                    .append("<td>").append(esc(text(item, "name"))).append("</td>")
-                    .append("<td class=\"num\">").append(esc(text(item, "sku"))).append("</td>")
-                    .append("<td class=\"num\">").append(plain(item.getQuantity())).append("</td>")
-                    .append("<td class=\"num\">").append(esc(text(item, "unit"))).append("</td>")
-                    .append("<td class=\"num\">").append(plain(item.getUnitPrice())).append("</td>")
+                    .append("<td>").append(brand.esc(brand.text(item.getProductSnapshot(), "name"))).append("</td>")
+                    .append("<td class=\"num\">").append(brand.esc(brand.text(item.getProductSnapshot(), "sku"))).append("</td>")
+                    .append("<td class=\"num\">").append(item.getQuantity().toPlainString()).append("</td>")
+                    .append("<td class=\"num\">").append(brand.esc(brand.text(item.getProductSnapshot(), "unit"))).append("</td>")
+                    .append("<td class=\"num\">").append(item.getUnitPrice().toPlainString()).append("</td>")
                     .append("<td class=\"num\">").append(item.getVatRate().stripTrailingZeros().toPlainString()).append("</td>")
-                    .append("<td class=\"num\">").append(plain(item.getTotal())).append("</td>")
+                    .append("<td class=\"num\">").append(item.getTotal().toPlainString()).append("</td>")
                     .append("</tr>");
         }
 
@@ -136,55 +125,15 @@ public class InvoicePdfRenderer {
                 </body>
                 </html>
                 """
-                .replace("@@NUMBER@@", esc(invoice.getNumber() + " от " + invoice.getIssueDate().format(RU_DATE)))
-                .replace("@@SELLER@@", requisites(invoice.getSellerSnapshot()))
-                .replace("@@BUYER@@", requisites(invoice.getBuyerSnapshot()))
+                .replace("@@NUMBER@@", brand.esc(invoice.getNumber() + " от " + invoice.getIssueDate().format(RU_DATE)))
+                .replace("@@SELLER@@", brand.requisites(invoice.getSellerSnapshot(),
+                        new String[]{"name", "unp", "address", "bank_account", "bank_name", "bank_bic"},
+                        new String[]{null, "УНП", null, "р/с", "банк", "БИК"}))
+                .replace("@@BUYER@@", brand.requisites(invoice.getBuyerSnapshot(),
+                        new String[]{"name", "unp", "address", "bank_account", "bank_name", "bank_bic"},
+                        new String[]{null, "УНП", null, "р/с", "банк", "БИК"}))
                 .replace("@@ROWS@@", rows)
-                .replace("@@TOTAL@@", plain(invoice.getTotalAmount()))
-                .replace("@@VAT@@", plain(invoice.getTotalVat()));
-    }
-
-    private String requisites(java.util.Map<String, Object> map) {
-        if (map == null) {
-            return "";
-        }
-        String[] keys = {"name", "unp", "address", "bank_account", "bank_name", "bank_bic"};
-        String[] labels = {null, "УНП", null, "р/с", "банк", "БИК"};
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < keys.length; i++) {
-            Object value = map.get(keys[i]);
-            if (value == null || String.valueOf(value).isBlank()) {
-                continue;
-            }
-            if (sb.length() > 0) {
-                sb.append("<br/>");
-            }
-            sb.append(labels[i] == null ? "" : labels[i] + " ")
-                    .append(esc(String.valueOf(value)));
-        }
-        return sb.toString();
-    }
-
-    private String text(InvoiceItem item, String key) {
-        Object value = item.getProductSnapshot().get(key);
-        return value == null ? "" : String.valueOf(value);
-    }
-
-    private String plain(BigDecimal value) {
-        return value == null ? "" : value.toPlainString();
-    }
-
-    private String esc(String value) {
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-    }
-
-    /** Flying Saucer читает шрифты с файловой системы — извлекаем из classpath во временный файл. */
-    private String tempCopy(String classpath) throws Exception {
-        Path tmp = Files.createTempFile("gusto-font-", ".ttf");
-        try (InputStream in = new ClassPathResource(classpath).getInputStream()) {
-            Files.copy(in, tmp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        }
-        tmp.toFile().deleteOnExit();
-        return tmp.toAbsolutePath().toString();
+                .replace("@@TOTAL@@", invoice.getTotalAmount().toPlainString())
+                .replace("@@VAT@@", invoice.getTotalVat().toPlainString());
     }
 }
