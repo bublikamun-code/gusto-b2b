@@ -171,12 +171,20 @@ public class InvoiceService {
             throw new GustoException(ErrorCode.INVOICE_INVALID_STATE,
                     "Отменить можно черновик или выпущенный счёт, текущий статус: " + invoice.getStatus());
         }
+        // счёт с платежами не отменяется (S28): сначала сторнировать оплаты
+        Integer payments = jdbcTemplate.queryForObject(
+                "select count(*) from payments where invoice_id = ?", Integer.class, invoiceId);
+        if (payments != null && payments > 0) {
+            throw new GustoException(ErrorCode.INVOICE_INVALID_STATE,
+                    "Счёт имеет зарегистрированные платежи и не может быть отменён");
+        }
         // PARTIALLY_PAID/PAID не достижимы до S28; тут — консервативный запрет на отмену оплаченного
+        Status before = invoice.getStatus();
         invoice.setStatus(Status.CANCELLED);
         invoice = invoiceRepository.save(invoice);
 
         auditService.append(actor.getId(), "INVOICE_CANCEL", "invoice", invoice.getId(),
-                Map.of("status", invoice.getStatus().name()),
+                Map.of("status", before.name()),
                 Map.of("status", Status.CANCELLED.name(), "number", invoice.getNumber()));
 
         return toResponse(invoice, invoiceItemRepository.findAllByInvoiceId(invoiceId));

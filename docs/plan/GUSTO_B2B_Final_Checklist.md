@@ -823,6 +823,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(frontend): documents lists and download`.
 
 ### S28 [B] Платежи и задолженность
+> ✅ Выполнено 2026-09-19 [B] — модуль `by.gusto.payment` (таблица `payments` из V1): `POST /invoices/{id}/payments` (только ISSUED/PARTIALLY_PAID → 409 `INVOICE_INVALID_STATE` иначе; сумма > 0 и ≤ остатка долга — переплата → 400; `paidAt/method/note`), автоматика статусов: Σ < итог → `PARTIALLY_PAID`, ≥ итога → `PAID` (аудит `PAYMENT_REGISTER` с before/after); `GET /invoices/{id}/payments` — история; запрет отмены счёта с платежами в `InvoiceService.cancel` (409, без цикла модулей — count через JdbcTemplate) + фикс бага before/after аудита отмены; отчёт `GET /invoices/debts` (ADMIN/ACCOUNTANT): по компаниям с активными счетами — invoiced (ISSUED+PARTIALLY_PAID), paid, долг > 0, дата счёта; OpenAPI (3 пути, схемы Payment/DebtRow) + Bruno; 3 интеграционных теста (100 зелёных): частичная→полная оплата с историей и аудитом, запрет переплаты/отмены, агрегация долга по компаниям (оплаченный счёт не попадает в отчёт).
+
 - `payments`, статусы счёта: частичная оплата → PARTIALLY_PAID, полная → PAID; остаток долга по компании.
 - Отчёт «задолженность по клиентам».
 - **Приёмка:** тесты статусов и сводки долга.
