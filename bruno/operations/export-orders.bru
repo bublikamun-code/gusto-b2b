@@ -1,0 +1,14 @@
+meta {
+  name: Export orders xlsx
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{host}}/api/v1/admin/export/orders?from=2026-09-01&to=2026-09-19
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

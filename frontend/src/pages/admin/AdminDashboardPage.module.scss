@@ -1,0 +1,62 @@
+@use "../../styles/tokens" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: -0.75rem 0 0;
+  color: rgba($color-graphite, 0.6);
+  font-size: 0.9375rem;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid rgba($color-graphite, 0.12);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  height: 100%;
+
+  &:hover {
+    border-color: $color-line;
+  }
+}
+
+.tileAccent {
+  border-color: rgba($color-bordeaux, 0.55);
+  background: rgba($color-yolk, 0.08);
+}
+
+.tileValue {
+  font-family: $font-display;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tileLabel {
+  color: rgba($color-graphite, 0.65);
+  font-size: 0.875rem;
+}
+
+.tileHint {
+  color: rgba($color-graphite, 0.55);
+  font-size: 0.8125rem;
+}

@@ -20,6 +20,9 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import AdminCmsPage from "./pages/admin/AdminCmsPage";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
+import AdminAuditPage from "./pages/admin/AdminAuditPage";
+import AdminIntegrationPage from "./pages/admin/AdminIntegrationPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import ManagerOrdersPage from "./pages/manager/ManagerOrdersPage";
 import ManagerOrderCreatePage from "./pages/manager/ManagerOrderCreatePage";
@@ -70,6 +73,8 @@ export default function App() {
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
               {/* Документы (S27): счета/накладные, создание из заказа — первая раздел-страница бухгалтера */}
               <Route path="/admin/documents" element={<DocumentsPage />} />
+              {/* Обмен 1С (S38): мастер импорта/экспорта — ADMIN/ACCOUNTANT, как S35 */}
+              <Route path="/admin/integration" element={<AdminIntegrationPage />} />
               {/* CRUD-разделы только для ADMIN: у других ролей бэкенд на /admin/** отдаёт 403 */}
               <Route element={<RoleGuard allowed={["ADMIN"]} />}>
                 <Route path="/admin/users" element={<AdminUsersPage />} />
@@ -77,6 +82,9 @@ export default function App() {
                 <Route path="/admin/products" element={<AdminProductsPage />} />
                 {/* CMS (S37): статьи draft/published */}
                 <Route path="/admin/cms" element={<AdminCmsPage />} />
+                {/* Операционный центр (S38): настройки и журнал аудита — ADMIN */}
+                <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                <Route path="/admin/audit" element={<AdminAuditPage />} />
               </Route>
             </Route>
           </Route>

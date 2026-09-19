@@ -1,0 +1,21 @@
+meta {
+  name: Settings stock update
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{host}}/api/v1/admin/settings/stock
+  auth: bearer
+  body: json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "defaultLocationId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+  }
+}

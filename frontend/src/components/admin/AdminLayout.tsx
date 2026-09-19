@@ -25,12 +25,19 @@ export function AdminLayout() {
     { to: "/admin/documents", label: "Документы" },
     // Склад (S18.4): ADMIN/ACCOUNTANT/MANAGER по матрице 2.1
     { to: "/warehouse/balance", label: "Склад" },
+    // Обмен 1С (S38): права как у импорта S35 — ADMIN/ACCOUNTANT
+    ...(user?.role === "ADMIN" || user?.role === "ACCOUNTANT"
+      ? [{ to: "/admin/integration", label: "Обмен 1С" }]
+      : []),
     ...(user?.role === "ADMIN"
       ? [
           { to: "/admin/users", label: "Пользователи" },
           { to: "/admin/companies", label: "Компании" },
           { to: "/admin/products", label: "Товары" },
           { to: "/admin/cms", label: "Страницы" },
+          // Операционный центр (S38): настройки и аудит — только ADMIN
+          { to: "/admin/settings", label: "Настройки" },
+          { to: "/admin/audit", label: "Аудит" },
         ]
       : []),
   ];

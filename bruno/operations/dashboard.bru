@@ -1,0 +1,14 @@
+meta {
+  name: Operations dashboard
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{host}}/api/v1/admin/operations/dashboard
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

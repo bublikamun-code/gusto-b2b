@@ -30,6 +30,7 @@ public class EmailNotificationChannel implements OutboxChannel {
     private final NotificationSubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final by.gusto.common.settings.SettingsService settingsService;
 
     @Value("${app.base-url}")
     private String appBaseUrl;
@@ -45,6 +46,13 @@ public class EmailNotificationChannel implements OutboxChannel {
     public boolean send(OutboxMessage message) {
         if (!emailSender.isEnabled()) {
             log.info("EMAIL выключен: событие {} пропущено", message.getType());
+            return true;
+        }
+        // служебные письма (подтверждение, сброс) правилами не управляются;
+        // бизнес-события — как в Telegram (S38)
+        if (!message.getType().startsWith("EMAIL_")
+                && !settingsService.notificationEnabled(message.getType())) {
+            log.info("EMAIL: событие {} отключено правилами уведомлений", message.getType());
             return true;
         }
         switch (message.getType()) {
