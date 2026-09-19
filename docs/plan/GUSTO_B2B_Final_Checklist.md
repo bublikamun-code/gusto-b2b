@@ -891,6 +891,8 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 7 — Обмен с 1С, CMS, админка
 
 ### S35 [B] Импорт прайсов/остатков из 1С (.xlsx)
+> ✅ Выполнено 2026-09-19 [B] — Apache POI 5.2.5; миграция V19 (статусы `integration_files` по словарю 2.8 UPLOADED/PROCESSING/DONE/FAILED); модуль `by.gusto.integration`: `POST /admin/import/prices?archiveMissing=` и `POST /admin/import/stock` (multipart .xlsx, только ADMIN/ACCOUNTANT, матрица 2.1); парсинг A=SKU/B=значение с заголовком, upsert цен по SKU в активный прайс-лист (создаётся при отсутствии), остатки — дельта к складу по умолчанию через `applyMovement` (reference IMPORT_1C), опция «отсутствующие в файле → архив» (is_active=false, только для прайсов и по флагу); отчёт rowsTotal/Ok/Error + ошибки с номерами строк (CSV в `error_log_file_id`), файл и отчёт в `integration_files`+`files` (PRIVATE), результат в audit_log; исходный файл сохраняется до парсинга; 3 интеграционных теста (113 зелёных): upsert цен с отчётом ошибок + аудит, дельта остатков + 403 менеджеру, 1000 строк < 30 с (приёмка).
+
 - `POST /admin/import/prices` и `/stock` (Apache POI).
 - Отчёт по строкам (ok/error с номером строки), `integration_files` (статусы — словарь 2.8).
 - Правило конфликтов: upsert по SKU; отсутствующие → архив (флаг).
