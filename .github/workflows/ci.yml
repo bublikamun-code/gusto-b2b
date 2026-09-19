@@ -47,9 +47,33 @@ jobs:
         run: npm ci --prefix frontend
       - name: Generate API types
         run: npm run generate-api --prefix frontend   # заодно валидирует shared/openapi.yaml
+      - name: Audit prod dependencies (S40)
+        run: npm audit --omit=dev --audit-level=high --prefix frontend
       - name: Lint
         run: npm run lint --prefix frontend
       - name: Test
         run: npm run test --prefix frontend
       - name: Build
         run: npm run build --prefix frontend
+
+  # S40: сканирование зависимостей backend. Информационная (continue-on-error):
+  # без NVD_API_KEY OWASP упирается в rate limit NVD. Когда появится секрет
+  # NVD_API_KEY (S41) — убрать continue-on-error и джоба станет блокирующей.
+  dependency-scan:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Outdated dependencies report
+        run: mvn -B versions:display-dependency-updates -f backend/pom.xml -DprocessDependencyManagement=false || true
+      - name: OWASP dependency-check
+        run: >
+          mvn -B org.owasp:dependency-check-maven:check -f backend/pom.xml
+          -DfailBuildOnCVSS=9
+          -DnvdApiKey=${{ secrets.NVD_API_KEY || '' }}
+          -Dformat=HTML
