@@ -2203,6 +2203,82 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /invoices/{id}/payments:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [invoices]
+      summary: Зарегистрировать платёж по счёту (S28; ADMIN/ACCOUNTANT)
+      description: |
+        Только для ISSUED/PARTIALLY_PAID. Сумма ≤ остатка долга (переплата → 400).
+        Σ платежей = итог счёта → PAID, меньше → PARTIALLY_PAID.
+        Счёт с платежами не отменяется (409 `INVOICE_INVALID_STATE`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentRequest" }
+      responses:
+        "200":
+          description: Платёж зарегистрирован
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Недопустимый статус счёта (`INVOICE_INVALID_STATE`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    get:
+      tags: [invoices]
+      summary: История платежей счёта (S28; ADMIN/ACCOUNTANT)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Платежи счёта
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Payment" }
+
+  /invoices/debts:
+    get:
+      tags: [invoices]
+      summary: Отчёт «задолженность по клиентам» (S28; ADMIN/ACCOUNTANT)
+      description: >-
+        Компании с активными счетами (ISSUED/PARTIALLY_PAID) — выставлено,
+        оплачено, долг больше нуля.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Строки долга по компаниям
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/DebtRow" }
+
   /waybills:
     post:
       tags: [invoices]
@@ -3375,6 +3451,40 @@ components:
         - $ref: "#/components/schemas/Envelope"
         - properties:
             data: { $ref: "#/components/schemas/Waybill" }
+
+    # ----- Платежи (S28) ----------------------------------------------------------
+    PaymentRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount: { type: number, description: "Сумма платежа ≤ остатка долга" }
+        paidAt: { type: string, format: date, nullable: true, description: "По умолчанию — сегодня" }
+        method: { type: string, nullable: true, description: "Безнал / наличные / ЕРИП" }
+        note: { type: string, nullable: true }
+    Payment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        invoiceId: { type: string, format: uuid }
+        amount: { type: number }
+        paidAt: { type: string, format: date }
+        method: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    PaymentResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Payment" }
+    DebtRow:
+      type: object
+      properties:
+        companyId: { type: string, format: uuid }
+        companyName: { type: string }
+        invoiced: { type: number, description: "Сумма активных счетов (ISSUED + PARTIALLY_PAID)" }
+        paid: { type: number, description: "Оплачено по активным счетам" }
+        debt: { type: number, description: "Остаток долга (> 0)" }
+        oldestActiveAt: { type: string, format: date-time, nullable: true }
 
     DeliveryType:
       type: string

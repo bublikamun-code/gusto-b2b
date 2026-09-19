@@ -1,0 +1,14 @@
+meta {
+  name: Debts report
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{host}}/api/v1/invoices/debts
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
