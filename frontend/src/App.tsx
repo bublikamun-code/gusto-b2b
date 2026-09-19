@@ -19,6 +19,7 @@ import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminCompaniesPage from "./pages/admin/AdminCompaniesPage";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
+import AdminCmsPage from "./pages/admin/AdminCmsPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import ManagerOrdersPage from "./pages/manager/ManagerOrdersPage";
 import ManagerOrderCreatePage from "./pages/manager/ManagerOrderCreatePage";
@@ -32,11 +33,10 @@ import CabinetOrdersPage from "./pages/cabinet/CabinetOrdersPage";
 import HomePage from "./pages/public/HomePage";
 import CatalogPage from "./pages/public/CatalogPage";
 import ProductPage from "./pages/public/ProductPage";
-import DeliveryPage from "./pages/public/DeliveryPage";
-import AboutPage from "./pages/public/AboutPage";
 import ContactsPage from "./pages/public/ContactsPage";
 import PrivacyPage from "./pages/public/PrivacyPage";
 import BecomeClientPage from "./pages/public/BecomeClientPage";
+import CmsPageView from "./pages/public/CmsPageView";
 import { initChat } from "./chat";
 import WarehouseBalancePage from "./pages/warehouse/WarehouseBalancePage";
 import WarehouseDocumentsPage from "./pages/warehouse/WarehouseDocumentsPage";
@@ -75,6 +75,8 @@ export default function App() {
                 <Route path="/admin/users" element={<AdminUsersPage />} />
                 <Route path="/admin/companies" element={<AdminCompaniesPage />} />
                 <Route path="/admin/products" element={<AdminProductsPage />} />
+                {/* CMS (S37): статьи draft/published */}
+                <Route path="/admin/cms" element={<AdminCmsPage />} />
               </Route>
             </Route>
           </Route>
@@ -126,8 +128,9 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/products/:sku" element={<ProductPage />} />
-            <Route path="/delivery" element={<DeliveryPage />} />
-            <Route path="/about" element={<AboutPage />} />
+            {/* CMS (S37): «О нас» и «Доставка» из БД (fallback — старые страницы) */}
+            <Route path="/delivery" element={<CmsPageView slug="delivery" fallbackTitle="Доставка" />} />
+            <Route path="/about" element={<CmsPageView slug="about" fallbackTitle="О нас" />} />
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/become-client" element={<BecomeClientPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

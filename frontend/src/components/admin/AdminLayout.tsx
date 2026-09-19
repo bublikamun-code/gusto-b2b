@@ -30,6 +30,7 @@ export function AdminLayout() {
           { to: "/admin/users", label: "Пользователи" },
           { to: "/admin/companies", label: "Компании" },
           { to: "/admin/products", label: "Товары" },
+          { to: "/admin/cms", label: "Страницы" },
         ]
       : []),
   ];
