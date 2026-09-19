@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest, refreshSession } from "./client";
 import { useAuthStore } from "../store/authStore";
 import type {
   LoginPayload,
@@ -16,9 +16,8 @@ export function login(body: LoginRequest): Promise<LoginPayload> {
 }
 
 export function refresh(): Promise<{ accessToken: string; expiresIn: number }> {
-  return apiRequest<{ accessToken: string; expiresIn: number }>("/auth/refresh", {
-    method: "POST",
-  });
+  // single-flight из client.ts: две ротации подряд отзываются друг о друге
+  return refreshSession().then((r) => ({ ...r, expiresIn: 900 }));
 }
 
 export function logout(): Promise<void> {

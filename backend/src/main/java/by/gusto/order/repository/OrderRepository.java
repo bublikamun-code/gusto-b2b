@@ -15,8 +15,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
 
     Page<OrderEntity> findAllByCustomerCompanyIdOrderByCreatedAtDesc(UUID customerCompanyId, Pageable pageable);
 
+    // «свои + пул» (2.7): заказы клиента, взятые менеджером, и не назначенные (пул).
+    // Пул раньше терялся — модалка «Выставить счёт из заказа» была пуста (нашёл E2E S39).
     @Query("select o from OrderEntity o where "
-            + "(o.customerUserId = :userId or o.managerId = :userId) "
+            + "(o.customerUserId = :userId or o.managerId = :userId or o.managerId is null) "
             + "order by o.createdAt desc")
     Page<OrderEntity> findAllVisibleTo(@Param("userId") UUID userId, Pageable pageable);
 

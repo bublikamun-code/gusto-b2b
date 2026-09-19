@@ -13,6 +13,11 @@ backend/data/
 # node
 frontend/node_modules/
 frontend/dist/
+e2e/node_modules/
+
+# e2e / playwright (S39)
+e2e/playwright-report/
+e2e/test-results/
 
 # ide / os
 .idea/

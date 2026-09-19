@@ -11,6 +11,9 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/gusto}
     username: ${SPRING_DATASOURCE_USERNAME:gusto}
     password: ${SPRING_DATASOURCE_PASSWORD:gusto}
+    hikari:
+      # S39: при 100 RPS пула по умолчанию (10) не хватает — растёт p95 каталога
+      maximum-pool-size: 20
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}

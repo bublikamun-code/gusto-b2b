@@ -46,6 +46,23 @@ function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
+/**
+ * Silent-refresh для AuthInit: single-flight обязателен, иначе два параллельных
+ * вызова (StrictMode в dev монтирует AuthInit дважды) ротируют refresh-токен
+ * дважды, и часть запросов уходит с уже отозванным access-токеном.
+ */
+export function refreshSession(): Promise<{ accessToken: string }> {
+  return refreshAccessToken().then((token) => {
+    if (!token) {
+      throw {
+        code: "AUTH_REFRESH_INVALID",
+        message: "Refresh-токен недействителен",
+      } as ApiError;
+    }
+    return { accessToken: token };
+  });
+}
+
 export interface ListResponse<T> {
   items: T[];
   page: number;
@@ -54,7 +71,7 @@ export interface ListResponse<T> {
 }
 
 async function apiRawRequest<T>(path: string, options: InternalOptions = {}): Promise<ApiEnvelope<T>> {
-  const { token, body, __retried, ...rest } = options;
+  const { token: explicitToken, body, __retried, ...rest } = options;
   const url = `${API_BASE}${path}`;
   const headers = new Headers(rest.headers);
   headers.set("Accept", "application/json");
@@ -62,6 +79,9 @@ async function apiRawRequest<T>(path: string, options: InternalOptions = {}): Pr
   if (body !== undefined && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
+  // по умолчанию берём токен из стора: часть модулей (cart, cabinet, crm, orders)
+  // не передаёт его явно — без этого их запросы уходят без Authorization (S39 E2E)
+  const token = explicitToken ?? useAuthStore.getState().accessToken ?? undefined;
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }

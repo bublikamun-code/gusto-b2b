@@ -1,0 +1,15 @@
+{
+  "name": "gusto-b2b-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "E2E-тесты полного цикла (S39): Playwright поверх docker compose стека",
+  "scripts": {
+    "test": "playwright test",
+    "test:showcase": "playwright test showcase",
+    "test:cycle": "playwright test full-cycle",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}
