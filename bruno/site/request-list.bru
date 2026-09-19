@@ -1,0 +1,14 @@
+meta {
+  name: List site requests
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/api/v1/crm/site-requests?status=NEW
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

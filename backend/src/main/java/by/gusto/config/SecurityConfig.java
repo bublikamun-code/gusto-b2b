@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/healthz", "/readyz", "/actuator/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/catalog/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/site/requests").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/files/**").permitAll()
                         .anyRequest().authenticated()
                 )
