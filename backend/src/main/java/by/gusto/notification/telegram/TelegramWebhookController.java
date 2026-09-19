@@ -26,6 +26,7 @@ public class TelegramWebhookController {
 
     private final TelegramProperties properties;
     private final SubscriptionService subscriptionService;
+    private final by.gusto.common.settings.SettingsService settingsService;
 
     @PostMapping("/webhook")
     public ResponseEntity<Map<String, Object>> webhook(
@@ -67,7 +68,7 @@ public class TelegramWebhookController {
 
     private void reply(TelegramProperties properties, String chatId, String text) {
         try {
-            new TelegramApiClient(properties).sendMessage(chatId, text);
+            new TelegramApiClient(properties, settingsService).sendMessage(chatId, text);
         } catch (Exception e) {
             log.warn("TELEGRAM ответ не отправлен: {}", e.getMessage());
         }

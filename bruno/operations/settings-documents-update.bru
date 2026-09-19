@@ -1,0 +1,23 @@
+meta {
+  name: Settings documents update
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{host}}/api/v1/admin/settings/documents
+  auth: bearer
+  body: json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "seriesTtn": "A",
+    "seriesTn": "A",
+    "vatDefault": 10
+  }
+}

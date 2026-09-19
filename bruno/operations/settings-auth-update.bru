@@ -1,0 +1,21 @@
+meta {
+  name: Settings auth gate update
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{host}}/api/v1/admin/settings/auth
+  auth: bearer
+  body: json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "requireEmailConfirmation": false
+  }
+}

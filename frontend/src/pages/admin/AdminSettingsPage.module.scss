@@ -1,0 +1,38 @@
+@use "../../styles/tokens" as *;
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.rules {
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 90px 1fr 2fr;
+  gap: 0.75rem;
+  align-items: start;
+  border-top: 1px dashed var(--color-border, #e5e5e0);
+  padding-top: 0.75rem;
+}

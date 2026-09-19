@@ -1,0 +1,26 @@
+meta {
+  name: Settings seller update
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{host}}/api/v1/admin/settings/seller
+  auth: bearer
+  body: json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "ЧТУП «ЛорСан»",
+    "unp": "191536521",
+    "address": "220028 г. Минск, ул. Бородинская, д. 1Б, пом. 14, РБ",
+    "bankAccount": "",
+    "bankName": "",
+    "bankBic": ""
+  }
+}

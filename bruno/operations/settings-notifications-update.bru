@@ -1,0 +1,27 @@
+meta {
+  name: Settings notifications update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{host}}/api/v1/admin/settings/notifications
+  auth: bearer
+  body: json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "telegramBotToken": null,
+    "rules": {
+      "ORDER_CREATED": true,
+      "ORDER_STATUS_CHANGED": true,
+      "INVOICE_ISSUED": true,
+      "SITE_REQUEST_CREATED": true
+    }
+  }
+}

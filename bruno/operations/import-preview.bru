@@ -1,0 +1,19 @@
+meta {
+  name: Import preview
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{host}}/api/v1/admin/import/prices/preview?archiveMissing=false
+  auth: bearer
+  body: multipart
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:multipart {
+  file: @prices.xlsx
+}

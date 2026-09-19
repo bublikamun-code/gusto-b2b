@@ -155,6 +155,40 @@ public class XlsxImportService {
 
     // ----- internals -------------------------------------------------------------
 
+    /**
+     * Предпросмотр импорта (S38): разбор и валидация без записи — мастер
+     * показывает строки и ошибки до применения. Список строк обрезан до 100.
+     */
+    @Transactional(readOnly = true)
+    public by.gusto.integration.dto.ImportPreview preview(MultipartFile file, String type) {
+        String expected = "prices".equalsIgnoreCase(type) ? "PRICES" : "STOCK";
+        if (!"PRICES".equals(expected) && !"STOCK".equals(expected)) {
+            throw new GustoException(ErrorCode.VALIDATION_FAILED, "Неизвестный тип импорта: " + type);
+        }
+        List<ParsedRow> rows = parse(file, expected);
+        List<by.gusto.integration.dto.ImportPreview.RowPreview> rowsOut = new ArrayList<>();
+        int errors = 0;
+        for (ParsedRow parsed : rows) {
+            boolean ok = parsed.error() == null;
+            String message = parsed.error();
+            if (ok) {
+                Optional<Product> product = productRepository.findBySkuAndDeletedAtIsNull(parsed.sku());
+                if (product.isEmpty()) {
+                    ok = false;
+                    message = "Товар не найден: " + parsed.sku();
+                }
+            }
+            if (!ok) {
+                errors++;
+            }
+            if (rowsOut.size() < 100) {
+                rowsOut.add(new by.gusto.integration.dto.ImportPreview.RowPreview(
+                        parsed.rowNumber(), parsed.sku(), parsed.value(), ok, message));
+            }
+        }
+        return new by.gusto.integration.dto.ImportPreview(expected, rows.size(), errors, rowsOut);
+    }
+
     /** Upsert цены в активном прайс-листе (создаётся, если нет). */
     private void upsertPrice(Product product, BigDecimal price, PriceList priceList,
                              Map<UUID, ProductPrice> existingPrices) {

@@ -2965,6 +2965,246 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  # ----- Операционный центр (S38) ---------------------------------------------
+
+  /admin/settings:
+    get:
+      tags: [admin]
+      summary: Сводка настроек операционного центра (только ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Настройки по группам; locations — доступные склады
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/settings/seller:
+    put:
+      tags: [admin]
+      summary: Реквизиты продавца (попадают в снапшоты новых документов)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerSettings" }
+      responses:
+        "200":
+          description: Обновлено; возвращается сводка настроек
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/settings/documents:
+    put:
+      tags: [admin]
+      summary: Серии ТН/ТТН и НДС по умолчанию
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DocumentSettings" }
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/settings/notifications:
+    put:
+      tags: [admin]
+      summary: Токен Telegram (write-only) и правила уведомлений (2.6)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationSettingsRequest" }
+      responses:
+        "200":
+          description: Обновлено; токен не возвращается никогда
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/settings/stock:
+    put:
+      tags: [admin]
+      summary: Склад по умолчанию (1.6)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StockSettings" }
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/settings/auth:
+    put:
+      tags: [admin]
+      summary: Гейт подтверждения email при саморегистрации (S08.1)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthSettings" }
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/settings/landing:
+    put:
+      tags: [admin]
+      summary: Тексты лендинга (hero, блок доставки); пустые значения → дефолты витрины
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LandingSettings" }
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettingsResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/audit:
+    get:
+      tags: [admin]
+      summary: Журнал аудита с фильтрами (только ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - name: action
+          in: query
+          schema: { type: string }
+          description: Префикс действия, например SETTINGS_UPDATE
+        - name: targetType
+          in: query
+          schema: { type: string }
+        - name: targetId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: actorId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date }
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Записи журнала, новые сверху
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditListResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/operations/dashboard:
+    get:
+      tags: [admin]
+      summary: Дашборд процессов (ADMIN/ACCOUNTANT)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Сводка за сегодня + списки проблемных позиций и задач
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationsDashboardResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/import/{type}/preview:
+    post:
+      tags: [admin]
+      summary: "Предпросмотр импорта 1С: разбор и валидация без записи (ADMIN/ACCOUNTANT)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: [prices, stock] }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: .xlsx, колонки A=SKU, B=значение
+      responses:
+        "200":
+          description: Строки с результатом валидации (обрезано до 100)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportPreviewResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /cms/landing:
+    get:
+      tags: [cms]
+      summary: Публичные тексты лендинга из настроек; пустые объекты → дефолты витрины
+      security: []
+      responses:
+        "200":
+          description: hero и delivery (могут быть пустыми объектами)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicLanding" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -4272,3 +4512,195 @@ components:
             data:
               type: array
               items: { $ref: "#/components/schemas/ProductImage" }
+    # ----- Операционный центр (S38) ---------------------------------------------
+    SettingsResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Settings" }
+    Settings:
+      type: object
+      properties:
+        seller: { $ref: "#/components/schemas/SellerSettings" }
+        documents: { $ref: "#/components/schemas/DocumentSettings" }
+        notifications: { $ref: "#/components/schemas/NotificationSettings" }
+        stock: { $ref: "#/components/schemas/StockSettings" }
+        auth: { $ref: "#/components/schemas/AuthSettings" }
+        landing:
+          nullable: true
+          $ref: "#/components/schemas/LandingSettings"
+        locations:
+          type: array
+          description: Склады для выбора склада по умолчанию
+          items: { $ref: "#/components/schemas/LocationOption" }
+    SellerSettings:
+      type: object
+      required: [name, unp]
+      properties:
+        name: { type: string }
+        unp: { type: string }
+        address: { type: string }
+        bankAccount: { type: string }
+        bankName: { type: string }
+        bankBic: { type: string }
+    DocumentSettings:
+      type: object
+      required: [seriesTtn, seriesTn, vatDefault]
+      properties:
+        seriesTtn: { type: string, minLength: 1 }
+        seriesTn: { type: string, minLength: 1 }
+        vatDefault: { type: number, minimum: 0, maximum: 25 }
+    NotificationSettings:
+      type: object
+      description: Токен write-only и не возвращается; tokenSource — settings|env
+      properties:
+        telegramBotToken:
+          type: string
+          nullable: true
+          description: "PUT: null — не менять, пустая строка — убрать, значение — записать"
+        telegramTokenSet: { type: boolean }
+        telegramTokenSource: { type: string, enum: [settings, env, none] }
+        rules:
+          type: object
+          description: Тип события → включено (отсутствует = включено)
+          additionalProperties: { type: boolean }
+    NotificationSettingsRequest:
+      type: object
+      properties:
+        telegramBotToken:
+          type: string
+          nullable: true
+        rules:
+          type: object
+          additionalProperties: { type: boolean }
+    StockSettings:
+      type: object
+      required: [defaultLocationId]
+      properties:
+        defaultLocationId: { type: string, format: uuid }
+    LocationOption:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+    AuthSettings:
+      type: object
+      required: [requireEmailConfirmation]
+      properties:
+        requireEmailConfirmation: { type: boolean }
+    LandingSettings:
+      type: object
+      properties:
+        hero:
+          nullable: true
+          $ref: "#/components/schemas/HeroSettings"
+        delivery:
+          nullable: true
+          $ref: "#/components/schemas/DeliverySettings"
+    HeroSettings:
+      type: object
+      properties:
+        eyebrow: { type: string }
+        title: { type: string }
+        text: { type: string }
+    DeliverySettings:
+      type: object
+      properties:
+        title: { type: string }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              number: { type: string }
+              title: { type: string }
+              text: { type: string }
+    PublicLanding:
+      type: object
+      description: Значения настроек; пустой объект — показать дефолт витрины
+      properties:
+        hero: { type: object, additionalProperties: true }
+        delivery: { type: object, additionalProperties: true }
+    AuditEntry:
+      type: object
+      required: [id, action, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        actorId: { type: string, format: uuid, nullable: true }
+        actorEmail: { type: string, nullable: true }
+        actorName: { type: string, nullable: true }
+        action: { type: string }
+        targetType: { type: string, nullable: true }
+        targetId: { type: string, format: uuid, nullable: true }
+        before: { type: object, additionalProperties: true, nullable: true }
+        after: { type: object, additionalProperties: true, nullable: true }
+        createdAt: { type: string, format: date-time }
+    AuditListResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/AuditEntry" }
+    OperationsDashboardResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/OperationsDashboard" }
+    OperationsDashboard:
+      type: object
+      required: [ordersToday, requestsToday, unpaidInvoices, lowStock, overdueTasks]
+      properties:
+        ordersToday: { type: integer, minimum: 0 }
+        requestsToday: { type: integer, minimum: 0 }
+        unpaidInvoices:
+          type: object
+          properties:
+            count: { type: integer, minimum: 0 }
+            outstanding: { type: number }
+        lowStock:
+          type: array
+          items:
+            type: object
+            required: [productId, sku, productName, available, minStock]
+            properties:
+              productId: { type: string, format: uuid }
+              sku: { type: string }
+              productName: { type: string }
+              available: { type: number }
+              minStock: { type: number }
+        overdueTasks:
+          type: array
+          items:
+            type: object
+            required: [id, title, assigneeName, dueDate]
+            properties:
+              id: { type: string, format: uuid }
+              title: { type: string }
+              assigneeName: { type: string }
+              dueDate: { type: string, format: date-time }
+    ImportPreviewResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/ImportPreview" }
+    ImportPreview:
+      type: object
+      required: [type, rowsTotal, errorsCount, rows]
+      properties:
+        type: { type: string, enum: [PRICES, STOCK] }
+        rowsTotal: { type: integer }
+        errorsCount: { type: integer }
+        rows:
+          type: array
+          description: До 100 строк
+          items:
+            type: object
+            required: [row, sku, ok]
+            properties:
+              row: { type: integer }
+              sku: { type: string }
+              value: { type: number, nullable: true }
+              ok: { type: boolean }
+              message: { type: string, nullable: true }

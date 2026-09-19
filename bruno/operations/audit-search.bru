@@ -1,0 +1,14 @@
+meta {
+  name: Audit search
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{host}}/api/v1/admin/audit?action=SETTINGS_UPDATE&page=0&size=20
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

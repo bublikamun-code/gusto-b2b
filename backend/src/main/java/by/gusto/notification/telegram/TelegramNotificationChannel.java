@@ -33,6 +33,7 @@ public class TelegramNotificationChannel implements OutboxChannel {
     private final CompanyRepository companyRepository;
     private final OrderRepository orderRepository;
     private final TelegramApiClient telegramApiClient;
+    private final by.gusto.common.settings.SettingsService settingsService;
 
     @Override
     public boolean supports(String type) {
@@ -44,6 +45,11 @@ public class TelegramNotificationChannel implements OutboxChannel {
     public boolean send(OutboxMessage message) {
         if (!telegramApiClient.isEnabled()) {
             log.info("TELEGRAM выключен: событие {} пропущено", message.getType());
+            return true;
+        }
+        // правило уведомлений из админки (S38): выключенный тип не рассылается
+        if (!settingsService.notificationEnabled(message.getType())) {
+            log.info("TELEGRAM: событие {} отключено правилами уведомлений", message.getType());
             return true;
         }
         String text = template(message.getType(), message.getPayload());

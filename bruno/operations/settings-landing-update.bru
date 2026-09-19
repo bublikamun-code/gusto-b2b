@@ -1,0 +1,25 @@
+meta {
+  name: Settings landing update
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{host}}/api/v1/admin/settings/landing
+  auth: bearer
+  body: json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "hero": {
+      "eyebrow": "Интернет-магазин · Минск",
+      "title": "Свежая поставка каждое утро",
+      "text": "Работаем с фермерскими хозяйствами напрямую."
+    }
+  }
+}

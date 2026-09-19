@@ -1,0 +1,14 @@
+meta {
+  name: Settings get
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/api/v1/admin/settings
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
