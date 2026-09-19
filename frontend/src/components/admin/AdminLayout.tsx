@@ -22,6 +22,7 @@ export function AdminLayout() {
   // CRUD-разделы — только ADMIN (бэкенд /admin/** для остальных отдаёт 403).
   const navItems = [
     { to: "/admin/dashboard", label: "Дашборд" },
+    { to: "/admin/documents", label: "Документы" },
     // Склад (S18.4): ADMIN/ACCOUNTANT/MANAGER по матрице 2.1
     { to: "/warehouse/balance", label: "Склад" },
     ...(user?.role === "ADMIN"

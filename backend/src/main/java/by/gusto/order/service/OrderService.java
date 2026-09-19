@@ -169,8 +169,11 @@ public class OrderService {
             orders = orderRepository.findAllByCustomerCompanyIdOrderByCreatedAtDesc(user.getCompanyId(), pageable);
         } else if (user.getRole() == Role.CUSTOMER_INDIVIDUAL) {
             orders = orderRepository.findAllByCustomerUserIdOrderByCreatedAtDesc(user.getId(), pageable);
+        } else if (user.getRole() == Role.ACCOUNTANT) {
+            // бухгалтер работает с документами по всем заказам (матрица 2.1, S27)
+            orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
         } else {
-            // MANAGER/ADMIN: свои + пул; полный менеджерский список — S22
+            // MANAGER/ADMIN: свои + пул (2.7); расширенные фильтры — S22
             orders = orderRepository.findAllVisibleTo(user.getId(), pageable);
         }
         return orders.map(o -> toResponse(o, orderItemRepository.findAllByOrderId(o.getId()))).getContent();

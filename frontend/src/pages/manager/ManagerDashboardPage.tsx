@@ -32,6 +32,9 @@ export default function ManagerDashboardPage() {
           <Link to="/manager/orders/new">
             <Button variant="accent">Заказ от имени клиента</Button>
           </Link>
+          <Link to="/manager/documents">
+            <Button>Документы</Button>
+          </Link>
           <Button variant="secondary" onClick={handleLogout}>
             Выйти
           </Button>
