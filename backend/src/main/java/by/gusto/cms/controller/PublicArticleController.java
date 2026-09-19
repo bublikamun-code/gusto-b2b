@@ -19,6 +19,34 @@ import java.util.Map;
 public class PublicArticleController {
 
     private final ArticleService articleService;
+    private final by.gusto.common.settings.SettingsService settingsService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    /** Тексты лендинга (S38): правятся в админке без коммита. */
+    @org.springframework.web.bind.annotation.GetMapping("/landing")
+    public ResponseEntity<Map<String, Object>> landing() {
+        Map<String, Object> landing = new java.util.LinkedHashMap<>();
+        landing.put("hero", readSetting("landing.hero", Map.of(
+                "title", "Свежая поставка каждое утро",
+                "subtitle", "Мясной гастроном ГУСТО")));
+        landing.put("delivery", readSetting("landing.delivery", Map.of(
+                "title", "Как мы доставляем",
+                "steps", java.util.List.of("Заявка", "Свежесть с утра", "Доставка к вам"))));
+        return ResponseEntity.ok(landing);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> readSetting(String key, Map<String, Object> fallback) {
+        String json = settingsService.getString(key);
+        if (json == null) {
+            return fallback;
+        }
+        try {
+            return objectMapper.readValue(json, Map.class);
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
 
     @GetMapping("/pages/{slug}")
     public ResponseEntity<Map<String, Object>> page(@PathVariable String slug) {
