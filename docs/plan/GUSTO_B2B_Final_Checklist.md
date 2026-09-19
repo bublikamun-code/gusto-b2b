@@ -862,6 +862,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(requests): site requests with outbox`.
 
 ### S32 [B] Telegram-бот
+> ✅ Выполнено 2026-09-19 [B] — модуль `by.gusto.notification`: подписки (`POST /notifications/telegram/code` — одноразовый код в Redis TTL 15 мин; вебхук `POST /notifications/telegram/webhook` — permitAll + секрет `X-Telegram-Bot-Api-Secret-Token`/`?secret=`, обрабатывает `/start <КОД>`: связывает chat_id с пользователем (unique user+channel+destination), отвечает через sendMessage; `GET/DELETE /notifications/subscriptions`); `TelegramApiClient` (api.telegram.org sendMessage, `TELEGRAM_BOT_TOKEN` из .env — пусто = выключено); `TelegramNotificationChannel` (специализированный канал в реестре S31) — маршрутизация по 2.6: ORDER_CREATED (розница → все менеджеры, опт → менеджер компании), ORDER_STATUS_CHANGED → клиент-подписчик, INVOICE_ISSUED → подписчики компании-покупателя, SITE_REQUEST_CREATED → все менеджеры; шаблоны сообщений; выключенная интеграция пропускает события без ошибок, реальный сбой → ретрай S31; webhook за Nginx — runbook; OpenAPI (3 пути) + Bruno `notifications/`; 2 интеграционных теста (108 зелёных): привязка по коду через вебхук с секретом + одноразовость + отписка, выключенная интеграция + маршрутизация адресатов.
+
 - Регистрация бота, webhook за Nginx.
 - Подписка менеджера/клиента (привязка по команде/коду).
 - Шаблоны уведомлений (новый заказ, статус, счёт).
