@@ -162,6 +162,7 @@ export default function ManagerOrdersPage() {
       <header className={styles.header}>
         <h1>Заказы</h1>
         <nav className={styles.nav}>
+          <Link to="/manager/inbox">Единое окно</Link>
           <Link to="/manager/orders/new">Заказ от имени клиента</Link>
           <Link to="/warehouse">Склад</Link>
         </nav>

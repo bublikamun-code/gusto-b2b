@@ -26,6 +26,18 @@ export default function ManagerDashboardPage() {
         <h1>Кабинет менеджера</h1>
         <p>Пользователь: {user?.fullName ?? user?.email}</p>
         <div className="actions">
+          <Link to="/manager/inbox">
+            <Button>Единое окно</Button>
+          </Link>
+          <Link to="/manager/leads">
+            <Button>Лиды</Button>
+          </Link>
+          <Link to="/manager/clients">
+            <Button>Клиенты</Button>
+          </Link>
+          <Link to="/manager/dashboard">
+            <Button>Дашборд</Button>
+          </Link>
           <Link to="/manager/orders">
             <Button>Заказы</Button>
           </Link>
