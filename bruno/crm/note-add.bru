@@ -1,0 +1,22 @@
+meta {
+  name: Add note
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{host}}/api/v1/crm/notes
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"companyId": "company-uuid", "body": "Заметка"}
+}

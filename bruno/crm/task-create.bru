@@ -1,0 +1,22 @@
+meta {
+  name: Create task
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/api/v1/crm/tasks
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"title": "Позвонить клиенту", "dueDate": "2026-09-25T12:00:00Z"}
+}

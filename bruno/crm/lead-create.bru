@@ -1,0 +1,22 @@
+meta {
+  name: Create lead
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/crm/leads
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"name": "Лид", "phone": "+375 29 000-00-00", "companyName": "ООО", "source": "website"}
+}

@@ -833,6 +833,8 @@ settings (key TEXT PK, value JSONB)
 ## Неделя 6 — CRM, заявки, уведомления
 
 ### S29 [B] CRM: лиды, задачи, заметки
+> ✅ Выполнено 2026-09-19 [B] — миграция V17 (CHECK словаря 2.8 на `leads.status`/`crm_tasks.status` + индексы); модуль `by.gusto.crm`: лиды (`POST /crm/leads`, список со scope `mine|unassigned|pool|all` + фильтр статуса — менеджеру `all` запрещён, назначение `/assign`, воронка `/status` NEW→IN_PROGRESS→QUALIFIED→WON/LOST с запретом пропусков → 409 `LEAD_STATUS_TRANSITION`, взятие из пула закрепляет; всё в audit_log); задачи (`/crm/tasks` scope `mine|overdue|all`, overdue-флаг просрочки, закрытие DONE/CANCELLED, повторное закрытие → 409); заметки по компании (`/crm/notes`) — история взаимодействия; дашборд `/crm/dashboard` (ADMIN — база, MANAGER — свои): выручка по COMPLETED за период, топ-5 товаров/клиентов, долг (S28), конверсия лидов WON/(WON+LOST); единый `CrmController` @PreAuthorize MANAGER/ADMIN (бухгалтеру CRM нет); конвертация заявок сайта в лиды — S31; OpenAPI (tag crm, 9 путей, схемы) + Bruno `crm/`; 3 интеграционных теста (103 зелёных).
+
 - `leads` из заявок сайта, назначение менеджеру, статусы воронки по словарю 2.8 (миграция добавляет CHECK).
 - `crm_tasks` (срок, статус), `crm_notes`; комментарии по заявке/лиду — история взаимодействия с клиентом.
 - Розничные заказы без менеджера (2.7) видны менеджеру в пуле «не назначено».

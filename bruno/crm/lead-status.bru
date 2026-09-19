@@ -1,0 +1,26 @@
+meta {
+  name: Lead change status
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/api/v1/crm/leads/:id/status
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: lead-uuid
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"status": "IN_PROGRESS"}
+}

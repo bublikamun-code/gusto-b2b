@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
             case CONFLICT, IDEMPOTENCY_CONFLICT, STOCK_DOCUMENT_INVALID,
                  ORDER_STATUS_TRANSITION, ORDER_ALREADY_TAKEN,
-                 INVOICE_INVALID_STATE, INVOICE_ALREADY_EXISTS -> HttpStatus.CONFLICT;
+                 INVOICE_INVALID_STATE, INVOICE_ALREADY_EXISTS, LEAD_STATUS_TRANSITION -> HttpStatus.CONFLICT;
             case RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
             case INTERNAL -> HttpStatus.INTERNAL_SERVER_ERROR;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;
