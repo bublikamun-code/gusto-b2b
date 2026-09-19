@@ -45,22 +45,19 @@ public class OutboxPoller {
                     .waitDurationInOpenState(Duration.ofSeconds(30))
                     .build());
 
-    /** Специализированный канал важнее канала-по-умолчанию (лог). */
-    private OutboxChannel channelFor(String type) {
-        OutboxChannel fallback = null;
-        for (OutboxChannel channel : channels) {
-            if (!(channel instanceof by.gusto.outbox.channel.LoggingOutboxChannel)
-                    && channel.supports(type)) {
-                return channel;
-            }
-            if (channel instanceof by.gusto.outbox.channel.LoggingOutboxChannel) {
-                fallback = channel;
-            }
+    /** Все специализированные каналы типа; если ни один — канал-лог (низший приоритет). */
+    private List<OutboxChannel> channelsFor(String type) {
+        List<OutboxChannel> specific = channels.stream()
+                .filter(c -> !(c instanceof by.gusto.outbox.channel.LoggingOutboxChannel))
+                .filter(c -> c.supports(type))
+                .toList();
+        if (!specific.isEmpty()) {
+            return specific;
         }
-        if (fallback == null) {
-            throw new IllegalStateException("Нет канала для типа " + type);
-        }
-        return fallback;
+        return channels.stream()
+                .filter(c -> c instanceof by.gusto.outbox.channel.LoggingOutboxChannel)
+                .filter(c -> c.supports(type))
+                .toList();
     }
 
     @Scheduled(fixedDelayString = "${outbox.poll-interval-ms:10000}")
@@ -84,10 +81,20 @@ public class OutboxPoller {
         }
     }
 
+    /**
+     * Событие уходит во ВСЕ подходящие каналы (Telegram + Email обрабатывают
+     * одни и те же бизнес-события по разным подпискам). Семантика at-least-once:
+     * при сбое любого канала сообщение ретраится целиком.
+     */
     private void dispatch(OutboxMessage message) {
+        List<OutboxChannel> targets = channelsFor(message.getType());
         try {
-            boolean sent = circuitBreaker.executeSupplier(() -> channelFor(message.getType()).send(message));
-            if (sent) {
+            boolean allSent = true;
+            for (OutboxChannel channel : targets) {
+                boolean sent = circuitBreaker.executeSupplier(() -> channel.send(message));
+                allSent = allSent && sent;
+            }
+            if (allSent) {
                 message.setStatus(OutboxMessage.Status.SENT);
                 message.setSentAt(Instant.now());
                 repository.save(message);

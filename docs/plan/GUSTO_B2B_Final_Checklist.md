@@ -871,6 +871,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(notifications): telegram bot`.
 
 ### S33 [B] Email
+> ✅ Выполнено 2026-09-19 [B] — `spring-boot-starter-mail` + `EmailProperties` (SMTP host/port/user/pass, from — только .env, в админке не правятся; пустой host = выключено); `EmailTemplateRenderer` — бренд-обёртка (сливки/бордо, кнопка-ссылка); `EmailNotificationChannel` в реестре S31: `EMAIL_CONFIRMATION` (ссылка из payload, APP_BASE_URL), новый `EMAIL_PASSWORD_RESET` (PasswordResetService кладёт событие со ссылкой `/reset-password?token=`), `ORDER_STATUS_CHANGED`/`INVOICE_ISSUED` клиенту **без активной Telegram-подписки** (правило 2.6, `resolveClientEmails`/`resolveCompanyEmailsWithoutTelegram`); OutboxPoller → доставка во **все** подходящие каналы (at-least-once); выключенный SMTP пропускает события, сбой → ретрай; ссылки от `APP_BASE_URL`; 2 интеграционных теста (110 зелёных): выключенный SMTP + правило «есть TG → письма нет».
+
 - SMTP-транспорт (host/port/user/password) — в `.env`; правила получателей и шаблоны — в `settings` (единообразие с S38: в админке транспорт не правится).
 - Ссылки в письмах (сброс пароля, статусы) строятся от `APP_BASE_URL` (новая переменная `.env`/compose).
 - Шаблоны писем в бренде (сливки/бордо).
