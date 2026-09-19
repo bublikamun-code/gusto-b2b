@@ -31,13 +31,13 @@ public class TelegramApiClient {
         if (token.isBlank()) {
             throw new IllegalStateException("Telegram не настроен (токен пуст и в settings, и в .env)");
         }
-        String response = RestClient.create()
+        RestClient.create()
                 .post()
                 .uri("https://api.telegram.org/bot{token}/sendMessage", token)
                 .body(Map.of("chat_id", chatId, "text", text))
                 .retrieve()
                 .body(String.class);
-        log.debug("TELEGRAM sendMessage -> {}: {}", chatId, response);
+        log.debug("TELEGRAM sendMessage -> {} отправлено", chatId);
     }
 
     /** Настройка админки приоритетнее .env: смена токена не требует пересборки (S38). */

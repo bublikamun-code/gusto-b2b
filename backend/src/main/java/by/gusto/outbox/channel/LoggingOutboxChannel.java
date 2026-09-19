@@ -22,9 +22,11 @@ public class LoggingOutboxChannel implements OutboxChannel {
 
     @Override
     public boolean send(OutboxMessage message) {
-        log.info("OUTBOX {} [{}] aggregate={}/{}: {}",
+        // S40: payload может содержать PII (заявки: имя/телефон/email) —
+        // в лог идёт только маршрутная информация
+        log.info("OUTBOX {} [{}] aggregate={}/{}",
                 message.getId(), message.getType(), message.getAggregateType(),
-                message.getAggregateId(), message.getPayload());
+                message.getAggregateId());
         return true;
     }
 }
