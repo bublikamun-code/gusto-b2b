@@ -1,0 +1,14 @@
+meta {
+  name: List waybills
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/api/v1/waybills?page=0&size=20
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

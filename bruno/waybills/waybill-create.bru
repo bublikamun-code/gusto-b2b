@@ -1,0 +1,22 @@
+meta {
+  name: Create waybill
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/waybills
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {"orderId": "order-uuid", "type": "TTN", "vehicle": "AB 1234-5", "driver": "Иванов И.И."}
+}

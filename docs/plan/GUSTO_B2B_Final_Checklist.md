@@ -805,6 +805,8 @@ settings (key TEXT PK, value JSONB)
 - `GIT(STD)` — `feat(invoices): branded pdf generation`.
 
 ### S26 [B] ТТН и ТН
+> ✅ Выполнено 2026-09-19 [B] — миграция V16 (sequences `doc_seq_tn/ttn_A_2026`, уникальность номера); модуль `by.gusto.waybill`: `POST /waybills` из заказа (по V1 — окончательный снапшот без статусов: стороны, грузополучатель при отличии — вложенный `consignee` в buyer_snapshot, транспорт `vehicle/driver/carrierCompany` в carrier_snapshot для ТТН; позиции с массой `кол-во × weight_per_unit`; НДС расчётно 2.3); нумерация `ТН-A-N`/`ТТН-A-N` — кириллический префикс + серия из `settings('document.series.*')`, sequence (тип, серия, год) с fallback create-if-missing до ротации S31; PDF формируется сразу (общий `BrandPdfSupport`: шрифты/экранирование/реквизиты) — структура по примеру ТиоптТрейд (грузоотправитель/грузополучатель/заказчик, авто/водитель, масса, подписи, М.П.); `GET /waybills` (скоупинг как у счетов), `GET /waybills/{id}`, `GET /waybills/{id}/pdf`; кабинет юрлица: `GET /cabinet/waybills` + `/{id}/pdf`; розница/отменённые → 400; OpenAPI + Bruno `waybills/`; 3 интеграционных теста (97 зелёных): снапшоты+масса+PDF+аудит, независимая нумерация ТН/ТТН, права и кабинет.
+
 - Модели `waybills`, нумерация с серией.
 - ТТН по структуре примера (грузоотправитель/получатель/заказчик/авто/водитель/товары/масса/НДС).
 - PDF ТН и ТТН.
