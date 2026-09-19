@@ -41,6 +41,7 @@ tags:
   - name: orders
   - name: warehouse
   - name: invoices
+  - name: crm
 
 paths:
   /healthz:
@@ -2279,6 +2280,267 @@ paths:
                         type: array
                         items: { $ref: "#/components/schemas/DebtRow" }
 
+  /crm/leads:
+    post:
+      tags: [crm]
+      summary: Создать лид (S29; MANAGER/ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadCreateRequest" }
+      responses:
+        "200":
+          description: Лид создан (статус NEW)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    get:
+      tags: [crm]
+      summary: Список лидов (MANAGER — pool по умолчанию; ADMIN — все)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scope
+          in: query
+          schema: { type: string, enum: [mine, unassigned, pool, all] }
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/LeadStatus" }
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница лидов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Lead" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+
+  /crm/leads/{id}/assign:
+    post:
+      tags: [crm]
+      summary: Назначить менеджера на лид (S29)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [managerId]
+              properties:
+                managerId: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Лид назначен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /crm/leads/{id}/status:
+    post:
+      tags: [crm]
+      summary: Сменить статус лида (воронка 2.8; S29)
+      description: |
+        Переходы: NEW→IN_PROGRESS|LOST, IN_PROGRESS→QUALIFIED|LOST,
+        QUALIFIED→WON|LOST; WON/LOST терминальные. Взятие лида из пула
+        закрепляет его за менеджером. Недопустимый переход → 409 `LEAD_STATUS_TRANSITION`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/LeadStatus" }
+      responses:
+        "200":
+          description: Статус изменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadResponse" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Недопустимый переход (`LEAD_STATUS_TRANSITION`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /crm/tasks:
+    post:
+      tags: [crm]
+      summary: Создать задачу (S29; assignee по умолчанию — автор)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskCreateRequest" }
+      responses:
+        "200":
+          description: Задача создана (OPEN)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskResponse" }
+    get:
+      tags: [crm]
+      summary: Задачи (scope=mine|overdue|all; S29)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: scope
+          in: query
+          schema: { type: string, enum: [mine, overdue, all] }
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Страница задач (overdue=true для просроченных OPEN)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Task" }
+
+  /crm/tasks/{id}/status:
+    post:
+      tags: [crm]
+      summary: Закрыть задачу (?status=DONE|CANCELLED; S29)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          required: true
+          schema: { type: string, enum: [DONE, CANCELLED] }
+      responses:
+        "200":
+          description: Статус изменён
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskResponse" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Закрытая задача не меняет статус (`CONFLICT`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  /crm/notes:
+    post:
+      tags: [crm]
+      summary: Добавить заметку по компании (S29)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteCreateRequest" }
+      responses:
+        "200":
+          description: Заметка добавлена
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NoteResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    get:
+      tags: [crm]
+      summary: Заметки компании (история взаимодействия; S29)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Заметки компании (новые сверху)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Note" }
+
+  /crm/dashboard:
+    get:
+      tags: [crm]
+      summary: Дашборд руководителя (S29; выручка, топы, долг, конверсия)
+      description: >-
+        ADMIN — вся база; MANAGER — свои заказы и компании. Выручка по COMPLETED
+        заказам за период (по умолчанию последние 30 дней), топ-5 товаров и клиентов,
+        долг — сумма активных счетов (S28), конверсия лидов: WON / (WON+LOST).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Агрегаты дашборда
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        additionalProperties: true
+
   /waybills:
     post:
       tags: [invoices]
@@ -3485,6 +3747,86 @@ components:
         paid: { type: number, description: "Оплачено по активным счетам" }
         debt: { type: number, description: "Остаток долга (> 0)" }
         oldestActiveAt: { type: string, format: date-time, nullable: true }
+
+    # ----- CRM (S29) --------------------------------------------------------------
+    LeadStatus:
+      type: string
+      enum: [NEW, IN_PROGRESS, QUALIFIED, WON, LOST]
+    LeadCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        companyName: { type: string, nullable: true }
+        message: { type: string, nullable: true }
+        source: { type: string, nullable: true, description: "website / phone / visit" }
+        managerId: { type: string, format: uuid, nullable: true }
+    Lead:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        source: { type: string, nullable: true }
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        companyName: { type: string, nullable: true }
+        message: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/LeadStatus" }
+        assignedManagerId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+    LeadResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Lead" }
+    TaskCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        assigneeId: { type: string, format: uuid, nullable: true }
+        companyId: { type: string, format: uuid, nullable: true }
+        dueDate: { type: string, format: date-time, nullable: true }
+    Task:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        companyId: { type: string, format: uuid, nullable: true }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        dueDate: { type: string, format: date-time, nullable: true }
+        status: { type: string, enum: [OPEN, DONE, CANCELLED] }
+        overdue: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    TaskResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Task" }
+    NoteCreateRequest:
+      type: object
+      required: [companyId, body]
+      properties:
+        companyId: { type: string, format: uuid }
+        body: { type: string }
+    Note:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        companyId: { type: string, format: uuid }
+        authorId: { type: string, format: uuid }
+        authorName: { type: string, nullable: true }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+    NoteResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - properties:
+            data: { $ref: "#/components/schemas/Note" }
 
     DeliveryType:
       type: string

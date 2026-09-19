@@ -1,0 +1,14 @@
+meta {
+  name: List leads
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/api/v1/crm/leads?scope=pool&status=NEW
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

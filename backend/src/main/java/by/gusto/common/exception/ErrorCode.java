@@ -33,6 +33,9 @@ public enum ErrorCode {
     INVOICE_INVALID_STATE("INVOICE_INVALID_STATE", "Недопустимый переход статуса счёта"),
     INVOICE_ALREADY_EXISTS("INVOICE_ALREADY_EXISTS", "Активный счёт по этому заказу уже существует"),
 
+    // CRM
+    LEAD_STATUS_TRANSITION("LEAD_STATUS_TRANSITION", "Недопустимый переход статуса лида"),
+
     // Validation
     VALIDATION_FAILED("VALIDATION_FAILED", "Ошибка валидации запроса"),
 
