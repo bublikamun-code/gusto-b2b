@@ -50,6 +50,10 @@ management:
 app:
   # База для ссылок в письмах (подтверждение email — S08.1; сброс пароля, статусы — S33)
   base-url: ${APP_BASE_URL:http://localhost:5173}
+  cors:
+    # S40: allowlist источников для браузерных вызовов API (через запятую).
+    # В проде добавляется https://gustomeat.by (S41).
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
   jwt:
     # Без дефолта: секрет обязан приходить из env (.env / CI), иначе контекст не поднимется
     secret: ${JWT_SECRET}

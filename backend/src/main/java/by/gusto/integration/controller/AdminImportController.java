@@ -26,14 +26,20 @@ import org.springframework.web.multipart.MultipartFile;
 @PreAuthorize("hasAnyRole('ADMIN','ACCOUNTANT')")
 public class AdminImportController {
 
+    private static final java.time.Duration IMPORT_WINDOW = java.time.Duration.ofHours(1);
+    private static final int IMPORT_LIMIT = 10;
+    private static final int PREVIEW_LIMIT = 30;
+
     private final XlsxImportService importService;
     private final AuthContext authContext;
+    private final by.gusto.common.ratelimit.RequestRateLimiter rateLimiter;
 
     @PostMapping("/prices")
     public ResponseEntity<ApiResponse<ImportReport>> prices(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "false") boolean archiveMissing) {
         User actor = authContext.getCurrentUser();
+        rateLimiter.enforcePerUser(actor.getId(), "import", IMPORT_LIMIT, IMPORT_WINDOW);
         return ResponseEntity.ok(ApiResponse.success(
                 importService.importPrices(file, archiveMissing, actor)));
     }
@@ -41,8 +47,10 @@ public class AdminImportController {
     @PostMapping("/stock")
     public ResponseEntity<ApiResponse<ImportReport>> stock(
             @RequestParam("file") MultipartFile file) {
+        User actor = authContext.getCurrentUser();
+        rateLimiter.enforcePerUser(actor.getId(), "import", IMPORT_LIMIT, IMPORT_WINDOW);
         return ResponseEntity.ok(ApiResponse.success(
-                importService.importStock(file, authContext.getCurrentUser())));
+                importService.importStock(file, actor)));
     }
 
     /**
@@ -53,6 +61,8 @@ public class AdminImportController {
     public ResponseEntity<ApiResponse<ImportPreview>> preview(
             @PathVariable String type,
             @RequestParam("file") MultipartFile file) {
+        User actor = authContext.getCurrentUser();
+        rateLimiter.enforcePerUser(actor.getId(), "import-preview", PREVIEW_LIMIT, IMPORT_WINDOW);
         return ResponseEntity.ok(ApiResponse.success(importService.preview(file, type)));
     }
 }
