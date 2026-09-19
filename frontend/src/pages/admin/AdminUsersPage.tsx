@@ -26,7 +26,9 @@ const userSchema = z.object({
   role: z.enum(["ADMIN", "ACCOUNTANT", "MANAGER", "CUSTOMER_LEGAL", "CUSTOMER_INDIVIDUAL"]),
   companyId: z.string().optional(),
   isActive: z.boolean(),
-  password: z.string().min(8, "Пароль не может быть короче 8 символов").optional(),
+  // пустая строка от пустого input — это «пароль не задан» (поле «необязательно»),
+  // иначе создать пользователя через UI без пароля невозможно (нашёл E2E S39)
+  password: z.string().min(8, "Пароль не может быть короче 8 символов").or(z.literal("")).optional(),
 });
 
 type UserForm = z.infer<typeof userSchema>;
