@@ -11,14 +11,46 @@
 
 .bulk {
   background: $color-card;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   border-radius: 2px;
   margin-bottom: 1.25rem;
+
+  // заголовок-кнопка: блок сворачивается, чтобы не занимать экран всегда
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.25rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+  }
 
   &__title {
     font-family: $font-heading;
     font-size: 1.1rem;
-    margin: 0 0 0.25rem;
+    color: $color-graphite;
+  }
+
+  &__toggle:hover &__title {
+    color: $color-bordeaux;
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    color: $color-bordeaux;
+    transition: transform 0.15s ease;
+
+    &:not([data-open]) {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &__body {
+    margin-top: 0.75rem;
   }
 
   &__hint {
@@ -73,10 +105,11 @@
 }
 
 .quantityInput {
-  max-width: 5rem;
+  max-width: 3.5rem;
   margin: 0 auto;
 
   input {
+    padding: 0.45rem 0.25rem;
     text-align: center;
   }
 }
@@ -93,4 +126,22 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+// компактнее на мобильных: фильтры в два столбца, меньше пустоты между секциями
+@media (max-width: 640px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .filters > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .bulk {
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+  }
 }

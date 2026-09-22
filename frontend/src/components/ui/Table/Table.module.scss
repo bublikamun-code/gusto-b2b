@@ -77,23 +77,31 @@
     }
 
     tbody td {
-      display: block;
-      padding: 0.45rem 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.4rem 0;
       border-bottom: 1px dashed rgba($color-graphite, 0.15);
       overflow-wrap: anywhere;
 
+      // подпись слева, значение справа — поле занимает одну строку
       &::before {
         content: attr(data-label);
-        display: block;
+        flex-shrink: 0;
         font-family: $font-heading;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-size: 0.62rem;
         color: rgba($color-graphite, 0.55);
-        margin-bottom: 0.15rem;
       }
 
-      // ячейки без title (кнопки действий) и пустое состояние — без подписи
+      // ячейки без title (кнопки действий) и пустое состояние — без подписи,
+      // ведут себя как обычный блок на всю ширину
+      &:not([data-label]) {
+        display: block;
+      }
+
       &:not([data-label])::before {
         content: none;
       }
@@ -101,6 +109,12 @@
       &:last-child {
         border-bottom: none;
       }
+    }
+
+    // колонки, не нужные на мобильных (mobileHidden у Column)
+    th.mobileHidden,
+    tbody td.mobileHidden {
+      display: none;
     }
 
     .state {

@@ -272,10 +272,10 @@ export default function CabinetCartPage() {
               onChange={(event) => setNote(event.target.value)}
             />
             <div className={styles.actions}>
-              <Button onClick={submit} loading={submitting}>
+              <Button size="sm" onClick={submit} loading={submitting}>
                 Подтвердить заказ
               </Button>
-              <Button variant="secondary" onClick={() => setConfirmingClear(true)}>
+              <Button size="sm" variant="secondary" onClick={() => setConfirmingClear(true)}>
                 Очистить корзину
               </Button>
             </div>

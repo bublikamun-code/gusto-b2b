@@ -7,6 +7,8 @@ export interface Column<T> {
   align?: "left" | "center" | "right";
   width?: string;
   render?: (row: T) => ReactNode;
+  // колонка не нужна в карточном виде на мобильных (≤640px)
+  mobileHidden?: boolean;
 }
 
 export interface TableProps<T> {
@@ -27,6 +29,7 @@ export function Table<T>({ columns, data, rowKey, loading, empty }: TableProps<T
               <th
                 key={column.key}
                 style={{ width: column.width, textAlign: column.align ?? "left" }}
+                className={column.mobileHidden ? styles.mobileHidden : undefined}
               >
                 {column.title}
               </th>
@@ -53,6 +56,7 @@ export function Table<T>({ columns, data, rowKey, loading, empty }: TableProps<T
                   <td
                     key={column.key}
                     style={{ textAlign: column.align ?? "left" }}
+                    className={column.mobileHidden ? styles.mobileHidden : undefined}
                     // подпись поля для карточного вида на мобильных (см. Table.module.scss)
                     data-label={
                       typeof column.title === "string" && column.title.trim()

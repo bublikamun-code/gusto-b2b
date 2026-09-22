@@ -8,6 +8,8 @@
   font-family: $font-heading;
   text-transform: uppercase;
   letter-spacing: 0.18em;
+  // Oswald-подписи с разрядкой переносить на 2 строки некрасиво
+  white-space: nowrap;
   // LinkButton — это <a>; без явного none браузер подчёркивает надпись
   text-decoration: none;
   border: 1px solid transparent;

@@ -28,6 +28,7 @@ export default function CabinetCatalogPage() {
 
   const [draftSearch, setDraftSearch] = useState(search);
   const [skuListDraft, setSkuListDraft] = useState("");
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [skuListError, setSkuListError] = useState<string | null>(null);
   const [skuListSuccess, setSkuListSuccess] = useState<string | null>(null);
   const [rowQuantities, setRowQuantities] = useState<Record<string, number>>({});
@@ -163,7 +164,7 @@ export default function CabinetCatalogPage() {
   const columns = [
     { key: "sku", title: "Артикул", width: "12%" },
     { key: "name", title: "Название", width: "35%" },
-    { key: "unit", title: "Ед. изм.", width: "10%" },
+    { key: "unit", title: "Ед. изм.", width: "10%", mobileHidden: true },
     {
       key: "customerPrice",
       title: "Цена клиента",
@@ -214,23 +215,38 @@ export default function CabinetCatalogPage() {
     <div className={styles.page}>
       <main className={styles.main}>
         <section className={styles.bulk}>
-          <h2 className={styles.bulk__title}>Массовое добавление по артикулам</h2>
-          <p className={styles.bulk__hint}>
-            Вставьте список артикулов через запятую, пробел или с новой строки
-          </p>
-          <div className={styles.bulk__row}>
-            <Textarea
-              placeholder="Например: bedro-kurinoye, steyk-ribay"
-              value={skuListDraft}
-              onChange={(event) => setSkuListDraft(event.target.value)}
-              className={styles.bulk__textarea}
-            />
-            <Button onClick={handleBulkAdd} loading={bulkAdding} className={styles.bulk__button}>
-              Добавить список
-            </Button>
-          </div>
-          {skuListError && <p className={styles.bulk__error}>{skuListError}</p>}
-          {skuListSuccess && <p className={styles.bulk__success}>{skuListSuccess}</p>}
+          <button
+            type="button"
+            className={styles.bulk__toggle}
+            aria-expanded={bulkOpen}
+            aria-controls="bulk-body"
+            onClick={() => setBulkOpen((open) => !open)}
+          >
+            <span className={styles.bulk__title}>Массовое добавление по артикулам</span>
+            <span className={styles.bulk__chevron} aria-hidden data-open={bulkOpen || undefined}>
+              ▾
+            </span>
+          </button>
+          {bulkOpen && (
+            <div id="bulk-body" className={styles.bulk__body}>
+              <p className={styles.bulk__hint}>
+                Вставьте список артикулов через запятую, пробел или с новой строки
+              </p>
+              <div className={styles.bulk__row}>
+                <Textarea
+                  placeholder="Например: bedro-kurinoye, steyk-ribay"
+                  value={skuListDraft}
+                  onChange={(event) => setSkuListDraft(event.target.value)}
+                  className={styles.bulk__textarea}
+                />
+                <Button onClick={handleBulkAdd} loading={bulkAdding} className={styles.bulk__button}>
+                  Добавить список
+                </Button>
+              </div>
+              {skuListError && <p className={styles.bulk__error}>{skuListError}</p>}
+              {skuListSuccess && <p className={styles.bulk__success}>{skuListSuccess}</p>}
+            </div>
+          )}
         </section>
 
         <section className={styles.filters}>

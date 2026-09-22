@@ -16,17 +16,11 @@
 }
 
 .quantityInput {
-  width: 6.5rem;
+  width: 3.5rem;
+  margin: 0 auto;
 
   input {
-    appearance: textfield;
-  }
-
-  input::-webkit-outer-spin-button,
-  input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    display: none;
-    margin: 0;
+    padding: 0.45rem 0.25rem;
   }
 }
 
