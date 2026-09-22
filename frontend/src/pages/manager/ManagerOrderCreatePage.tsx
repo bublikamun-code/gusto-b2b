@@ -89,7 +89,7 @@ export default function ManagerOrderCreatePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Заказ от имени клиента</h1>
-        <Link to="/manager/orders">К списку заказов</Link>
+        <Link className="pageLink" to="/manager/orders">К списку заказов</Link>
       </header>
 
       <Card className={styles.card}>

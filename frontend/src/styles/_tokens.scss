@@ -8,6 +8,8 @@ $color-graphite: #26201c; // текст, монохром
 
 $font-display: "Russo One", sans-serif; // H1, логотип, цены
 $font-heading: "Oswald", sans-serif; // H2, кнопки, меню (прописные, разрядка 4–8px)
+// UI-кнопки/бейджи/табы: letter-spacing 0.18em — осознанное отклонение от 4–8px
+// бренд-бука (полная разрядка даёт переносы подписей в sm-кнопках таблиц).
 $font-body: "Rubik", sans-serif; // основной текст, межстрочный 1.5–1.6
 
 $line-height-body: 1.55;

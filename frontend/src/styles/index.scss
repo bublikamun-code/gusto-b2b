@@ -43,7 +43,7 @@ body {
   max-width: 40rem;
   margin: 4rem auto;
   padding: 2.5rem;
-  background-color: #fffdf7;
+  background-color: $color-card;
   border-top: 4px solid $color-bordeaux;
 
   h1 {
@@ -56,6 +56,37 @@ body {
 
 .card__note {
   color: $color-bordeaux;
+}
+
+// ряд плиток-действий на дашбордах кабинета и менеджера (кнопки в Link-обёртках)
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+// Ряд действий на страницах без собственного модуля стилей
+// (дашборды кабинета и менеджера): без него кнопки слипаются.
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pageLink {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: $color-bordeaux;
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: $color-bordeaux-dark;
+  }
 }
 
 .footer {

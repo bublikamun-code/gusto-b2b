@@ -24,37 +24,9 @@
   justify-content: flex-end;
 }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(38, 32, 28, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 50;
-}
-
-.modal {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.25rem;
-  max-width: 36rem;
-  width: 100%;
-  max-height: 85vh;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-
-  h2 {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-}
-
 .modalActions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  margin-top: 0.75rem;
 }

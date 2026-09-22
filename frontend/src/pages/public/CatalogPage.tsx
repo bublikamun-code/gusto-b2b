@@ -32,7 +32,7 @@ export default function CatalogPage() {
     queryFn: listBrands,
   });
 
-  const { data: products, isLoading, isError, refetch } = useQuery({
+  const { data: products, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["products", "catalog", { page, size: PAGE_SIZE, search, categoryId, brandId }],
     queryFn: () => listProducts({ page, size: PAGE_SIZE, search, categoryId, brandId }),
   });
@@ -96,7 +96,12 @@ export default function CatalogPage() {
       {isError && (
         <p className={styles.catalog__status}>
           Не удалось загрузить каталог.{" "}
-          <Button size="sm" variant="secondary" onClick={() => refetch()}>
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={isRefetching}
+            onClick={() => refetch()}
+          >
             Повторить
           </Button>
         </p>

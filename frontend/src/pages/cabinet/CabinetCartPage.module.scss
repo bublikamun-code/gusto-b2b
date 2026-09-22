@@ -1,8 +1,8 @@
 @use "../../styles/tokens" as *;
 
 .page {
-  background: var(--color-surface, #ffffff);
-  border: 1px solid var(--color-border, #e5e5e0);
+  background: $color-card;
+  border: 1px solid $color-line;
   border-radius: 0.75rem;
   padding: 1.5rem;
   display: flex;
@@ -16,7 +16,18 @@
 }
 
 .quantityInput {
-  width: 5rem;
+  width: 6.5rem;
+
+  input {
+    appearance: textfield;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    display: none;
+    margin: 0;
+  }
 }
 
 .totals {
@@ -27,12 +38,12 @@
 }
 
 .vat {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.9rem;
 }
 
 .checkout {
-  border-top: 1px solid var(--color-border, #e5e5e0);
+  border-top: 1px solid $color-line;
   padding-top: 1rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
@@ -54,7 +65,12 @@
 
 .hint {
   grid-column: 1 / -1;
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.85rem;
+  margin: 0;
+}
+
+.emptyHint {
+  color: rgba($color-graphite, 0.72);
   margin: 0;
 }

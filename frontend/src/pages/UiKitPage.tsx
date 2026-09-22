@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Badge,
   Button,
   Card,
+  ConfirmModal,
   Input,
+  LinkButton,
   Modal,
   Pagination,
   Select,
@@ -12,8 +14,8 @@ import {
   Textarea,
   useToast,
   type Column,
-} from "../components/ui";
-import styles from "./UiKitPage.module.scss";
+} from '../components/ui';
+import styles from './UiKitPage.module.scss';
 
 interface DemoRow {
   sku: string;
@@ -24,36 +26,42 @@ interface DemoRow {
 }
 
 const demoRows: DemoRow[] = [
-  { sku: "A-100", name: "Филе куриное охлаждённое", unit: "кг", price: "8,90", stock: "120" },
-  { sku: "A-101", name: "Бедро куриное без кости", unit: "кг", price: "7,40", stock: "85" },
-  { sku: "B-205", name: "Вырезка свиная", unit: "кг", price: "16,20", stock: "24" },
-  { sku: "B-206", name: "Фарш говяжий 80/20", unit: "кг", price: "12,50", stock: "60" },
-  { sku: "C-310", name: "Яйцо куриное С1, 10 шт", unit: "уп", price: "3,80", stock: "200" },
+  { sku: 'A-100', name: 'Филе куриное охлаждённое', unit: 'кг', price: '8,90', stock: '120' },
+  { sku: 'A-101', name: 'Бедро куриное без кости', unit: 'кг', price: '7,40', stock: '85' },
+  { sku: 'B-205', name: 'Вырезка свиная', unit: 'кг', price: '16,20', stock: '24' },
+  { sku: 'B-206', name: 'Фарш говяжий 80/20', unit: 'кг', price: '12,50', stock: '60' },
+  { sku: 'C-310', name: 'Яйцо куриное С1, 10 шт', unit: 'уп', price: '3,80', stock: '200' },
 ];
 
 const demoColumns: Column<DemoRow>[] = [
-  { key: "sku", title: "Артикул" },
-  { key: "name", title: "Наименование" },
-  { key: "unit", title: "Ед. изм.", align: "center", width: "6rem" },
+  { key: 'sku', title: 'Артикул' },
+  { key: 'name', title: 'Наименование' },
+  { key: 'unit', title: 'Ед. изм.', align: 'center', width: '6rem' },
   {
-    key: "price",
-    title: "Цена",
-    align: "right",
-    width: "7rem",
+    key: 'price',
+    title: 'Цена',
+    align: 'right',
+    width: '7rem',
     render: (row) => `${row.price} р./${row.unit}`,
   },
   {
-    key: "stock",
-    title: "Статус",
-    width: "9rem",
+    key: 'stock',
+    title: 'Статус',
+    width: '9rem',
     render: (row) =>
-      Number(row.stock) > 30 ? <Badge variant="success">В наличии</Badge> : <Badge variant="warning">Под заказ</Badge>,
+      Number(row.stock) > 30 ? (
+        <Badge variant="success">В наличии</Badge>
+      ) : (
+        <Badge variant="warning">Под заказ</Badge>
+      ),
   },
 ];
 
 export default function UiKitPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmDangerOpen, setConfirmDangerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(3);
   const toast = useToast();
 
@@ -88,6 +96,12 @@ export default function UiKitPage() {
           <div className={styles.row}>
             <Button block>На всю ширину</Button>
           </div>
+          <div className={styles.row}>
+            <LinkButton to="/catalog">Ссылка-кнопка</LinkButton>
+            <LinkButton to="/catalog" variant="secondary" size="sm">
+              Ссылка-кнопка (secondary, sm)
+            </LinkButton>
+          </div>
         </section>
 
         <section className={styles.section}>
@@ -101,12 +115,12 @@ export default function UiKitPage() {
               label="Категория"
               placeholder="Выберите категорию"
               options={[
-                { value: "meat", label: "Мясо" },
-                { value: "poultry", label: "Птица" },
-                { value: "eggs", label: "Яйца" },
+                { value: 'meat', label: 'Мясо' },
+                { value: 'poultry', label: 'Птица' },
+                { value: 'eggs', label: 'Яйца' },
               ]}
             />
-            <Select label="Недоступный" disabled options={[{ value: "x", label: "X" }]} />
+            <Select label="Недоступный" disabled options={[{ value: 'x', label: 'X' }]} />
             <Textarea label="Комментарий к заказу" placeholder="Время доставки, подъезд…" />
           </div>
         </section>
@@ -134,7 +148,11 @@ export default function UiKitPage() {
             </Card>
             <Card
               title="С действием"
-              actions={<Button size="sm" variant="secondary">Открыть</Button>}
+              actions={
+                <Button size="sm" variant="secondary">
+                  Открыть
+                </Button>
+              }
             >
               <p>В заголовке можно разместить действия.</p>
             </Card>
@@ -147,10 +165,10 @@ export default function UiKitPage() {
             active={activeTab}
             onChange={setActiveTab}
             items={[
-              { key: "all", label: "Все" },
-              { key: "meat", label: "Мясо" },
-              { key: "poultry", label: "Птица" },
-              { key: "eggs", label: "Яйца" },
+              { key: 'all', label: 'Все' },
+              { key: 'meat', label: 'Мясо' },
+              { key: 'poultry', label: 'Птица' },
+              { key: 'eggs', label: 'Яйца' },
             ]}
           />
         </section>
@@ -159,7 +177,12 @@ export default function UiKitPage() {
           <h2 className={styles.sectionTitle}>Table</h2>
           <Table columns={demoColumns} data={demoRows} rowKey={(row) => row.sku} />
           <h3 className={styles.subTitle}>Пустое состояние</h3>
-          <Table columns={demoColumns} data={[]} rowKey={(row) => row.sku} empty="Товары не найдены" />
+          <Table
+            columns={demoColumns}
+            data={[]}
+            rowKey={(row) => row.sku}
+            empty="Товары не найдены"
+          />
         </section>
 
         <section className={styles.section}>
@@ -171,15 +194,28 @@ export default function UiKitPage() {
           <h2 className={styles.sectionTitle}>Modal · Toast</h2>
           <div className={styles.row}>
             <Button onClick={() => setModalOpen(true)}>Открыть модальное окно</Button>
-            <Button variant="secondary" onClick={() => toast.push("Заказ создан", "success")}>
+            <Button variant="secondary" onClick={() => toast.push('Заказ создан', 'success')}>
               Toast: успех
             </Button>
-            <Button variant="secondary" onClick={() => toast.push("Недостаточно товара на складе", "error")}>
+            <Button
+              variant="secondary"
+              onClick={() => toast.push('Недостаточно товара на складе', 'error')}
+            >
               Toast: ошибка
             </Button>
-            <Button variant="secondary" onClick={() => toast.push("Прайс обновлён", "info")}>
+            <Button variant="secondary" onClick={() => toast.push('Прайс обновлён', 'info')}>
               Toast: инфо
             </Button>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>ConfirmModal</h2>
+          <div className={styles.row}>
+            <Button variant="secondary" onClick={() => setConfirmOpen(true)}>
+              Подтверждение действия
+            </Button>
+            <Button onClick={() => setConfirmDangerOpen(true)}>Подтверждение удаления</Button>
           </div>
         </section>
       </main>
@@ -198,7 +234,7 @@ export default function UiKitPage() {
             <Button
               onClick={() => {
                 setModalOpen(false);
-                toast.push("Заказ подтверждён", "success");
+                toast.push('Заказ подтверждён', 'success');
               }}
             >
               Подтвердить
@@ -207,10 +243,36 @@ export default function UiKitPage() {
         }
       >
         <p>
-          Создать заказ на 5 позиций, сумма 1 489,00 р. с НДС 10%? Доставка: г. Минск,
-          ул. Монтажников, 39.
+          Создать заказ на 5 позиций, сумма 1 489,00 р. с НДС 10%? Доставка: г. Минск, ул.
+          Монтажников, 39.
         </p>
       </Modal>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Провести документ"
+        confirmLabel="Провести"
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          toast.push('Документ проведён', 'success');
+        }}
+      >
+        <p>Провести документ «Приходная накладная №12»? Сформируются движения склада.</p>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={confirmDangerOpen}
+        title="Удаление фото"
+        confirmLabel="Удалить"
+        onClose={() => setConfirmDangerOpen(false)}
+        onConfirm={() => {
+          setConfirmDangerOpen(false);
+          toast.push('Фото удалено', 'success');
+        }}
+      >
+        <p>Удалить фото «Разделка туши»? Действие необратимо.</p>
+      </ConfirmModal>
     </div>
   );
 }

@@ -49,20 +49,8 @@
   min-width: 20rem;
 }
 
-.input {
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 0.5rem 0.6rem;
-  font-size: 0.9rem;
-
-  &:focus {
-    outline: 2px solid rgba(124, 45, 36, 0.3);
-    border-color: #7c2d24;
-  }
-}
-
 .hint {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.82rem;
   margin: 0;
 }

@@ -1,34 +1,47 @@
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Input, Modal, Pagination, Select, Table, useToast } from "../../components/ui";
-import { createUser, deleteUser, listUsers, resetUserPassword, updateUser } from "../../api/users";
-import { listCompanies } from "../../api/companies";
-import type { Company, Role, User } from "../../types/admin";
-import styles from "./AdminPages.module.scss";
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Button,
+  ConfirmModal,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Table,
+  useToast,
+} from '../../components/ui';
+import { createUser, deleteUser, listUsers, resetUserPassword, updateUser } from '../../api/users';
+import { listCompanies } from '../../api/companies';
+import type { Company, Role, User } from '../../types/admin';
+import styles from './AdminPages.module.scss';
 
 const ROLES: { value: Role; label: string }[] = [
-  { value: "ADMIN", label: "Администратор" },
-  { value: "ACCOUNTANT", label: "Бухгалтер" },
-  { value: "MANAGER", label: "Менеджер" },
-  { value: "CUSTOMER_LEGAL", label: "Клиент (юрлицо)" },
-  { value: "CUSTOMER_INDIVIDUAL", label: "Клиент (физлицо)" },
+  { value: 'ADMIN', label: 'Администратор' },
+  { value: 'ACCOUNTANT', label: 'Бухгалтер' },
+  { value: 'MANAGER', label: 'Менеджер' },
+  { value: 'CUSTOMER_LEGAL', label: 'Клиент (юрлицо)' },
+  { value: 'CUSTOMER_INDIVIDUAL', label: 'Клиент (физлицо)' },
 ];
 
 const roleLabel = (role: Role) => ROLES.find((r) => r.value === role)?.label ?? role;
 
 const userSchema = z.object({
-  email: z.string().email("Введите корректный email"),
-  fullName: z.string().min(2, "ФИО не может быть короче 2 символов"),
+  email: z.string().email('Введите корректный email'),
+  fullName: z.string().min(2, 'ФИО не может быть короче 2 символов'),
   phone: z.string().optional(),
-  role: z.enum(["ADMIN", "ACCOUNTANT", "MANAGER", "CUSTOMER_LEGAL", "CUSTOMER_INDIVIDUAL"]),
+  role: z.enum(['ADMIN', 'ACCOUNTANT', 'MANAGER', 'CUSTOMER_LEGAL', 'CUSTOMER_INDIVIDUAL']),
   companyId: z.string().optional(),
   isActive: z.boolean(),
   // пустая строка от пустого input — это «пароль не задан» (поле «необязательно»),
   // иначе создать пользователя через UI без пароля невозможно (нашёл E2E S39)
-  password: z.string().min(8, "Пароль не может быть короче 8 символов").or(z.literal("")).optional(),
+  password: z
+    .string()
+    .min(8, 'Пароль не может быть короче 8 символов')
+    .or(z.literal(''))
+    .optional(),
 });
 
 type UserForm = z.infer<typeof userSchema>;
@@ -42,7 +55,14 @@ interface UserFormModalProps {
   isSubmitting: boolean;
 }
 
-function UserFormModal({ open, user, companies, onClose, onSubmit, isSubmitting }: UserFormModalProps) {
+function UserFormModal({
+  open,
+  user,
+  companies,
+  onClose,
+  onSubmit,
+  isSubmitting,
+}: UserFormModalProps) {
   const {
     register,
     handleSubmit,
@@ -62,23 +82,23 @@ function UserFormModal({ open, user, companies, onClose, onSubmit, isSubmitting 
           password: undefined,
         }
       : {
-          email: "",
-          fullName: "",
-          phone: "",
-          role: "CUSTOMER_LEGAL",
-          companyId: "",
+          email: '',
+          fullName: '',
+          phone: '',
+          role: 'CUSTOMER_LEGAL',
+          companyId: '',
           isActive: true,
-          password: "",
+          password: '',
         },
   });
 
-  const roleValue = watch("role");
-  const showCompany = roleValue === "CUSTOMER_LEGAL";
+  const roleValue = watch('role');
+  const showCompany = roleValue === 'CUSTOMER_LEGAL';
 
   return (
     <Modal
       open={open}
-      title={user ? "Редактировать пользователя" : "Новый пользователь"}
+      title={user ? 'Редактировать пользователя' : 'Новый пользователь'}
       onClose={onClose}
       footer={
         <>
@@ -86,7 +106,7 @@ function UserFormModal({ open, user, companies, onClose, onSubmit, isSubmitting 
             Отмена
           </Button>
           <Button type="submit" form="user-form" loading={isSubmitting}>
-            {user ? "Сохранить" : "Создать"}
+            {user ? 'Сохранить' : 'Создать'}
           </Button>
         </>
       }
@@ -99,18 +119,24 @@ function UserFormModal({ open, user, companies, onClose, onSubmit, isSubmitting 
           if (!user) reset();
         })}
       >
-        <Input label="Email" type="email" error={errors.email?.message} {...register("email")} />
-        <Input label="ФИО" error={errors.fullName?.message} {...register("fullName")} />
-        <Input label="Телефон" error={errors.phone?.message} {...register("phone")} />
-        <Select label="Роль" options={ROLES} value={watch("role")} error={errors.role?.message} {...register("role")} />
+        <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
+        <Input label="ФИО" error={errors.fullName?.message} {...register('fullName')} />
+        <Input label="Телефон" error={errors.phone?.message} {...register('phone')} />
+        <Select
+          label="Роль"
+          options={ROLES}
+          value={watch('role')}
+          error={errors.role?.message}
+          {...register('role')}
+        />
         {showCompany && (
           <Select
             label="Компания"
             placeholder="Выберите компанию"
             options={companies.map((c) => ({ value: c.id, label: `${c.name} (УНП ${c.unp})` }))}
-            value={watch("companyId") ?? ""}
+            value={watch('companyId') ?? ''}
             error={errors.companyId?.message}
-            {...register("companyId")}
+            {...register('companyId')}
           />
         )}
         {!user && (
@@ -119,11 +145,11 @@ function UserFormModal({ open, user, companies, onClose, onSubmit, isSubmitting 
             type="password"
             placeholder="Будет сгенерирован временный пароль"
             error={errors.password?.message}
-            {...register("password")}
+            {...register('password')}
           />
         )}
         <label className={styles.checkbox}>
-          <input type="checkbox" {...register("isActive")} />
+          <input type="checkbox" {...register('isActive')} />
           <span>Активен</span>
         </label>
       </form>
@@ -134,26 +160,31 @@ function UserFormModal({ open, user, companies, onClose, onSubmit, isSubmitting 
 export default function AdminUsersPage() {
   const { push } = useToast();
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState({ search: "", role: "", isActive: "" as "" | "true" | "false" });
+  const [filters, setFilters] = useState({
+    search: '',
+    role: '',
+    isActive: '' as '' | 'true' | 'false',
+  });
   const [page, setPage] = useState(1);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
 
   const { data: usersData, isLoading: isUsersLoading } = useQuery({
-    queryKey: ["admin", "users", filters, page],
+    queryKey: ['admin', 'users', filters, page],
     queryFn: () =>
       listUsers({
         page: page - 1,
         size: 20,
         search: filters.search || undefined,
         role: (filters.role as Role) || undefined,
-        isActive: filters.isActive === "" ? undefined : filters.isActive === "true",
+        isActive: filters.isActive === '' ? undefined : filters.isActive === 'true',
       }),
   });
 
   const { data: companiesData } = useQuery({
-    queryKey: ["admin", "companies", "all"],
+    queryKey: ['admin', 'companies', 'all'],
     queryFn: () => listCompanies({ size: 1000 }),
   });
 
@@ -166,30 +197,35 @@ export default function AdminUsersPage() {
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
-      push("Пользователь создан", "success");
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      push('Пользователь создан', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       setIsFormOpen(false);
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось создать пользователя", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось создать пользователя', 'error'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof updateUser>[1] }) => updateUser(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof updateUser>[1] }) =>
+      updateUser(id, body),
     onSuccess: () => {
-      push("Пользователь обновлён", "success");
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      push('Пользователь обновлён', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       setEditingUser(null);
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось обновить пользователя", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось обновить пользователя', 'error'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
-      push("Пользователь удалён", "success");
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      push('Пользователь удалён', 'success');
+      setDeletingUser(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось удалить пользователя", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось удалить пользователя', 'error'),
   });
 
   const resetMutation = useMutation({
@@ -197,7 +233,8 @@ export default function AdminUsersPage() {
     onSuccess: (data) => {
       setResetResult(data.temporaryPassword);
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось сбросить пароль", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось сбросить пароль', 'error'),
   });
 
   const handleFormSubmit = (values: UserForm) => {
@@ -225,9 +262,7 @@ export default function AdminUsersPage() {
   };
 
   const handleDelete = (user: User) => {
-    if (confirm(`Удалить пользователя ${user.fullName}?`)) {
-      deleteMutation.mutate(user.id);
-    }
+    setDeletingUser(user);
   };
 
   return (
@@ -252,39 +287,47 @@ export default function AdminUsersPage() {
         <Select
           placeholder="Все статусы"
           options={[
-            { value: "true", label: "Активен" },
-            { value: "false", label: "Неактивен" },
+            { value: 'true', label: 'Активен' },
+            { value: 'false', label: 'Неактивен' },
           ]}
           value={filters.isActive}
-          onChange={(e) => setFilters((f) => ({ ...f, isActive: e.target.value as "" | "true" | "false" }))}
+          onChange={(e) =>
+            setFilters((f) => ({ ...f, isActive: e.target.value as '' | 'true' | 'false' }))
+          }
         />
       </div>
 
       <Table<User>
         columns={[
-          { key: "fullName", title: "ФИО" },
-          { key: "email", title: "Email" },
-          { key: "phone", title: "Телефон" },
-          { key: "role", title: "Роль", render: (row) => roleLabel(row.role) },
+          { key: 'fullName', title: 'ФИО' },
+          { key: 'email', title: 'Email' },
+          { key: 'phone', title: 'Телефон' },
+          { key: 'role', title: 'Роль', render: (row) => roleLabel(row.role) },
           {
-            key: "company",
-            title: "Компания",
-            render: (row) => (row.companyId ? companiesById.get(row.companyId)?.name ?? "—" : "—"),
+            key: 'company',
+            title: 'Компания',
+            render: (row) =>
+              row.companyId ? (companiesById.get(row.companyId)?.name ?? '—') : '—',
           },
           {
-            key: "isActive",
-            title: "Статус",
-            render: (row) => (row.isActive ? "Активен" : "Неактивен"),
+            key: 'isActive',
+            title: 'Статус',
+            render: (row) => (row.isActive ? 'Активен' : 'Неактивен'),
           },
           {
-            key: "actions",
-            title: "Действия",
+            key: 'actions',
+            title: 'Действия',
             render: (row) => (
               <div className={styles.actions}>
                 <Button size="sm" variant="secondary" onClick={() => handleEdit(row)}>
                   Изменить
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => resetMutation.mutate(row.id)}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={resetMutation.isPending && resetMutation.variables === row.id}
+                  onClick={() => resetMutation.mutate(row.id)}
+                >
                   Сбросить пароль
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => handleDelete(row)}>
@@ -316,8 +359,22 @@ export default function AdminUsersPage() {
 
       <Modal open={!!resetResult} title="Временный пароль" onClose={() => setResetResult(null)}>
         <p className={styles.hint}>Скопируйте пароль — он показывается один раз.</p>
-        <Input readOnly value={resetResult ?? ""} />
+        <Input readOnly value={resetResult ?? ''} />
       </Modal>
+
+      <ConfirmModal
+        open={deletingUser !== null}
+        title="Удалить пользователя"
+        confirmLabel="Удалить"
+        loading={deleteMutation.isPending}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={() => deletingUser && deleteMutation.mutate(deletingUser.id)}
+      >
+        <p>
+          Удалить пользователя {deletingUser?.fullName} ({deletingUser?.email})? Вход в систему
+          будет отозван; действие необратимо.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

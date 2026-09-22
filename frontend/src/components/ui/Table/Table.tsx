@@ -50,7 +50,16 @@ export function Table<T>({ columns, data, rowKey, loading, empty }: TableProps<T
             data.map((row) => (
               <tr key={rowKey(row)}>
                 {columns.map((column) => (
-                  <td key={column.key} style={{ textAlign: column.align ?? "left" }}>
+                  <td
+                    key={column.key}
+                    style={{ textAlign: column.align ?? "left" }}
+                    // подпись поля для карточного вида на мобильных (см. Table.module.scss)
+                    data-label={
+                      typeof column.title === "string" && column.title.trim()
+                        ? column.title
+                        : undefined
+                    }
+                  >
                     {column.render
                       ? column.render(row)
                       : String((row as Record<string, unknown>)[column.key] ?? "")}

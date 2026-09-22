@@ -1,8 +1,7 @@
-/** Деньги в BYN, ru-RU-подобное форматирование (2.3: цены НДС-включённые). */
+/** Деньги, формат бренд-бука — суффикс «р.» (2.3: цены НДС-включённые). */
 export function formatMoney(value: number): string {
-  return new Intl.NumberFormat("ru-BY", {
-    style: "currency",
-    currency: "BYN",
+  return `${new Intl.NumberFormat("ru-BY", {
     minimumFractionDigits: 2,
-  }).format(value);
+    maximumFractionDigits: 2,
+  }).format(value)} р.`;
 }

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "../ui";
+import { Button, LinkButton } from "../ui";
 import { DASHBOARD_BY_ROLE } from "../auth/dashboardByRole";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore, selectCartTotalCount } from "../../store/cartStore";
@@ -20,9 +21,12 @@ export function PublicHeader() {
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const localCartCount = useCartStore((s) => selectCartTotalCount(s.items));
+  const [loggingOut, setLoggingOut] = useState(false);
 
   function handleLogout() {
+    setLoggingOut(true);
     logout().finally(() => {
+      setLoggingOut(false);
       useCartStore.getState().clear();
       useCartStore.getState().setOwner(null);
       clearAuth();
@@ -61,7 +65,7 @@ export function PublicHeader() {
             <Link to={DASHBOARD_BY_ROLE[user.role] ?? "/cabinet"} className={styles.actions__login}>
               {user.fullName || "Кабинет"}
             </Link>
-            <Button variant="secondary" size="sm" onClick={handleLogout}>
+            <Button variant="secondary" size="sm" loading={loggingOut} onClick={handleLogout}>
               Выйти
             </Button>
           </>
@@ -71,11 +75,9 @@ export function PublicHeader() {
           </Link>
         )}
         {/* Оформление требует входа: аноним уйдёт на /login, после входа локальная корзина переедет в серверную */}
-        <Link to="/cabinet/cart" className={styles.actions__cartLink}>
-          <Button variant="primary" size="sm">
-            Корзина{localCartCount > 0 ? ` (${localCartCount})` : ""}
-          </Button>
-        </Link>
+        <LinkButton to="/cabinet/cart" variant="primary" size="sm">
+          Корзина{localCartCount > 0 ? ` (${localCartCount})` : ""}
+        </LinkButton>
       </div>
     </header>
   );

@@ -4,6 +4,8 @@ import { AdminIndexRedirect, AuthRedirect, ProtectedRoute, RoleGuard } from "./c
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { WarehouseLayout } from "./components/warehouse/WarehouseLayout";
 import { PublicLayout } from "./components/public/PublicLayout";
+import { CabinetLayout } from "./components/cabinet/CabinetLayout";
+import { ManagerLayout } from "./components/manager/ManagerLayout";
 import NotFoundPage from "./pages/NotFoundPage";
 import UiKitPage from "./pages/UiKitPage";
 import LoginPage from "./pages/LoginPage";
@@ -23,7 +25,6 @@ import AdminCmsPage from "./pages/admin/AdminCmsPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminAuditPage from "./pages/admin/AdminAuditPage";
 import AdminIntegrationPage from "./pages/admin/AdminIntegrationPage";
-import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import ManagerOrdersPage from "./pages/manager/ManagerOrdersPage";
 import ManagerOrderCreatePage from "./pages/manager/ManagerOrderCreatePage";
 import CrmInboxPage from "./pages/manager/CrmInboxPage";
@@ -89,35 +90,38 @@ export default function App() {
             </Route>
           </Route>
 
+          {/* Кабинет клиента: единый CabinetLayout с шапкой; guards сохраняются */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/manager" element={<ManagerDashboardPage />} />
-            <Route path="/cabinet" element={<CabinetDashboardPage />} />
-            <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
-            <Route path="/cabinet/cart" element={<CabinetCartPage />} />
-            <Route path="/cabinet/profile" element={<CabinetProfilePage />} />
-          </Route>
-
-          {/* Заказы клиента (S23): только клиенты, у персонала свои разделы */}
-          <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL", "CUSTOMER_INDIVIDUAL"]} />}>
-            <Route path="/cabinet/orders" element={<CabinetOrdersPage />} />
-          </Route>
-
-          {/* Документы юрлица (S27): счета и накладные; физлицо документов не имеет (2.1) */}
-          <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL"]} />}>
-            <Route path="/cabinet/documents" element={<CabinetDocumentsPage />} />
+            <Route element={<CabinetLayout />}>
+              <Route path="/cabinet" element={<CabinetDashboardPage />} />
+              <Route path="/cabinet/catalog" element={<CabinetCatalogPage />} />
+              <Route path="/cabinet/cart" element={<CabinetCartPage />} />
+              <Route path="/cabinet/profile" element={<CabinetProfilePage />} />
+              {/* Заказы клиента (S23): только клиенты, у персонала свои разделы */}
+              <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL", "CUSTOMER_INDIVIDUAL"]} />}>
+                <Route path="/cabinet/orders" element={<CabinetOrdersPage />} />
+              </Route>
+              {/* Документы юрлица (S27): счета и накладные; физлицо документов не имеет (2.1) */}
+              <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL"]} />}>
+                <Route path="/cabinet/documents" element={<CabinetDocumentsPage />} />
+              </Route>
+            </Route>
           </Route>
 
           {/* Заказы в работе (S22/S23): лента, пул «не назначено», заказ от имени клиента.
-              Роль проверяет и бэкенд (2.1) — для глубоких ссылок. */}
+              Роль проверяет и бэкенд (2.1) — для глубоких ссылок.
+              Единый каркас бэк-офиса: то же меню, что на админке и складе. */}
           <Route element={<RoleGuard allowed={["MANAGER", "ADMIN"]} />}>
-            <Route path="/manager/orders" element={<ManagerOrdersPage />} />
-            <Route path="/manager/orders/new" element={<ManagerOrderCreatePage />} />
-            <Route path="/manager/documents" element={<DocumentsPage />} />
-            {/* CRM UI (S30): единое окно, воронка, клиенты, дашборд */}
-            <Route path="/manager/inbox" element={<CrmInboxPage />} />
-            <Route path="/manager/leads" element={<CrmLeadsPage />} />
-            <Route path="/manager/clients" element={<CrmClientsPage />} />
-            <Route path="/manager/dashboard" element={<CrmDashboardPage />} />
+            <Route element={<ManagerLayout />}>
+              <Route path="/manager/orders" element={<ManagerOrdersPage />} />
+              <Route path="/manager/orders/new" element={<ManagerOrderCreatePage />} />
+              <Route path="/manager/documents" element={<DocumentsPage />} />
+              {/* CRM UI (S30): единое окно, воронка, клиенты, дашборд */}
+              <Route path="/manager/inbox" element={<CrmInboxPage />} />
+              <Route path="/manager/leads" element={<CrmLeadsPage />} />
+              <Route path="/manager/clients" element={<CrmClientsPage />} />
+              <Route path="/manager/dashboard" element={<CrmDashboardPage />} />
+            </Route>
           </Route>
 
           {/* Склад (S18.4): матрица 2.1 — ADMIN/ACCOUNTANT/MANAGER; бэкенд отдаёт 403 остальным */}

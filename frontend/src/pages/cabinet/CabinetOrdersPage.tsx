@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Badge, Button, Card, Table, useToast } from "../../components/ui";
+import { Badge, Button, Card, Modal, Table, useToast } from "../../components/ui";
 import { addOrderItemsToCart, listOrders, type Order } from "../../api/orders";
 import { orderStatusBadge, type OrderStatus } from "../../lib/orderStatus";
 import { topFrequentItems } from "../../lib/frequentItems";
@@ -30,6 +30,7 @@ export default function CabinetOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [details, setDetails] = useState<Order | null>(null);
   const [repeating, setRepeating] = useState<string | null>(null);
+  const [addingFrequent, setAddingFrequent] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -58,12 +59,16 @@ export default function CabinetOrdersPage() {
   };
 
   const addFrequent = async (productId: string) => {
+    if (addingFrequent) return;
+    setAddingFrequent(productId);
     try {
       await putCartItem(productId, 1);
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       push("Добавлено в корзину", "success");
     } catch (err) {
       push((err as Error).message, "error");
+    } finally {
+      setAddingFrequent(null);
     }
   };
 
@@ -105,10 +110,6 @@ export default function CabinetOrdersPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Мои заказы</h1>
-        <nav className={styles.nav}>
-          <Link to="/cabinet/catalog">Каталог</Link>
-          <Link to="/cabinet/cart">Корзина</Link>
-        </nav>
       </header>
 
       {frequent.length > 0 && (
@@ -123,7 +124,11 @@ export default function CabinetOrdersPage() {
                     {item.sku} · заказывали {item.orderCount} раз(а)
                   </span>
                 </div>
-                <Button variant="accent" onClick={() => addFrequent(item.productId)}>
+                <Button
+                  variant="accent"
+                  loading={addingFrequent === item.productId}
+                  onClick={() => addFrequent(item.productId)}
+                >
                   В корзину
                 </Button>
               </div>
@@ -140,11 +145,10 @@ export default function CabinetOrdersPage() {
         empty="Заказов пока нет — начните с каталога"
       />
 
-      {details && (
-        <div className={styles.overlay} onClick={() => setDetails(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <Modal open={!!details} onClose={() => setDetails(null)} title={details ? `Заказ ${details.number}` : undefined}>
+        {details && (
+          <>
             <div className={styles.modalHead}>
-              <h2>Заказ {details.number}</h2>
               {orderStatusBadge(details.status as OrderStatus)}
               <Button variant="secondary" onClick={() => setDetails(null)}>
                 Закрыть
@@ -197,9 +201,9 @@ export default function CabinetOrdersPage() {
             >
               Повторить заказ
             </Button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

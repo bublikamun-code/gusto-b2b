@@ -1,38 +1,40 @@
-import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Input, Modal, Table, useToast } from "../../components/ui";
+import { useCallback, useEffect, useState } from 'react';
+import { Badge, Button, ConfirmModal, Input, Modal, Table, useToast } from '../../components/ui';
 import {
   createSupplier,
   deactivateSupplier,
   listSuppliers,
   updateSupplier,
   type Supplier,
-} from "../../api/warehouse";
-import styles from "./WarehousePages.module.scss";
+} from '../../api/warehouse';
+import styles from './WarehousePages.module.scss';
 
 const emptyForm = {
-  name: "",
-  unp: "",
-  phone: "",
-  email: "",
-  contactPerson: "",
-  note: "",
+  name: '',
+  unp: '',
+  phone: '',
+  email: '',
+  contactPerson: '',
+  note: '',
 };
 
 export default function WarehouseSuppliersPage() {
   const { push } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deactivating, setDeactivating] = useState<Supplier | null>(null);
+  const [acting, setActing] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     listSuppliers(search || undefined)
       .then((result) => setSuppliers(result.items))
-      .catch((err) => push((err as Error).message, "error"))
+      .catch((err) => push((err as Error).message, 'error'))
       .finally(() => setLoading(false));
   }, [search, push]);
 
@@ -50,73 +52,79 @@ export default function WarehouseSuppliersPage() {
     setEditing(supplier);
     setForm({
       name: supplier.name,
-      unp: supplier.unp ?? "",
-      phone: supplier.phone ?? "",
-      email: supplier.email ?? "",
-      contactPerson: supplier.contactPerson ?? "",
-      note: supplier.note ?? "",
+      unp: supplier.unp ?? '',
+      phone: supplier.phone ?? '',
+      email: supplier.email ?? '',
+      contactPerson: supplier.contactPerson ?? '',
+      note: supplier.note ?? '',
     });
     setModalOpen(true);
   };
 
   const submit = async () => {
     if (!form.name.trim()) {
-      push("Укажите название поставщика", "error");
+      push('Укажите название поставщика', 'error');
       return;
     }
-      setSaving(true);
+    setSaving(true);
     try {
       if (editing) {
         await updateSupplier(editing.id, form);
-        push("Поставщик обновлён", "success");
+        push('Поставщик обновлён', 'success');
       } else {
         await createSupplier(form);
-        push("Поставщик создан", "success");
+        push('Поставщик создан', 'success');
       }
       setEditing(null);
       setModalOpen(false);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const deactivate = async (supplier: Supplier) => {
+  const deactivate = async () => {
+    if (!deactivating) return;
+    const supplier = deactivating;
+    setActing(true);
     try {
       await deactivateSupplier(supplier.id);
-      push(`${supplier.name} деактивирован`, "info");
+      push(`${supplier.name} деактивирован`, 'info');
+      setDeactivating(null);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
+    } finally {
+      setActing(false);
     }
   };
 
   const columns = [
-    { key: "name", title: "Поставщик" },
-    { key: "unp", title: "УНП" },
-    { key: "contactPerson", title: "Контактное лицо" },
-    { key: "phone", title: "Телефон" },
+    { key: 'name', title: 'Поставщик' },
+    { key: 'unp', title: 'УНП' },
+    { key: 'contactPerson', title: 'Контактное лицо' },
+    { key: 'phone', title: 'Телефон' },
     {
-      key: "isActive",
-      title: "Статус",
+      key: 'isActive',
+      title: 'Статус',
       render: (row: Supplier) => (
-        <Badge variant={row.isActive ? "success" : "neutral"}>
-          {row.isActive ? "Активен" : "Не активен"}
+        <Badge variant={row.isActive ? 'success' : 'neutral'}>
+          {row.isActive ? 'Активен' : 'Не активен'}
         </Badge>
       ),
     },
     {
-      key: "actions",
-      title: "",
+      key: 'actions',
+      title: '',
       render: (row: Supplier) => (
-        <div style={{ display: "flex", gap: "0.4rem" }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           <Button size="sm" variant="secondary" onClick={() => openEdit(row)}>
             Изменить
           </Button>
           {row.isActive && (
-            <Button size="sm" variant="secondary" onClick={() => deactivate(row)}>
+            <Button size="sm" variant="secondary" onClick={() => setDeactivating(row)}>
               Деактивировать
             </Button>
           )}
@@ -159,7 +167,7 @@ export default function WarehouseSuppliersPage() {
           setModalOpen(false);
           setEditing(null);
         }}
-        title={editing ? `Поставщик: ${editing.name}` : "Новый поставщик"}
+        title={editing ? `Поставщик: ${editing.name}` : 'Новый поставщик'}
       >
         <div className={styles.formColumn}>
           <Input
@@ -192,6 +200,20 @@ export default function WarehouseSuppliersPage() {
           </Button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={deactivating !== null}
+        title="Деактивировать поставщика"
+        confirmLabel="Деактивировать"
+        loading={acting}
+        onClose={() => setDeactivating(null)}
+        onConfirm={deactivate}
+      >
+        <p>
+          Деактивировать поставщика «{deactivating?.name}»? Он исчезнет из списка при создании
+          заказов, история заказов сохранится.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

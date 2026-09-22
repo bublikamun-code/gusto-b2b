@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Table, useToast } from "../../components/ui";
+import { Badge, Button, Input, Modal, Table, useToast } from "../../components/ui";
 import { addNote, listNotes, listTasks, type CrmNote, type CrmTask } from "../../api/crm";
 import { listManagerCompanies, type ManagerCompany } from "../../api/orders";
 import { listOrders, type Order } from "../../api/orders";
@@ -21,6 +21,7 @@ export default function CrmClientsPage() {
   const [notes, setNotes] = useState<CrmNote[]>([]);
   const [noteBody, setNoteBody] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingNote, setSavingNote] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -47,7 +48,8 @@ export default function CrmClientsPage() {
   };
 
   const saveNote = async () => {
-    if (!selected || !noteBody.trim()) return;
+    if (!selected || !noteBody.trim() || savingNote) return;
+    setSavingNote(true);
     try {
       await addNote(selected.id, noteBody.trim());
       setNotes((await listNotes(selected.id)).items);
@@ -55,6 +57,8 @@ export default function CrmClientsPage() {
       push("Заметка добавлена", "success");
     } catch (err) {
       push((err as Error).message, "error");
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -90,11 +94,10 @@ export default function CrmClientsPage() {
         empty="Закреплённых компаний пока нет"
       />
 
-      {selected && (
-        <div className={styles.overlay} onClick={() => setSelected(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.name}>
+        {selected && (
+          <>
             <div className={styles.modalHead}>
-              <h2>{selected.name}</h2>
               {selected.unp && <Badge variant="neutral">УНП {selected.unp}</Badge>}
               <Button variant="secondary" onClick={() => setSelected(null)}>
                 Закрыть
@@ -129,13 +132,19 @@ export default function CrmClientsPage() {
             <div className={styles.section}>
               <h3>Заметки</h3>
               <div className={styles.noteForm}>
-                <input
+                <Input
                   className={styles.input}
                   placeholder="Новая заметка о клиенте…"
                   value={noteBody}
                   onChange={(e) => setNoteBody(e.target.value)}
                 />
-                <Button size="sm" variant="accent" disabled={!noteBody.trim()} onClick={saveNote}>
+                <Button
+                  size="sm"
+                  variant="accent"
+                  loading={savingNote}
+                  disabled={!noteBody.trim()}
+                  onClick={saveNote}
+                >
                   Добавить
                 </Button>
               </div>
@@ -150,9 +159,9 @@ export default function CrmClientsPage() {
                 ))}
               </ul>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

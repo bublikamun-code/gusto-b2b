@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { Button, Card, Input, useToast } from "../../components/ui";
-import { apiRequest } from "../../api/client";
-import { useAuthStore } from "../../store/authStore";
-import styles from "./CabinetProfilePage.module.scss";
+import { useEffect, useState } from 'react';
+import { Button, Card, ConfirmModal, Input, useToast } from '../../components/ui';
+import { apiRequest } from '../../api/client';
+import { useAuthStore } from '../../store/authStore';
+import styles from './CabinetProfilePage.module.scss';
 
 interface Profile {
   email: string;
@@ -15,59 +15,65 @@ export default function CabinetProfilePage() {
   const { push } = useToast();
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [changing, setChanging] = useState(false);
+  const [confirmingPassword, setConfirmingPassword] = useState(false);
 
   useEffect(() => {
-    apiRequest<Profile>("/cabinet/profile")
+    apiRequest<Profile>('/cabinet/profile')
       .then((p) => {
         setProfile(p);
         setFullName(p.fullName);
-        setPhone(p.phone ?? "");
+        setPhone(p.phone ?? '');
       })
-      .catch((err) => push((err as Error).message, "error"));
+      .catch((err) => push((err as Error).message, 'error'));
   }, [push]);
 
   const saveProfile = async () => {
     setSaving(true);
     try {
-      const updated = await apiRequest<Profile>("/cabinet/profile", {
-        method: "PATCH",
+      const updated = await apiRequest<Profile>('/cabinet/profile', {
+        method: 'PATCH',
         body: { fullName, phone },
       });
       setProfile(updated);
-      push("Профиль сохранён", "success");
+      push('Профиль сохранён', 'success');
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const changePassword = async () => {
+  const requestPasswordChange = () => {
     if (newPassword.length < 8) {
-      push("Новый пароль — минимум 8 символов", "error");
+      push('Новый пароль — минимум 8 символов', 'error');
       return;
     }
+    setConfirmingPassword(true);
+  };
+
+  const changePassword = async () => {
+    setConfirmingPassword(false);
     setChanging(true);
     try {
-      await apiRequest("/cabinet/profile/password", {
-        method: "POST",
+      await apiRequest('/cabinet/profile/password', {
+        method: 'POST',
         body: { currentPassword, newPassword },
       });
-      push("Пароль изменён. Войдите с новым паролем.", "success");
+      push('Пароль изменён. Войдите с новым паролем.', 'success');
       // Все сессии завершены — разлогиниваем
       setTimeout(() => {
         clearAuth();
-        window.location.href = "/login";
+        window.location.href = '/login';
       }, 1500);
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setChanging(false);
     }
@@ -80,7 +86,11 @@ export default function CabinetProfilePage() {
       <Card className={styles.card}>
         <h2>Данные</h2>
         <p className={styles.email}>{profile?.email}</p>
-        <Input label="Имя и фамилия" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <Input
+          label="Имя и фамилия"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+        />
         <Input label="Телефон" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <Button onClick={saveProfile} loading={saving}>
           Сохранить
@@ -106,13 +116,26 @@ export default function CabinetProfilePage() {
         <p className={styles.hint}>После смены пароля потребуется войти заново.</p>
         <Button
           variant="secondary"
-          onClick={changePassword}
-          loading={changing}
+          onClick={requestPasswordChange}
           disabled={!currentPassword || !newPassword}
         >
           Изменить пароль
         </Button>
       </Card>
+
+      <ConfirmModal
+        open={confirmingPassword}
+        title="Изменить пароль"
+        confirmLabel="Изменить пароль"
+        loading={changing}
+        onClose={() => setConfirmingPassword(false)}
+        onConfirm={changePassword}
+      >
+        <p>
+          Сменить пароль для {profile?.email}? Все активные сессии будут завершены, потребуется
+          войти заново.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

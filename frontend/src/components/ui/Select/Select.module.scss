@@ -39,6 +39,14 @@
     background: rgba($color-graphite, 0.06);
     cursor: not-allowed;
   }
+
+  // раскрытый список стилизуется частично (Chrome/Windows); на мобильных
+  // popup рисует ОС и CSS на него не действует
+  option {
+    background: $color-card;
+    color: $color-graphite;
+    font-family: $font-body;
+  }
 }
 
 .arrow {

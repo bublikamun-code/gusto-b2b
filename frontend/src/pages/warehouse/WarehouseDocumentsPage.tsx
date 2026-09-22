@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 import {
   Badge,
   Button,
+  ConfirmModal,
   Input,
   Modal,
   Pagination,
   Select,
   Table,
   useToast,
-} from "../../components/ui";
+} from '../../components/ui';
 import {
   cancelWarehouseDocument,
   confirmWarehouseDocument,
@@ -20,15 +21,15 @@ import {
   type StockLocation,
   type WarehouseDocument,
   type WarehouseDocumentType,
-} from "../../api/warehouse";
+} from '../../api/warehouse';
 import {
   DOCUMENT_STATUS_LABELS,
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_TYPE_OPTIONS,
   locationFieldsForType,
   validateDocumentLocations,
-} from "../../lib/warehouse";
-import styles from "./WarehousePages.module.scss";
+} from '../../lib/warehouse';
+import styles from './WarehousePages.module.scss';
 
 interface DraftItem {
   productId: string;
@@ -38,10 +39,10 @@ interface DraftItem {
 
 const emptyDraft = (type: WarehouseDocumentType) => ({
   type,
-  locationFromId: "",
-  locationToId: "",
-  note: "",
-  items: [{ productId: "", quantity: "1", price: "" }] as DraftItem[],
+  locationFromId: '',
+  locationToId: '',
+  note: '',
+  items: [{ productId: '', quantity: '1', price: '' }] as DraftItem[],
 });
 
 export default function WarehouseDocumentsPage() {
@@ -49,14 +50,19 @@ export default function WarehouseDocumentsPage() {
   const [documents, setDocuments] = useState<WarehouseDocument[]>([]);
   const [locations, setLocations] = useState<StockLocation[]>([]);
   const [products, setProducts] = useState<CatalogProductRef[]>([]);
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState(emptyDraft("INCOMING"));
+  const [draft, setDraft] = useState(emptyDraft('INCOMING'));
   const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    action: 'confirm' | 'cancel';
+    document: WarehouseDocument;
+  } | null>(null);
+  const [acting, setActing] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -65,7 +71,7 @@ export default function WarehouseDocumentsPage() {
         setDocuments(result.items);
         setTotal(result.total);
       })
-      .catch((err) => push((err as Error).message, "error"))
+      .catch((err) => push((err as Error).message, 'error'))
       .finally(() => setLoading(false));
   }, [typeFilter, statusFilter, page, push]);
 
@@ -74,17 +80,24 @@ export default function WarehouseDocumentsPage() {
   }, [load]);
 
   useEffect(() => {
-    listLocations().then(setLocations).catch(() => undefined);
-    listProductRefs().then((result) => setProducts(result.items)).catch(() => undefined);
+    listLocations()
+      .then(setLocations)
+      .catch(() => undefined);
+    listProductRefs()
+      .then((result) => setProducts(result.items))
+      .catch(() => undefined);
   }, []);
 
   const locationOptions = [
-    { value: "", label: "— выберите склад —" },
+    { value: '', label: '— выберите склад —' },
     ...locations.map((location) => ({ value: location.id, label: location.name })),
   ];
   const productOptions = [
-    { value: "", label: "— товар —" },
-    ...products.map((product) => ({ value: product.id, label: `${product.sku} · ${product.name}` })),
+    { value: '', label: '— товар —' },
+    ...products.map((product) => ({
+      value: product.id,
+      label: `${product.sku} · ${product.name}`,
+    })),
   ];
 
   const fields = locationFieldsForType(draft.type);
@@ -95,11 +108,11 @@ export default function WarehouseDocumentsPage() {
 
   const submit = async () => {
     if (locationError) {
-      push(locationError, "error");
+      push(locationError, 'error');
       return;
     }
     if (draft.items.some((item) => !item.productId || Number(item.quantity) <= 0)) {
-      push("Заполните позиции: товар и положительное количество", "error");
+      push('Заполните позиции: товар и положительное количество', 'error');
       return;
     }
     setSaving(true);
@@ -115,67 +128,90 @@ export default function WarehouseDocumentsPage() {
           price: item.price ? Number(item.price) : undefined,
         })),
       });
-      push("Документ создан. Подтвердите его, чтобы провести движения.", "success");
+      push('Документ создан. Подтвердите его, чтобы провести движения.', 'success');
       setCreating(false);
-      setDraft(emptyDraft("INCOMING"));
+      setDraft(emptyDraft('INCOMING'));
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const act = async (action: "confirm" | "cancel", document: WarehouseDocument) => {
+  const runAction = async () => {
+    if (!pendingAction) return;
+    const { action, document } = pendingAction;
+    setActing(true);
     try {
-      if (action === "confirm") {
+      if (action === 'confirm') {
         await confirmWarehouseDocument(document.id);
-        push(`${document.number} проведён`, "success");
+        push(`${document.number} проведён`, 'success');
       } else {
         await cancelWarehouseDocument(document.id);
-        push(`${document.number} отменён`, "info");
+        push(`${document.number} отменён`, 'info');
       }
+      setPendingAction(null);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
+    } finally {
+      setActing(false);
     }
   };
 
   const columns = [
-    { key: "number", title: "Номер", render: (row: WarehouseDocument) => <span className={styles.number}>{row.number}</span> },
-    { key: "type", title: "Тип", render: (row: WarehouseDocument) => DOCUMENT_TYPE_LABELS[row.type] },
     {
-      key: "status",
-      title: "Статус",
+      key: 'number',
+      title: 'Номер',
+      render: (row: WarehouseDocument) => <span className={styles.number}>{row.number}</span>,
+    },
+    {
+      key: 'type',
+      title: 'Тип',
+      render: (row: WarehouseDocument) => DOCUMENT_TYPE_LABELS[row.type],
+    },
+    {
+      key: 'status',
+      title: 'Статус',
       render: (row: WarehouseDocument) => (
         <Badge
           variant={
-            row.status === "CONFIRMED" ? "success" : row.status === "CANCELLED" ? "neutral" : "warning"
+            row.status === 'CONFIRMED'
+              ? 'success'
+              : row.status === 'CANCELLED'
+                ? 'neutral'
+                : 'warning'
           }
         >
           {DOCUMENT_STATUS_LABELS[row.status]}
         </Badge>
       ),
     },
-    { key: "documentDate", title: "Дата" },
+    { key: 'documentDate', title: 'Дата' },
     {
-      key: "items",
-      title: "Позиции",
+      key: 'items',
+      title: 'Позиции',
       render: (row: WarehouseDocument) =>
-        row.items
-          .map((item) => `${item.sku ?? item.productId} × ${item.quantity}`)
-          .join(", "),
+        row.items.map((item) => `${item.sku ?? item.productId} × ${item.quantity}`).join(', '),
     },
     {
-      key: "actions",
-      title: "",
+      key: 'actions',
+      title: '',
       render: (row: WarehouseDocument) =>
-        row.status === "DRAFT" ? (
-          <div style={{ display: "flex", gap: "0.4rem" }}>
-            <Button size="sm" onClick={() => act("confirm", row)}>
+        row.status === 'DRAFT' ? (
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <Button
+              size="sm"
+              onClick={() => setPendingAction({ action: 'confirm', document: row })}
+            >
               Провести
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => act("cancel", row)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setPendingAction({ action: 'cancel', document: row })}
+            >
               Отменить
             </Button>
           </div>
@@ -197,7 +233,7 @@ export default function WarehouseDocumentsPage() {
             setTypeFilter(event.target.value);
             setPage(0);
           }}
-          options={[{ value: "", label: "Все типы" }, ...DOCUMENT_TYPE_OPTIONS]}
+          options={[{ value: '', label: 'Все типы' }, ...DOCUMENT_TYPE_OPTIONS]}
         />
         <Select
           label="Статус"
@@ -207,7 +243,7 @@ export default function WarehouseDocumentsPage() {
             setPage(0);
           }}
           options={[
-            { value: "", label: "Все статусы" },
+            { value: '', label: 'Все статусы' },
             ...Object.entries(DOCUMENT_STATUS_LABELS).map(([value, label]) => ({ value, label })),
           ]}
         />
@@ -254,7 +290,7 @@ export default function WarehouseDocumentsPage() {
           />
 
           <div className={styles.itemsEditor}>
-            <strong>Позиции{draft.type === "INVENTORY" ? " (фактическое количество)" : ""}</strong>
+            <strong>Позиции{draft.type === 'INVENTORY' ? ' (фактическое количество)' : ''}</strong>
             {draft.items.map((item, index) => (
               <div key={index} className={styles.itemRow}>
                 <Select
@@ -279,7 +315,7 @@ export default function WarehouseDocumentsPage() {
                     setDraft({ ...draft, items });
                   }}
                 />
-                {draft.type === "INCOMING" && (
+                {draft.type === 'INCOMING' && (
                   <Input
                     label="Цена"
                     type="number"
@@ -295,6 +331,7 @@ export default function WarehouseDocumentsPage() {
                 )}
                 <Button
                   variant="secondary"
+                  aria-label="Удалить позицию"
                   onClick={() =>
                     setDraft({ ...draft, items: draft.items.filter((_, i) => i !== index) })
                   }
@@ -309,7 +346,7 @@ export default function WarehouseDocumentsPage() {
                 onClick={() =>
                   setDraft({
                     ...draft,
-                    items: [...draft.items, { productId: "", quantity: "1", price: "" }],
+                    items: [...draft.items, { productId: '', quantity: '1', price: '' }],
                   })
                 }
               >
@@ -323,6 +360,21 @@ export default function WarehouseDocumentsPage() {
           </Button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={pendingAction !== null}
+        title={pendingAction?.action === 'confirm' ? 'Провести документ' : 'Отменить документ'}
+        confirmLabel={pendingAction?.action === 'confirm' ? 'Провести' : 'Отменить'}
+        loading={acting}
+        onClose={() => setPendingAction(null)}
+        onConfirm={runAction}
+      >
+        <p>
+          {pendingAction?.action === 'confirm'
+            ? `Провести документ ${pendingAction.document.number}? Сформируются движения склада, документ станет неизменяемым.`
+            : `Отменить документ ${pendingAction?.document.number}? Провести его повторно будет нельзя.`}
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

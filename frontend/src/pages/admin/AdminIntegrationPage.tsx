@@ -1,21 +1,30 @@
-import { useRef, useState } from "react";
-import { Badge, Button, Card, Input, Table, useToast } from "../../components/ui";
+import { useRef, useState } from 'react';
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmModal,
+  Input,
+  Select,
+  Table,
+  useToast,
+} from '../../components/ui';
 import {
   applyImport,
   downloadExport,
   previewImport,
   type ImportPreview,
   type ImportReport,
-} from "../../api/adminOperations";
-import { importResultMessage, previewIsClean } from "../../lib/importWizard";
-import styles from "./AdminPages.module.scss";
-import wizardStyles from "./AdminIntegrationPage.module.scss";
+} from '../../api/adminOperations';
+import { importResultMessage, previewIsClean } from '../../lib/importWizard';
+import styles from './AdminPages.module.scss';
+import wizardStyles from './AdminIntegrationPage.module.scss';
 
-type ImportKind = "prices" | "stock";
+type ImportKind = 'prices' | 'stock';
 
 const KIND_LABELS: Record<ImportKind, string> = {
-  prices: "Прайсы (.xlsx: SKU, цена)",
-  stock: "Остатки (.xlsx: SKU, количество)",
+  prices: 'Прайсы (.xlsx: SKU, цена)',
+  stock: 'Остатки (.xlsx: SKU, количество)',
 };
 
 function today(): string {
@@ -34,21 +43,22 @@ export default function AdminIntegrationPage() {
   const { push } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const [kind, setKind] = useState<ImportKind>("prices");
+  const [kind, setKind] = useState<ImportKind>('prices');
   const [archiveMissing, setArchiveMissing] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmingApply, setConfirmingApply] = useState(false);
 
-  const [exportKind, setExportKind] = useState<"orders" | "invoices" | "waybills">("orders");
+  const [exportKind, setExportKind] = useState<'orders' | 'invoices' | 'waybills'>('orders');
   const [exportFrom, setExportFrom] = useState(daysAgo(30));
   const [exportTo, setExportTo] = useState(today());
 
   const resetFile = () => {
     setFile(null);
     setPreview(null);
-    if (fileInput.current) fileInput.current.value = "";
+    if (fileInput.current) fileInput.current.value = '';
   };
 
   const pickFile = (picked: File | null) => {
@@ -63,7 +73,7 @@ export default function AdminIntegrationPage() {
     try {
       setPreview(await previewImport(kind, file));
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setBusy(false);
     }
@@ -77,9 +87,9 @@ export default function AdminIntegrationPage() {
       setReport(result);
       setPreview(null);
       resetFile();
-      push(importResultMessage(result), result.rowsError > 0 ? "info" : "success");
+      push(importResultMessage(result), result.rowsError > 0 ? 'info' : 'success');
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setBusy(false);
     }
@@ -87,32 +97,32 @@ export default function AdminIntegrationPage() {
 
   const runExport = async () => {
     if (exportFrom > exportTo) {
-      push("Дата начала позже даты окончания", "error");
+      push('Дата начала позже даты окончания', 'error');
       return;
     }
     setBusy(true);
     try {
       await downloadExport(exportKind, exportFrom, exportTo);
-      push("Выгрузка скачана", "success");
+      push('Выгрузка скачана', 'success');
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setBusy(false);
     }
   };
 
   const previewColumns = [
-    { key: "row", title: "Строка", render: (row: ImportPreview["rows"][number]) => row.row },
-    { key: "sku", title: "SKU", render: (row: ImportPreview["rows"][number]) => row.sku },
+    { key: 'row', title: 'Строка', render: (row: ImportPreview['rows'][number]) => row.row },
+    { key: 'sku', title: 'SKU', render: (row: ImportPreview['rows'][number]) => row.sku },
     {
-      key: "value",
-      title: "Значение",
-      render: (row: ImportPreview["rows"][number]) => row.value ?? "—",
+      key: 'value',
+      title: 'Значение',
+      render: (row: ImportPreview['rows'][number]) => row.value ?? '—',
     },
     {
-      key: "status",
-      title: "Проверка",
-      render: (row: ImportPreview["rows"][number]) =>
+      key: 'status',
+      title: 'Проверка',
+      render: (row: ImportPreview['rows'][number]) =>
         row.ok ? (
           <Badge variant="success">OK</Badge>
         ) : (
@@ -122,8 +132,12 @@ export default function AdminIntegrationPage() {
   ];
 
   const reportColumns = [
-    { key: "row", title: "Строка", render: (row: ImportReport["errors"][number]) => row.row },
-    { key: "message", title: "Ошибка", render: (row: ImportReport["errors"][number]) => row.message },
+    { key: 'row', title: 'Строка', render: (row: ImportReport['errors'][number]) => row.row },
+    {
+      key: 'message',
+      title: 'Ошибка',
+      render: (row: ImportReport['errors'][number]) => row.message,
+    },
   ];
 
   return (
@@ -134,19 +148,19 @@ export default function AdminIntegrationPage() {
 
       <Card title="Импорт прайсов и остатков">
         <div className={styles.filters}>
-          <label className={wizardStyles.field}>
-            <span>Что импортируем</span>
-            <select
-              value={kind}
-              onChange={(e) => {
-                setKind(e.target.value as ImportKind);
-                pickFile(null);
-              }}
-            >
-              <option value="prices">{KIND_LABELS.prices}</option>
-              <option value="stock">{KIND_LABELS.stock}</option>
-            </select>
-          </label>
+          <Select
+            label="Что импортируем"
+            className={wizardStyles.field}
+            value={kind}
+            onChange={(e) => {
+              setKind(e.target.value as ImportKind);
+              pickFile(null);
+            }}
+            options={[
+              { value: 'prices', label: KIND_LABELS.prices },
+              { value: 'stock', label: KIND_LABELS.stock },
+            ]}
+          />
           <Input
             label="Файл .xlsx (первая строка — заголовок)"
             type="file"
@@ -156,7 +170,7 @@ export default function AdminIntegrationPage() {
           />
         </div>
 
-        {kind === "prices" && (
+        {kind === 'prices' && (
           <label className={styles.checkbox}>
             <input
               type="checkbox"
@@ -175,7 +189,7 @@ export default function AdminIntegrationPage() {
             variant="secondary"
             loading={busy}
             disabled={!file}
-            onClick={runApply}
+            onClick={() => setConfirmingApply(true)}
           >
             Применить без предпросмотра
           </Button>
@@ -189,10 +203,10 @@ export default function AdminIntegrationPage() {
         {preview && (
           <div className={wizardStyles.result}>
             <p className={styles.hint}>
-              Проверено строк: {preview.rowsTotal}, с ошибками: {preview.errorsCount}.{" "}
+              Проверено строк: {preview.rowsTotal}, с ошибками: {preview.errorsCount}.{' '}
               {previewIsClean(preview)
-                ? "Файл готов к применению."
-                : "Строки с ошибками будут пропущены при применении."}
+                ? 'Файл готов к применению.'
+                : 'Строки с ошибками будут пропущены при применении.'}
             </p>
             <Table
               columns={previewColumns}
@@ -200,7 +214,7 @@ export default function AdminIntegrationPage() {
               rowKey={(row) => String(row.row)}
               empty="Строк нет"
             />
-            <Button variant="accent" loading={busy} onClick={runApply}>
+            <Button variant="accent" loading={busy} onClick={() => setConfirmingApply(true)}>
               Применить импорт
             </Button>
           </div>
@@ -209,8 +223,8 @@ export default function AdminIntegrationPage() {
         {report && (
           <div className={wizardStyles.result}>
             <p className={styles.hint}>
-              Отчёт: всего {report.rowsTotal}, OK {report.rowsOk}, ошибок {report.rowsError}.
-              Файл импорта зарегистрирован в integration_files.
+              Отчёт: всего {report.rowsTotal}, OK {report.rowsOk}, ошибок {report.rowsError}. Файл
+              импорта зарегистрирован в integration_files.
             </p>
             {report.errors.length > 0 && (
               <Table
@@ -226,19 +240,17 @@ export default function AdminIntegrationPage() {
 
       <Card title="Выгрузка для 1С за период">
         <div className={styles.filters}>
-          <label className={wizardStyles.field}>
-            <span>Что выгружаем</span>
-            <select
-              value={exportKind}
-              onChange={(e) =>
-                setExportKind(e.target.value as "orders" | "invoices" | "waybills")
-              }
-            >
-              <option value="orders">Заказы</option>
-              <option value="invoices">Счета</option>
-              <option value="waybills">Накладные (ТН/ТТН)</option>
-            </select>
-          </label>
+          <Select
+            label="Что выгружаем"
+            className={wizardStyles.field}
+            value={exportKind}
+            onChange={(e) => setExportKind(e.target.value as 'orders' | 'invoices' | 'waybills')}
+            options={[
+              { value: 'orders', label: 'Заказы' },
+              { value: 'invoices', label: 'Счета' },
+              { value: 'waybills', label: 'Накладные (ТН/ТТН)' },
+            ]}
+          />
           <Input
             label="С даты"
             type="date"
@@ -256,6 +268,25 @@ export default function AdminIntegrationPage() {
           Скачать .xlsx
         </Button>
       </Card>
+
+      <ConfirmModal
+        open={confirmingApply}
+        title="Применить импорт"
+        confirmLabel="Применить"
+        loading={busy}
+        onClose={() => setConfirmingApply(false)}
+        onConfirm={async () => {
+          setConfirmingApply(false);
+          await runApply();
+        }}
+      >
+        <p>
+          Применить импорт {kind === 'prices' ? 'прайсов' : 'остатков'} из «{file?.name}»?{' '}
+          {archiveMissing
+            ? 'Товары, отсутствующие в прайсе, будут заархивированы и исчезнут с витрины.'
+            : 'Цены и остатки будут перезаписаны значениями из файла.'}
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

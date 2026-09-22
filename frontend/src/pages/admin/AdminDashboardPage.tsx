@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Badge, Button, Card, Table } from "../../components/ui";
+import { Badge, Button, Card, LinkButton, Table } from "../../components/ui";
 import { getOperationsDashboard, type OperationsDashboard } from "../../api/adminOperations";
 import styles from "./AdminDashboardPage.module.scss";
 
@@ -22,7 +22,7 @@ function formatMoney(value: number) {
 
 /** Дашборд процессов (S38): операционный центр — что требует внимания сегодня. */
 export default function AdminDashboardPage() {
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["operations-dashboard"],
     queryFn: getOperationsDashboard,
     refetchInterval: 60_000,
@@ -33,7 +33,7 @@ export default function AdminDashboardPage() {
       <div className={styles.page}>
         <h1 className={styles.title}>Операционный центр</h1>
         <p>Не удалось загрузить дашборд.</p>
-        <Button variant="secondary" onClick={() => void refetch()}>
+        <Button variant="secondary" loading={isRefetching} onClick={() => void refetch()}>
           Повторить
         </Button>
       </div>
@@ -75,11 +75,9 @@ export default function AdminDashboardPage() {
       <Card
         title="Позиции ниже min_stock"
         actions={
-          <Link to="/warehouse/balance">
-            <Button variant="secondary" size="sm">
-              Остатки склада
-            </Button>
-          </Link>
+          <LinkButton to="/warehouse/balance" variant="secondary" size="sm">
+            Остатки склада
+          </LinkButton>
         }
       >
         <Table<LowStockItem>
@@ -137,7 +135,7 @@ function Tile({
   accent?: boolean;
 }) {
   return (
-    <Link to={to}>
+    <Link to={to} className={styles.tileLink} aria-label={`${label}: ${loading ? "загрузка" : (value ?? 0)}`}>
       <div className={[styles.tile, accent ? styles.tileAccent : ""].filter(Boolean).join(" ")}>
         <span className={styles.tileValue}>{loading ? "…" : (value ?? 0)}</span>
         <span className={styles.tileLabel}>{label}</span>

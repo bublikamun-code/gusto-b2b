@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge, Button } from "../ui";
 import type { CatalogProduct } from "../../api/catalog";
+import { formatMoney } from "../../lib/format";
 import { stockStatusLabel } from "../../lib/stockStatus";
 import { useCartStore } from "../../store/cartStore";
 import styles from "./ProductCard.module.scss";
@@ -19,7 +20,7 @@ function showcaseBadge(product: CatalogProduct): string | undefined {
 }
 
 export function ProductCard({ product, badge }: ProductCardProps) {
-  const priceLabel = `${product.retailPrice.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} р./${product.unit}`;
+  const priceLabel = `${formatMoney(product.retailPrice)}/${product.unit}`;
   const effectiveBadge = badge ?? showcaseBadge(product);
 
   return (
@@ -54,7 +55,7 @@ export function ProductCard({ product, badge }: ProductCardProps) {
         <div className={styles.card__footer}>
           <span className={styles.card__price}>{priceLabel}</span>
           <Button
-            variant="secondary"
+            variant="accent"
             size="sm"
             onClick={() =>
               useCartStore.getState().addItem(

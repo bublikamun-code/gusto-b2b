@@ -1,33 +1,43 @@
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Input, Modal, Pagination, Select, Table, useToast } from "../../components/ui";
-import { createCompany, deleteCompany, listCompanies, updateCompany } from "../../api/companies";
-import { listUsers } from "../../api/users";
-import type { Company, CompanyStatus, User } from "../../types/admin";
-import styles from "./AdminPages.module.scss";
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Button,
+  ConfirmModal,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Table,
+  useToast,
+} from '../../components/ui';
+import { createCompany, deleteCompany, listCompanies, updateCompany } from '../../api/companies';
+import { listUsers } from '../../api/users';
+import type { Company, CompanyStatus, User } from '../../types/admin';
+import styles from './AdminPages.module.scss';
 
 const STATUSES: { value: CompanyStatus; label: string }[] = [
-  { value: "ACTIVE", label: "Активна" },
-  { value: "INACTIVE", label: "Неактивна" },
+  { value: 'ACTIVE', label: 'Активна' },
+  { value: 'INACTIVE', label: 'Неактивна' },
 ];
 
-const statusLabel = (status: CompanyStatus) => STATUSES.find((s) => s.value === status)?.label ?? status;
+const statusLabel = (status: CompanyStatus) =>
+  STATUSES.find((s) => s.value === status)?.label ?? status;
 
 const companySchema = z.object({
-  name: z.string().min(2, "Название не может быть короче 2 символов"),
+  name: z.string().min(2, 'Название не может быть короче 2 символов'),
   shortName: z.string().optional(),
-  unp: z.string().regex(/^\d{9}|\d{10}$/, "УНП должен состоять из 9 или 10 цифр"),
+  unp: z.string().regex(/^\d{9}|\d{10}$/, 'УНП должен состоять из 9 или 10 цифр'),
   legalAddress: z.string().optional(),
   actualAddress: z.string().optional(),
   bankAccount: z.string().optional(),
   bankName: z.string().optional(),
   bankBic: z.string().optional(),
   contactPhone: z.string().optional(),
-  contactEmail: z.string().email("Введите корректный email").optional().or(z.literal("")),
-  status: z.enum(["ACTIVE", "INACTIVE"]),
+  contactEmail: z.string().email('Введите корректный email').optional().or(z.literal('')),
+  status: z.enum(['ACTIVE', 'INACTIVE']),
   managerId: z.string().optional(),
 });
 
@@ -42,7 +52,14 @@ interface CompanyFormModalProps {
   isSubmitting: boolean;
 }
 
-function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmitting }: CompanyFormModalProps) {
+function CompanyFormModal({
+  open,
+  company,
+  managers,
+  onClose,
+  onSubmit,
+  isSubmitting,
+}: CompanyFormModalProps) {
   const {
     register,
     handleSubmit,
@@ -54,7 +71,7 @@ function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmit
       ? {
           name: company.name,
           shortName: company.shortName ?? undefined,
-          unp: company.unp ?? "",
+          unp: company.unp ?? '',
           legalAddress: company.legalAddress ?? undefined,
           actualAddress: company.actualAddress ?? undefined,
           bankAccount: company.bankAccount ?? undefined,
@@ -66,25 +83,25 @@ function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmit
           managerId: company.managerId ?? undefined,
         }
       : {
-          name: "",
-          shortName: "",
-          unp: "",
-          legalAddress: "",
-          actualAddress: "",
-          bankAccount: "",
-          bankName: "",
-          bankBic: "",
-          contactPhone: "",
-          contactEmail: "",
-          status: "ACTIVE",
-          managerId: "",
+          name: '',
+          shortName: '',
+          unp: '',
+          legalAddress: '',
+          actualAddress: '',
+          bankAccount: '',
+          bankName: '',
+          bankBic: '',
+          contactPhone: '',
+          contactEmail: '',
+          status: 'ACTIVE',
+          managerId: '',
         },
   });
 
   return (
     <Modal
       open={open}
-      title={company ? "Редактировать компанию" : "Новая компания"}
+      title={company ? 'Редактировать компанию' : 'Новая компания'}
       onClose={onClose}
       footer={
         <>
@@ -92,7 +109,7 @@ function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmit
             Отмена
           </Button>
           <Button type="submit" form="company-form" loading={isSubmitting}>
-            {company ? "Сохранить" : "Создать"}
+            {company ? 'Сохранить' : 'Создать'}
           </Button>
         </>
       }
@@ -105,23 +122,53 @@ function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmit
           if (!company) reset();
         })}
       >
-        <Input label="Название" error={errors.name?.message} {...register("name")} />
-        <Input label="Сокращённое название" error={errors.shortName?.message} {...register("shortName")} />
-        <Input label="УНП" error={errors.unp?.message} maxLength={9} {...register("unp")} />
-        <Input label="Юридический адрес" error={errors.legalAddress?.message} {...register("legalAddress")} />
-        <Input label="Фактический адрес" error={errors.actualAddress?.message} {...register("actualAddress")} />
-        <Input label="Расчётный счёт" error={errors.bankAccount?.message} {...register("bankAccount")} />
-        <Input label="Банк" error={errors.bankName?.message} {...register("bankName")} />
-        <Input label="БИК" error={errors.bankBic?.message} {...register("bankBic")} />
-        <Input label="Контактный телефон" error={errors.contactPhone?.message} {...register("contactPhone")} />
-        <Input label="Контактный email" type="email" error={errors.contactEmail?.message} {...register("contactEmail")} />
-        <Select label="Статус" options={STATUSES} error={errors.status?.message} {...register("status")} />
+        <Input label="Название" error={errors.name?.message} {...register('name')} />
+        <Input
+          label="Сокращённое название"
+          error={errors.shortName?.message}
+          {...register('shortName')}
+        />
+        <Input label="УНП" error={errors.unp?.message} maxLength={9} {...register('unp')} />
+        <Input
+          label="Юридический адрес"
+          error={errors.legalAddress?.message}
+          {...register('legalAddress')}
+        />
+        <Input
+          label="Фактический адрес"
+          error={errors.actualAddress?.message}
+          {...register('actualAddress')}
+        />
+        <Input
+          label="Расчётный счёт"
+          error={errors.bankAccount?.message}
+          {...register('bankAccount')}
+        />
+        <Input label="Банк" error={errors.bankName?.message} {...register('bankName')} />
+        <Input label="БИК" error={errors.bankBic?.message} {...register('bankBic')} />
+        <Input
+          label="Контактный телефон"
+          error={errors.contactPhone?.message}
+          {...register('contactPhone')}
+        />
+        <Input
+          label="Контактный email"
+          type="email"
+          error={errors.contactEmail?.message}
+          {...register('contactEmail')}
+        />
+        <Select
+          label="Статус"
+          options={STATUSES}
+          error={errors.status?.message}
+          {...register('status')}
+        />
         <Select
           label="Закреплённый менеджер"
           placeholder="Без менеджера"
           options={managers.map((m) => ({ value: m.id, label: m.fullName }))}
           error={errors.managerId?.message}
-          {...register("managerId")}
+          {...register('managerId')}
         />
       </form>
     </Modal>
@@ -131,13 +178,14 @@ function CompanyFormModal({ open, company, managers, onClose, onSubmit, isSubmit
 export default function AdminCompaniesPage() {
   const { push } = useToast();
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState({ search: "", status: "" as "" | CompanyStatus });
+  const [filters, setFilters] = useState({ search: '', status: '' as '' | CompanyStatus });
   const [page, setPage] = useState(1);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
 
   const { data: companiesData, isLoading: isCompaniesLoading } = useQuery({
-    queryKey: ["admin", "companies", filters, page],
+    queryKey: ['admin', 'companies', filters, page],
     queryFn: () =>
       listCompanies({
         page: page - 1,
@@ -148,8 +196,8 @@ export default function AdminCompaniesPage() {
   });
 
   const { data: managersData } = useQuery({
-    queryKey: ["admin", "users", "managers"],
-    queryFn: () => listUsers({ role: "MANAGER", size: 1000 }),
+    queryKey: ['admin', 'users', 'managers'],
+    queryFn: () => listUsers({ role: 'MANAGER', size: 1000 }),
   });
 
   const managersById = useMemo(() => {
@@ -161,30 +209,35 @@ export default function AdminCompaniesPage() {
   const createMutation = useMutation({
     mutationFn: createCompany,
     onSuccess: () => {
-      push("Компания создана", "success");
-      queryClient.invalidateQueries({ queryKey: ["admin", "companies"] });
+      push('Компания создана', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
       setIsFormOpen(false);
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось создать компанию", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось создать компанию', 'error'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof updateCompany>[1] }) => updateCompany(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof updateCompany>[1] }) =>
+      updateCompany(id, body),
     onSuccess: () => {
-      push("Компания обновлена", "success");
-      queryClient.invalidateQueries({ queryKey: ["admin", "companies"] });
+      push('Компания обновлена', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
       setEditingCompany(null);
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось обновить компанию", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось обновить компанию', 'error'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteCompany,
     onSuccess: () => {
-      push("Компания удалена", "success");
-      queryClient.invalidateQueries({ queryKey: ["admin", "companies"] });
+      push('Компания удалена', 'success');
+      setDeletingCompany(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
     },
-    onError: (err: { message?: string }) => push(err.message ?? "Не удалось удалить компанию", "error"),
+    onError: (err: { message?: string }) =>
+      push(err.message ?? 'Не удалось удалить компанию', 'error'),
   });
 
   const handleFormSubmit = (values: CompanyForm) => {
@@ -218,9 +271,7 @@ export default function AdminCompaniesPage() {
   };
 
   const handleDelete = (company: Company) => {
-    if (confirm(`Удалить компанию ${company.name}?`)) {
-      deleteMutation.mutate(company.id);
-    }
+    setDeletingCompany(company);
   };
 
   return (
@@ -240,30 +291,33 @@ export default function AdminCompaniesPage() {
           placeholder="Все статусы"
           options={STATUSES}
           value={filters.status}
-          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value as CompanyStatus | "" }))}
+          onChange={(e) =>
+            setFilters((f) => ({ ...f, status: e.target.value as CompanyStatus | '' }))
+          }
         />
       </div>
 
       <Table<Company>
         columns={[
-          { key: "name", title: "Название" },
-          { key: "shortName", title: "Сокращение" },
-          { key: "unp", title: "УНП" },
-          { key: "contactPhone", title: "Телефон" },
-          { key: "contactEmail", title: "Email" },
+          { key: 'name', title: 'Название' },
+          { key: 'shortName', title: 'Сокращение' },
+          { key: 'unp', title: 'УНП' },
+          { key: 'contactPhone', title: 'Телефон' },
+          { key: 'contactEmail', title: 'Email' },
           {
-            key: "status",
-            title: "Статус",
+            key: 'status',
+            title: 'Статус',
             render: (row) => statusLabel(row.status),
           },
           {
-            key: "manager",
-            title: "Менеджер",
-            render: (row) => (row.managerId ? managersById.get(row.managerId)?.fullName ?? "—" : "—"),
+            key: 'manager',
+            title: 'Менеджер',
+            render: (row) =>
+              row.managerId ? (managersById.get(row.managerId)?.fullName ?? '—') : '—',
           },
           {
-            key: "actions",
-            title: "Действия",
+            key: 'actions',
+            title: 'Действия',
             render: (row) => (
               <div className={styles.actions}>
                 <Button size="sm" variant="secondary" onClick={() => handleEdit(row)}>
@@ -295,6 +349,20 @@ export default function AdminCompaniesPage() {
         onSubmit={handleFormSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />
+
+      <ConfirmModal
+        open={deletingCompany !== null}
+        title="Удалить компанию"
+        confirmLabel="Удалить"
+        loading={deleteMutation.isPending}
+        onClose={() => setDeletingCompany(null)}
+        onConfirm={() => deletingCompany && deleteMutation.mutate(deletingCompany.id)}
+      >
+        <p>
+          Удалить компанию «{deletingCompany?.name}» (УНП {deletingCompany?.unp})? Заказы и счета
+          этой компании останутся в истории; действие необратимо.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

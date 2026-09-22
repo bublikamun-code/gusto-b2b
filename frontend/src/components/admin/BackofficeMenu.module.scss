@@ -1,0 +1,75 @@
+@use "../../styles/tokens" as *;
+
+.toggle {
+  flex-shrink: 0;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  color: $color-bordeaux;
+  background: $color-card;
+  border: 1px solid $color-line;
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: $color-cream;
+  }
+
+  &[aria-expanded="true"] {
+    background: $color-bordeaux;
+    color: $color-cream;
+    border-color: $color-bordeaux;
+  }
+}
+
+// Панель разделов: выглядит как бывший сайдбар админки —
+// одно и то же меню во всех разделах бэк-офиса.
+.panel {
+  width: 220px;
+  flex-shrink: 0;
+  background: $color-card;
+  border-right: 1px solid $color-line;
+  padding: 1rem 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  a {
+    padding: 0.75rem 1.25rem;
+    color: $color-graphite;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: $color-cream;
+    }
+
+    &.active {
+      background: $color-cream;
+      color: $color-bordeaux;
+      border-left-color: $color-bordeaux;
+      font-weight: 600;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .panel {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid $color-line;
+    padding: 0.5rem 0;
+  }
+
+  .nav a {
+    padding: 0.6rem 1rem;
+  }
+}

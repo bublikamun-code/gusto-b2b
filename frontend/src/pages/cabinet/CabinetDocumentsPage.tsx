@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Button, Card, Table, Tabs, useToast } from "../../components/ui";
 import {
   downloadPdf,
@@ -22,6 +21,8 @@ export default function CabinetDocumentsPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [waybills, setWaybills] = useState<Waybill[]>([]);
   const [loading, setLoading] = useState(true);
+  // plan-03: одна PDF-загрузка за раз — повторный клик по кнопке до ответа невозможен
+  const [pdfBusyId, setPdfBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -38,8 +39,16 @@ export default function CabinetDocumentsPage() {
     load();
   }, [load]);
 
-  const download = (path: string, filename: string) => {
-    downloadPdf(path, filename).catch((err) => push((err as Error).message, "error"));
+  const download = async (id: string, path: string, filename: string) => {
+    if (pdfBusyId) return;
+    setPdfBusyId(id);
+    try {
+      await downloadPdf(path, filename);
+    } catch (err) {
+      push((err as Error).message, "error");
+    } finally {
+      setPdfBusyId(null);
+    }
   };
 
   const invoiceColumns = [
@@ -60,7 +69,8 @@ export default function CabinetDocumentsPage() {
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => download(`/cabinet/invoices/${i.id}/pdf`, `${i.number}.pdf`)}
+          loading={pdfBusyId === i.id}
+          onClick={() => download(i.id, `/cabinet/invoices/${i.id}/pdf`, `${i.number}.pdf`)}
         >
           PDF
         </Button>
@@ -86,7 +96,8 @@ export default function CabinetDocumentsPage() {
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => download(`/cabinet/waybills/${w.id}/pdf`, `${w.number}.pdf`)}
+          loading={pdfBusyId === w.id}
+          onClick={() => download(w.id, `/cabinet/waybills/${w.id}/pdf`, `${w.number}.pdf`)}
         >
           PDF
         </Button>
@@ -98,10 +109,6 @@ export default function CabinetDocumentsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Документы</h1>
-        <nav className={styles.nav}>
-          <Link to="/cabinet/catalog">Каталог</Link>
-          <Link to="/cabinet/orders">Заказы</Link>
-        </nav>
       </header>
 
       <Card className={styles.filters}>
@@ -121,7 +128,7 @@ export default function CabinetDocumentsPage() {
           data={invoices}
           rowKey={(i) => i.id}
           loading={loading}
-          empty="Счетов пока нет"
+          empty="Счетов пока нет — счёт выставит менеджер после подтверждения заказа"
         />
       ) : (
         <Table<Waybill>
@@ -129,7 +136,7 @@ export default function CabinetDocumentsPage() {
           data={waybills}
           rowKey={(w) => w.id}
           loading={loading}
-          empty="Накладных пока нет"
+          empty="Накладных пока нет — накладную оформит менеджер после подтверждения заказа"
         />
       )}
     </div>

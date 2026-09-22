@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "../../components/ui";
+import { LinkButton } from "../../components/ui";
 import { listCategories, listProducts } from "../../api/catalog";
 import { getPublicLanding } from "../../api/adminOperations";
 import { resolveLanding, type PublicLanding } from "../../lib/landingTexts";
@@ -61,16 +61,12 @@ export default function HomePage() {
           <h1 className={styles.hero__title}>{hero.title}</h1>
           <p className={styles.hero__text}>{hero.text}</p>
           <div className={styles.hero__actions}>
-            <Link to="/catalog">
-              <Button variant="primary" size="lg">
-                Смотреть каталог
-              </Button>
-            </Link>
-            <Link to="/delivery">
-              <Button variant="secondary" size="lg">
-                Условия доставки
-              </Button>
-            </Link>
+            <LinkButton to="/catalog" variant="primary" size="lg">
+              Смотреть каталог
+            </LinkButton>
+            <LinkButton to="/delivery" variant="secondary" size="lg">
+              Условия доставки
+            </LinkButton>
           </div>
           <div className={styles.hero__stats}>
             {HERO_STATS.map((stat) => (
@@ -83,6 +79,10 @@ export default function HomePage() {
         </div>
         <div className={styles.hero__visual}>
           <div className={styles.hero__image} role="img" aria-label="Свежий стейк на кости">
+            <span className={styles.hero__mark}>
+              <span className={styles.hero__markIcon} />
+            </span>
+            <span className={styles.hero__wordmark}>ГУСТО</span>
             <span className={styles.hero__priceTag}>
               <span>Стейк на кости</span>
               <strong>38,90 р./кг</strong>
@@ -151,11 +151,9 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <Link to="/delivery">
-            <Button variant="accent" size="md">
-              Подробнее о доставке
-            </Button>
-          </Link>
+          <LinkButton to="/delivery" variant="accent" size="md">
+            Подробнее о доставке
+          </LinkButton>
         </div>
       </section>
     </>

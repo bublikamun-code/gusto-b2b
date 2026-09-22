@@ -1,7 +1,8 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "../../components/ui";
+import { Button, LinkButton } from "../../components/ui";
 import { getProduct } from "../../api/catalog";
+import { formatMoney } from "../../lib/format";
 import { stockStatusBadge } from "../../lib/stockStatus";
 import { useCartStore } from "../../store/cartStore";
 import styles from "./ProductPage.module.scss";
@@ -27,14 +28,14 @@ export default function ProductPage() {
     return (
       <section className={styles.product}>
         <p className={styles.product__status}>Товар не найден.</p>
-        <Link to="/catalog">
-          <Button variant="primary">В каталог</Button>
-        </Link>
+        <LinkButton to="/catalog" variant="primary">
+          В каталог
+        </LinkButton>
       </section>
     );
   }
 
-  const priceLabel = `${product.retailPrice.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} р./${product.unit}`;
+  const priceLabel = `${formatMoney(product.retailPrice)}/${product.unit}`;
 
   return (
     <section className={styles.product}>
@@ -68,7 +69,7 @@ export default function ProductPage() {
             <span className={styles.product__price}>{priceLabel}</span>
             {stockStatusBadge(product.stockStatus)}
             <Button
-              variant="primary"
+              variant="accent"
               size="lg"
               onClick={() =>
                 useCartStore.getState().addItem(

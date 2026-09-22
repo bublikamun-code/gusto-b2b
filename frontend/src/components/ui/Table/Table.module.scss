@@ -46,3 +46,65 @@
     padding: 1.5rem 0.9rem;
   }
 }
+
+// ≤640px вместо горизонтального скролла — строки-карточки с подписями полей
+// (подписи берутся из data-label, который Table.tsx ставит из column.title)
+@media (max-width: 640px) {
+  .scroll {
+    overflow-x: visible;
+  }
+
+  .table {
+    display: block;
+    background: transparent;
+    overflow: visible;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    tbody tr {
+      display: block;
+      background: $color-card;
+      border-radius: 2px;
+      padding: 0.25rem 0.9rem;
+    }
+
+    tbody td {
+      display: block;
+      padding: 0.45rem 0;
+      border-bottom: 1px dashed rgba($color-graphite, 0.15);
+      overflow-wrap: anywhere;
+
+      &::before {
+        content: attr(data-label);
+        display: block;
+        font-family: $font-heading;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.62rem;
+        color: rgba($color-graphite, 0.55);
+        margin-bottom: 0.15rem;
+      }
+
+      // ячейки без title (кнопки действий) и пустое состояние — без подписи
+      &:not([data-label])::before {
+        content: none;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .state {
+      padding: 1.2rem 0.9rem;
+    }
+  }
+}

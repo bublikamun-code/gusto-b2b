@@ -84,15 +84,36 @@
   max-width: 32rem;
   aspect-ratio: 4 / 5;
   border-radius: 50% 50% 0 0;
-  background: linear-gradient(135deg, rgba($color-bordeaux, 0.12) 0%, rgba($color-yolk, 0.12) 100%);
+  background: linear-gradient(135deg, rgba($color-bordeaux, 0.08) 0%, rgba($color-yolk, 0.08) 100%);
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 1.25rem;
+}
 
-  &::before {
-    content: "🥩";
-    font-size: 8rem;
-    opacity: 0.35;
-  }
+// Плейсхолдер без фото: круг-клеше как логотип-марка в шапке + аббревиатура (см. ProductCard)
+.hero__mark {
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: 50%;
+  background-color: $color-bordeaux;
+  display: grid;
+  place-items: center;
+}
+
+.hero__markIcon {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background-color: $color-cream;
+  border: 0.5rem solid $color-yolk;
+}
+
+.hero__wordmark {
+  font-family: $font-display;
+  font-size: 1.75rem;
+  letter-spacing: 0.05em;
+  color: rgba($color-bordeaux, 0.25);
 }
 
 .hero__priceTag {

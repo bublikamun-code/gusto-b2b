@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 import {
   Badge,
   Button,
+  ConfirmModal,
   Input,
   Modal,
   Pagination,
   Select,
   Table,
   useToast,
-} from "../../components/ui";
+} from '../../components/ui';
 import {
   cancelPurchaseOrder,
   createPurchaseOrder,
@@ -19,10 +20,10 @@ import {
   type CatalogProductRef,
   type PurchaseOrder,
   type Supplier,
-} from "../../api/warehouse";
-import { PURCHASE_STATUS_LABELS } from "../../lib/warehouse";
-import { formatMoney } from "../../lib/format";
-import styles from "./WarehousePages.module.scss";
+} from '../../api/warehouse';
+import { PURCHASE_STATUS_LABELS } from '../../lib/warehouse';
+import { formatMoney } from '../../lib/format';
+import styles from './WarehousePages.module.scss';
 
 interface DraftItem {
   productId: string;
@@ -35,15 +36,22 @@ export default function WarehousePurchaseOrdersPage() {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<CatalogProductRef[]>([]);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [supplierId, setSupplierId] = useState("");
-  const [expectedDate, setExpectedDate] = useState("");
-  const [items, setItems] = useState<DraftItem[]>([{ productId: "", quantity: "1", purchasePrice: "" }]);
+  const [supplierId, setSupplierId] = useState('');
+  const [expectedDate, setExpectedDate] = useState('');
+  const [items, setItems] = useState<DraftItem[]>([
+    { productId: '', quantity: '1', purchasePrice: '' },
+  ]);
   const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    action: 'send' | 'cancel';
+    order: PurchaseOrder;
+  } | null>(null);
+  const [acting, setActing] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -52,7 +60,7 @@ export default function WarehousePurchaseOrdersPage() {
         setOrders(result.items);
         setTotal(result.total);
       })
-      .catch((err) => push((err as Error).message, "error"))
+      .catch((err) => push((err as Error).message, 'error'))
       .finally(() => setLoading(false));
   }, [statusFilter, page, push]);
 
@@ -61,17 +69,24 @@ export default function WarehousePurchaseOrdersPage() {
   }, [load]);
 
   useEffect(() => {
-    listSuppliers().then((result) => setSuppliers(result.items)).catch(() => undefined);
-    listProductRefs().then((result) => setProducts(result.items)).catch(() => undefined);
+    listSuppliers()
+      .then((result) => setSuppliers(result.items))
+      .catch(() => undefined);
+    listProductRefs()
+      .then((result) => setProducts(result.items))
+      .catch(() => undefined);
   }, []);
 
   const supplierOptions = [
-    { value: "", label: "— поставщик —" },
+    { value: '', label: '— поставщик —' },
     ...suppliers.filter((s) => s.isActive).map((s) => ({ value: s.id, label: s.name })),
   ];
   const productOptions = [
-    { value: "", label: "— товар —" },
-    ...products.map((product) => ({ value: product.id, label: `${product.sku} · ${product.name}` })),
+    { value: '', label: '— товар —' },
+    ...products.map((product) => ({
+      value: product.id,
+      label: `${product.sku} · ${product.name}`,
+    })),
   ];
 
   const draftTotal = items.reduce(
@@ -81,11 +96,15 @@ export default function WarehousePurchaseOrdersPage() {
 
   const submit = async () => {
     if (!supplierId) {
-      push("Выберите поставщика", "error");
+      push('Выберите поставщика', 'error');
       return;
     }
-    if (items.some((item) => !item.productId || Number(item.quantity) <= 0 || Number(item.purchasePrice) <= 0)) {
-      push("Заполните позиции: товар, количество и закупочная цена", "error");
+    if (
+      items.some(
+        (item) => !item.productId || Number(item.quantity) <= 0 || Number(item.purchasePrice) <= 0,
+      )
+    ) {
+      push('Заполните позиции: товар, количество и закупочная цена', 'error');
       return;
     }
     setSaving(true);
@@ -99,52 +118,61 @@ export default function WarehousePurchaseOrdersPage() {
           purchasePrice: Number(item.purchasePrice),
         })),
       });
-      // сразу отправляем поставщику: приёмка возможна только для SENT
-      await sendPurchaseOrder(order.id);
-      push(`${order.number} создан и отправлен поставщику`, "success");
+      // черновик отправляется отдельным подтверждаемым действием «Отправить»
+      push(`${order.number} создан как черновик`, 'success');
       setModalOpen(false);
-      setSupplierId("");
-      setExpectedDate("");
-      setItems([{ productId: "", quantity: "1", purchasePrice: "" }]);
+      setSupplierId('');
+      setExpectedDate('');
+      setItems([{ productId: '', quantity: '1', purchasePrice: '' }]);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const act = async (action: "send" | "cancel", order: PurchaseOrder) => {
+  const runAction = async () => {
+    if (!pendingAction) return;
+    const { action, order } = pendingAction;
+    setActing(true);
     try {
-      if (action === "send") {
+      if (action === 'send') {
         await sendPurchaseOrder(order.id);
-        push(`${order.number} отправлен`, "success");
+        push(`${order.number} отправлен`, 'success');
       } else {
         await cancelPurchaseOrder(order.id);
-        push(`${order.number} отменён`, "info");
+        push(`${order.number} отменён`, 'info');
       }
+      setPendingAction(null);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
+    } finally {
+      setActing(false);
     }
   };
 
   const columns = [
-    { key: "number", title: "Номер", render: (row: PurchaseOrder) => <span className={styles.number}>{row.number}</span> },
-    { key: "supplierName", title: "Поставщик" },
     {
-      key: "status",
-      title: "Статус",
+      key: 'number',
+      title: 'Номер',
+      render: (row: PurchaseOrder) => <span className={styles.number}>{row.number}</span>,
+    },
+    { key: 'supplierName', title: 'Поставщик' },
+    {
+      key: 'status',
+      title: 'Статус',
       render: (row: PurchaseOrder) => (
         <Badge
           variant={
-            row.status === "RECEIVED"
-              ? "success"
-              : row.status === "PARTIAL"
-                ? "warning"
-                : row.status === "CANCELLED"
-                  ? "neutral"
-                  : "outline"
+            row.status === 'RECEIVED'
+              ? 'success'
+              : row.status === 'PARTIAL'
+                ? 'warning'
+                : row.status === 'CANCELLED'
+                  ? 'neutral'
+                  : 'outline'
           }
         >
           {PURCHASE_STATUS_LABELS[row.status]}
@@ -152,31 +180,35 @@ export default function WarehousePurchaseOrdersPage() {
       ),
     },
     {
-      key: "totalAmount",
-      title: "Сумма",
-      align: "right" as const,
+      key: 'totalAmount',
+      title: 'Сумма',
+      align: 'right' as const,
       render: (row: PurchaseOrder) => formatMoney(row.totalAmount),
     },
     {
-      key: "items",
-      title: "Принято",
+      key: 'items',
+      title: 'Принято',
       render: (row: PurchaseOrder) =>
         row.items
           .map((item) => `${item.sku ?? item.productId}: ${item.receivedQuantity}/${item.quantity}`)
-          .join(", "),
+          .join(', '),
     },
     {
-      key: "actions",
-      title: "",
+      key: 'actions',
+      title: '',
       render: (row: PurchaseOrder) =>
-        row.status === "DRAFT" || row.status === "SENT" ? (
-          <div style={{ display: "flex", gap: "0.4rem" }}>
-            {row.status === "DRAFT" && (
-              <Button size="sm" onClick={() => act("send", row)}>
+        row.status === 'DRAFT' || row.status === 'SENT' ? (
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            {row.status === 'DRAFT' && (
+              <Button size="sm" onClick={() => setPendingAction({ action: 'send', order: row })}>
                 Отправить
               </Button>
             )}
-            <Button size="sm" variant="secondary" onClick={() => act("cancel", row)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setPendingAction({ action: 'cancel', order: row })}
+            >
               Отменить
             </Button>
           </div>
@@ -199,7 +231,7 @@ export default function WarehousePurchaseOrdersPage() {
             setPage(0);
           }}
           options={[
-            { value: "", label: "Все статусы" },
+            { value: '', label: 'Все статусы' },
             ...Object.entries(PURCHASE_STATUS_LABELS).map(([value, label]) => ({ value, label })),
           ]}
         />
@@ -267,16 +299,19 @@ export default function WarehousePurchaseOrdersPage() {
                 />
                 <Button
                   variant="secondary"
+                  aria-label="Удалить позицию"
                   onClick={() => setItems(items.filter((_, i) => i !== index))}
                 >
                   ✕
                 </Button>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Button
                 variant="secondary"
-                onClick={() => setItems([...items, { productId: "", quantity: "1", purchasePrice: "" }])}
+                onClick={() =>
+                  setItems([...items, { productId: '', quantity: '1', purchasePrice: '' }])
+                }
               >
                 + позиция
               </Button>
@@ -284,10 +319,25 @@ export default function WarehousePurchaseOrdersPage() {
             </div>
           </div>
           <Button onClick={submit} loading={saving}>
-            Создать и отправить
+            Создать черновик
           </Button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={pendingAction !== null}
+        title={pendingAction?.action === 'send' ? 'Отправить заказ' : 'Отменить заказ'}
+        confirmLabel={pendingAction?.action === 'send' ? 'Отправить' : 'Отменить'}
+        loading={acting}
+        onClose={() => setPendingAction(null)}
+        onConfirm={runAction}
+      >
+        <p>
+          {pendingAction?.action === 'send'
+            ? `Отправить заказ ${pendingAction.order.number} поставщику ${pendingAction.order.supplierName}? После отправки состав заказа изменить нельзя.`
+            : `Отменить заказ ${pendingAction?.order.number}? Действие необратимо, принять по нему товар будет нельзя.`}
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

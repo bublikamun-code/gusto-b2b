@@ -21,11 +21,6 @@
   }
 }
 
-.nav {
-  display: flex;
-  gap: 1rem;
-}
-
 .counters {
   display: flex;
   gap: 1rem;
@@ -38,13 +33,13 @@
   gap: 0.25rem;
   min-width: 10rem;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
 }
 
 .counterValue {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #7c2d24;
+  color: $color-bordeaux;
 }
 
 .tabsCard {
@@ -68,10 +63,10 @@
 .taskMeta {
   display: block;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
 }
 
 .empty {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   margin: 0;
 }

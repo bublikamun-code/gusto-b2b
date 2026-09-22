@@ -1,3 +1,5 @@
+@use "../../styles/tokens" as *;
+
 .layout {
   display: flex;
   flex-direction: column;
@@ -8,14 +10,14 @@
   display: flex;
   align-items: center;
   gap: 2rem;
-  border-bottom: 2px solid var(--color-primary, #7c2d24);
+  border-bottom: 2px solid $color-bordeaux;
   padding-bottom: 0.5rem;
 }
 
 .title {
-  font-family: var(--font-display, "Russo One", sans-serif);
+  font-family: $font-display;
   font-size: 1.25rem;
-  color: var(--color-primary, #7c2d24);
+  color: $color-bordeaux;
 }
 
 .nav {
@@ -24,26 +26,33 @@
   flex-wrap: wrap;
 
   a {
-    font-family: var(--font-heading, "Oswald", sans-serif);
+    font-family: $font-heading;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 0.85rem;
-    color: var(--color-ink, #26201c);
+    color: $color-graphite;
     text-decoration: none;
     padding: 0.35rem 0.6rem;
 
     &:hover {
-      color: var(--color-primary, #7c2d24);
+      color: $color-bordeaux;
     }
 
     &.active {
-      background: var(--color-primary, #7c2d24);
-      color: var(--color-cream, #f5edde);
+      background: $color-bordeaux;
+      color: $color-cream;
     }
   }
 }
 
+.body {
+  display: flex;
+  align-items: stretch;
+}
+
 .main {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -58,4 +67,15 @@
 
 .deficit {
   background: rgba(229, 163, 60, 0.25); // желток-акцент: ниже min_stock
+}
+
+@media (max-width: 720px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .body {
+    flex-direction: column;
+  }
 }

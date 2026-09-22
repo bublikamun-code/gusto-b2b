@@ -102,12 +102,32 @@ async function apiRawRequest<T>(path: string, options: InternalOptions = {}): Pr
     useAuthStore.getState().clearAuth();
   }
 
-  const envelope = (await response.json()) as ApiEnvelope<T>;
+  // Тело разбираем защищённо: 401/403 бэкенд и 502 vite-прокси отвечают
+  // ПУСТЫМ телом — сырой response.json() падал «Unexpected end of JSON input»
+  const text = await response.text();
+  let envelope = {} as ApiEnvelope<T>;
+  if (text) {
+    try {
+      envelope = JSON.parse(text) as ApiEnvelope<T>;
+    } catch {
+      // не-JSON тело — ниже уйдёт как «Некорректный ответ сервера»
+    }
+  }
 
   if (!response.ok || envelope.error) {
     throw (envelope.error ?? {
-      code: "INTERNAL",
-      message: "Неизвестная ошибка сервера",
+      code:
+        response.status === 401 || response.status === 403
+          ? "AUTH_EXPIRED"
+          : response.status >= 500
+            ? "UNAVAILABLE"
+            : "INTERNAL",
+      message:
+        response.status === 401 || response.status === 403
+          ? "Сессия истекла — войдите заново"
+          : response.status >= 500
+            ? "Сервер временно недоступен, попробуйте позже"
+            : "Неизвестная ошибка сервера",
     }) as ApiError;
   }
 

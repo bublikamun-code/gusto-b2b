@@ -2,13 +2,22 @@
 
 .stack {
   position: fixed;
-  top: 1rem;
+  top: 4.5rem;
   right: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 200;
+  z-index: 1000;
   max-width: 22rem;
+}
+
+@media (max-width: 640px) {
+  .stack {
+    top: 4rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+  }
 }
 
 .toast {
@@ -16,13 +25,14 @@
   font-size: 0.9rem;
   color: $color-graphite;
   background: $color-card;
+  border: 1px solid $color-line;
   border-left: 4px solid $color-graphite;
   border-radius: 2px;
   padding: 0.75rem 1rem;
 }
 
 .success {
-  border-left-color: $color-bordeaux;
+  border-left-color: $color-graphite;
 }
 
 .error {
@@ -32,4 +42,21 @@
 
 .info {
   border-left-color: $color-yolk;
+}
+
+.glyph {
+  margin-right: 0.5rem;
+  font-weight: 700;
+}
+
+.success .glyph {
+  color: $color-graphite;
+}
+
+.error .glyph {
+  color: $color-bordeaux;
+}
+
+.info .glyph {
+  color: $color-yolk;
 }

@@ -7,7 +7,9 @@
   gap: 0.5rem;
   font-family: $font-heading;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
+  // LinkButton — это <a>; без явного none браузер подчёркивает надпись
+  text-decoration: none;
   border: 1px solid transparent;
   border-radius: 2px;
   cursor: pointer;

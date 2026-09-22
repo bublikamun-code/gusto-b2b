@@ -21,7 +21,7 @@
 }
 
 .period {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.85rem;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .kpiLabel {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.8rem;
   letter-spacing: 0.5pt;
   text-transform: uppercase;
@@ -47,7 +47,7 @@
 .kpiValue {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #7c2d24;
+  color: $color-bordeaux;
 }
 
 .charts {

@@ -11,6 +11,12 @@ import styles from "./Toast.module.scss";
 
 export type ToastVariant = "success" | "error" | "info";
 
+const GLYPHS: Record<ToastVariant, string> = {
+  success: "✓",
+  error: "✕",
+  info: "i",
+};
+
 interface ToastItem {
   id: number;
   text: string;
@@ -52,6 +58,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={toast.id}
             className={[styles.toast, styles[toast.variant]].filter(Boolean).join(" ")}
           >
+            <span className={styles.glyph} aria-hidden="true">
+              {GLYPHS[toast.variant]}
+            </span>
             {toast.text}
           </div>
         ))}

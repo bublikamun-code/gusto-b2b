@@ -21,11 +21,6 @@
   }
 }
 
-.nav {
-  display: flex;
-  gap: 1rem;
-}
-
 .filters {
   display: flex;
   align-items: center;
@@ -46,5 +41,5 @@
 }
 
 .terminal {
-  color: #9ca3af;
+  color: rgba($color-graphite, 0.55);
 }

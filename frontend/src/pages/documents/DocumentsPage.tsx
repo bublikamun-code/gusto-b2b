@@ -1,5 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, Modal, Select, Table, Tabs, useToast } from "../../components/ui";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  Card,
+  ConfirmModal,
+  Input,
+  Modal,
+  Select,
+  Table,
+  Tabs,
+  useToast,
+} from '../../components/ui';
 import {
   createInvoice,
   createWaybill,
@@ -10,24 +20,20 @@ import {
   type Invoice,
   type Waybill,
   type WaybillType,
-} from "../../api/documents";
-import { listOrders, type Order } from "../../api/orders";
-import {
-  formatDocDate,
-  invoiceStatusBadge,
-  waybillTypeLabel,
-} from "../../lib/documents";
-import { formatMoney } from "../../lib/format";
-import { orderStatusLabel, type OrderStatus } from "../../lib/orderStatus";
-import styles from "./DocumentsPage.module.scss";
+} from '../../api/documents';
+import { listOrders, type Order } from '../../api/orders';
+import { formatDocDate, invoiceStatusBadge, waybillTypeLabel } from '../../lib/documents';
+import { formatMoney } from '../../lib/format';
+import { orderStatusLabel, type OrderStatus } from '../../lib/orderStatus';
+import styles from './DocumentsPage.module.scss';
 
 const INVOICE_STATUS_OPTIONS = [
-  { value: "", label: "Все статусы" },
-  { value: "DRAFT", label: "Черновик" },
-  { value: "ISSUED", label: "Выпущен" },
-  { value: "PARTIALLY_PAID", label: "Частично оплачен" },
-  { value: "PAID", label: "Оплачен" },
-  { value: "CANCELLED", label: "Отменён" },
+  { value: '', label: 'Все статусы' },
+  { value: 'DRAFT', label: 'Черновик' },
+  { value: 'ISSUED', label: 'Выпущен' },
+  { value: 'PARTIALLY_PAID', label: 'Частично оплачен' },
+  { value: 'PAID', label: 'Оплачен' },
+  { value: 'CANCELLED', label: 'Отменён' },
 ];
 
 /**
@@ -38,20 +44,24 @@ const INVOICE_STATUS_OPTIONS = [
 export default function DocumentsPage() {
   const { push } = useToast();
 
-  const [tab, setTab] = useState("invoices");
+  const [tab, setTab] = useState('invoices');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [waybills, setWaybills] = useState<Waybill[]>([]);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"" | WaybillType>("");
+  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'' | WaybillType>('');
   const [loading, setLoading] = useState(true);
 
-  const [orderModal, setOrderModal] = useState<null | "invoice" | "waybill">(null);
+  const [orderModal, setOrderModal] = useState<null | 'invoice' | 'waybill'>(null);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState("");
-  const [waybillType, setWaybillType] = useState<WaybillType>("TTN");
-  const [vehicle, setVehicle] = useState("");
-  const [driver, setDriver] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState('');
+  const [waybillType, setWaybillType] = useState<WaybillType>('TTN');
+  const [vehicle, setVehicle] = useState('');
+  const [driver, setDriver] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [issuing, setIssuing] = useState<Invoice | null>(null);
+  const [acting, setActing] = useState(false);
+  // plan-03: одна PDF-загрузка за раз — повторный клик по кнопке до ответа невозможен
+  const [pdfBusyId, setPdfBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -60,7 +70,7 @@ export default function DocumentsPage() {
         setInvoices(invoicePage.items);
         setWaybills(waybillPage.items);
       })
-      .catch((err) => push((err as Error).message, "error"))
+      .catch((err) => push((err as Error).message, 'error'))
       .finally(() => setLoading(false));
   }, [push]);
 
@@ -68,21 +78,21 @@ export default function DocumentsPage() {
     load();
   }, [load]);
 
-  const openOrderModal = (kind: "invoice" | "waybill") => {
+  const openOrderModal = (kind: 'invoice' | 'waybill') => {
     setOrderModal(kind);
-    setSelectedOrder("");
+    setSelectedOrder('');
     listOrders(0, 30)
       .then((page) => setOrders(page.items))
-      .catch((err) => push((err as Error).message, "error"));
+      .catch((err) => push((err as Error).message, 'error'));
   };
 
   const createFromOrder = async () => {
     if (!selectedOrder) return;
     setSubmitting(true);
     try {
-      if (orderModal === "invoice") {
+      if (orderModal === 'invoice') {
         const invoice = await createInvoice(selectedOrder);
-        push(`Счёт ${invoice.displayNumber} создан (черновик)`, "success");
+        push(`Счёт ${invoice.displayNumber} создан (черновик)`, 'success');
       } else {
         const waybill = await createWaybill({
           orderId: selectedOrder,
@@ -90,24 +100,42 @@ export default function DocumentsPage() {
           vehicle: vehicle || undefined,
           driver: driver || undefined,
         });
-        push(`Накладная ${waybill.displayNumber} оформлена`, "success");
+        push(`Накладная ${waybill.displayNumber} оформлена`, 'success');
       }
       setOrderModal(null);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const issue = async (invoice: Invoice) => {
+  const issue = async () => {
+    if (!issuing) return;
+    const invoice = issuing;
+    setActing(true);
     try {
       await issueInvoice(invoice.id);
-      push(`Счёт ${invoice.displayNumber} выпущен, PDF готов`, "success");
+      push(`Счёт ${invoice.displayNumber} выпущен, PDF готов`, 'success');
+      setIssuing(null);
       load();
     } catch (err) {
-      push((err as Error).message, "error");
+      push((err as Error).message, 'error');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const downloadPdfFor = async (id: string, path: string, filename: string) => {
+    if (pdfBusyId) return;
+    setPdfBusyId(id);
+    try {
+      await downloadPdf(path, filename);
+    } catch (err) {
+      push((err as Error).message, 'error');
+    } finally {
+      setPdfBusyId(null);
     }
   };
 
@@ -121,34 +149,31 @@ export default function DocumentsPage() {
   );
 
   const invoiceColumns = [
-    { key: "number", title: "Счёт", render: (i: Invoice) => <strong>{i.displayNumber}</strong> },
-    { key: "date", title: "Дата", render: (i: Invoice) => formatDocDate(i.issueDate) },
-    { key: "status", title: "Статус", render: (i: Invoice) => invoiceStatusBadge(i.status) },
+    { key: 'number', title: 'Счёт', render: (i: Invoice) => <strong>{i.displayNumber}</strong> },
+    { key: 'date', title: 'Дата', render: (i: Invoice) => formatDocDate(i.issueDate) },
+    { key: 'status', title: 'Статус', render: (i: Invoice) => invoiceStatusBadge(i.status) },
     {
-      key: "total",
-      title: "Сумма",
-      align: "right" as const,
+      key: 'total',
+      title: 'Сумма',
+      align: 'right' as const,
       render: (i: Invoice) => formatMoney(i.totalAmount),
     },
     {
-      key: "actions",
-      title: "",
-      align: "right" as const,
+      key: 'actions',
+      title: '',
+      align: 'right' as const,
       render: (i: Invoice) => (
         <div className={styles.rowActions}>
-          {i.status === "DRAFT" && (
-            <Button size="sm" variant="accent" onClick={() => issue(i)}>
+          {i.status === 'DRAFT' && (
+            <Button size="sm" variant="accent" onClick={() => setIssuing(i)}>
               Выпустить
             </Button>
           )}
           <Button
             size="sm"
             variant="secondary"
-            onClick={() =>
-              downloadPdf(`/invoices/${i.id}/pdf`, `${i.number}.pdf`).catch((err) =>
-                push((err as Error).message, "error"),
-              )
-            }
+            loading={pdfBusyId === i.id}
+            onClick={() => downloadPdfFor(i.id, `/invoices/${i.id}/pdf`, `${i.number}.pdf`)}
           >
             PDF
           </Button>
@@ -158,34 +183,35 @@ export default function DocumentsPage() {
   ];
 
   const waybillColumns = [
-    { key: "number", title: "Накладная", render: (w: Waybill) => <strong>{w.displayNumber}</strong> },
-    { key: "type", title: "Тип", render: (w: Waybill) => waybillTypeLabel(w.type) },
-    { key: "date", title: "Дата", render: (w: Waybill) => formatDocDate(w.issueDate) },
     {
-      key: "total",
-      title: "Сумма",
-      align: "right" as const,
+      key: 'number',
+      title: 'Накладная',
+      render: (w: Waybill) => <strong>{w.displayNumber}</strong>,
+    },
+    { key: 'type', title: 'Тип', render: (w: Waybill) => waybillTypeLabel(w.type) },
+    { key: 'date', title: 'Дата', render: (w: Waybill) => formatDocDate(w.issueDate) },
+    {
+      key: 'total',
+      title: 'Сумма',
+      align: 'right' as const,
       render: (w: Waybill) => formatMoney(w.totalAmount),
     },
     {
-      key: "weight",
-      title: "Масса, кг",
-      align: "right" as const,
-      render: (w: Waybill) => (w.totalWeight ? w.totalWeight.toFixed(3) : "—"),
+      key: 'weight',
+      title: 'Масса, кг',
+      align: 'right' as const,
+      render: (w: Waybill) => (w.totalWeight ? w.totalWeight.toFixed(3) : '—'),
     },
     {
-      key: "actions",
-      title: "",
-      align: "right" as const,
+      key: 'actions',
+      title: '',
+      align: 'right' as const,
       render: (w: Waybill) => (
         <Button
           size="sm"
           variant="secondary"
-          onClick={() =>
-            downloadPdf(`/waybills/${w.id}/pdf`, `${w.number}.pdf`).catch((err) =>
-              push((err as Error).message, "error"),
-            )
-          }
+          loading={pdfBusyId === w.id}
+          onClick={() => downloadPdfFor(w.id, `/waybills/${w.id}/pdf`, `${w.number}.pdf`)}
         >
           PDF
         </Button>
@@ -198,23 +224,23 @@ export default function DocumentsPage() {
       <header className={styles.header}>
         <h1>Документы</h1>
         <div className={styles.headerActions}>
-          <Button variant="accent" onClick={() => openOrderModal("invoice")}>
+          <Button variant="accent" onClick={() => openOrderModal('invoice')}>
             Выставить счёт из заказа
           </Button>
-          <Button onClick={() => openOrderModal("waybill")}>Оформить накладную</Button>
+          <Button onClick={() => openOrderModal('waybill')}>Оформить накладную</Button>
         </div>
       </header>
 
       <Card className={styles.filters}>
         <Tabs
           items={[
-            { key: "invoices", label: "Счета" },
-            { key: "waybills", label: "Накладные" },
+            { key: 'invoices', label: 'Счета' },
+            { key: 'waybills', label: 'Накладные' },
           ]}
           active={tab}
           onChange={setTab}
         />
-        {tab === "invoices" ? (
+        {tab === 'invoices' ? (
           <Select
             value={statusFilter}
             options={INVOICE_STATUS_OPTIONS}
@@ -226,16 +252,16 @@ export default function DocumentsPage() {
             value={typeFilter}
             placeholder="Все типы"
             options={[
-              { value: "TTN", label: "ТТН" },
-              { value: "TN", label: "ТН" },
+              { value: 'TTN', label: 'ТТН' },
+              { value: 'TN', label: 'ТН' },
             ]}
-            onChange={(e) => setTypeFilter(e.target.value as "" | WaybillType)}
+            onChange={(e) => setTypeFilter(e.target.value as '' | WaybillType)}
             className={styles.filterSelect}
           />
         )}
       </Card>
 
-      {tab === "invoices" ? (
+      {tab === 'invoices' ? (
         <Table<Invoice>
           columns={invoiceColumns}
           data={filteredInvoices}
@@ -255,7 +281,7 @@ export default function DocumentsPage() {
 
       <Modal
         open={orderModal !== null}
-        title={orderModal === "invoice" ? "Выставить счёт из заказа" : "Оформить накладную"}
+        title={orderModal === 'invoice' ? 'Выставить счёт из заказа' : 'Оформить накладную'}
         onClose={() => setOrderModal(null)}
         footer={
           <>
@@ -268,7 +294,7 @@ export default function DocumentsPage() {
               disabled={!selectedOrder}
               onClick={createFromOrder}
             >
-              {orderModal === "invoice" ? "Создать счёт" : "Оформить"}
+              {orderModal === 'invoice' ? 'Создать счёт' : 'Оформить'}
             </Button>
           </>
         }
@@ -283,24 +309,22 @@ export default function DocumentsPage() {
             }))}
             onChange={(e) => setSelectedOrder(e.target.value)}
           />
-          {orderModal === "waybill" && (
+          {orderModal === 'waybill' && (
             <>
               <Select
                 value={waybillType}
                 options={[
-                  { value: "TTN", label: "ТТН (товарно-транспортная)" },
-                  { value: "TN", label: "ТН (товарная)" },
+                  { value: 'TTN', label: 'ТТН (товарно-транспортная)' },
+                  { value: 'TN', label: 'ТН (товарная)' },
                 ]}
                 onChange={(e) => setWaybillType(e.target.value as WaybillType)}
               />
-              <input
-                className={styles.input}
+              <Input
                 placeholder="Автомобиль (например, AB 1234-5)"
                 value={vehicle}
                 onChange={(e) => setVehicle(e.target.value)}
               />
-              <input
-                className={styles.input}
+              <Input
                 placeholder="Водитель"
                 value={driver}
                 onChange={(e) => setDriver(e.target.value)}
@@ -308,12 +332,27 @@ export default function DocumentsPage() {
             </>
           )}
           <p className={styles.hint}>
-            {orderModal === "invoice"
-              ? "Счёт создаётся черновиком: снапшоты реквизитов и позиций зафиксируются на момент создания."
-              : "Накладная создаётся окончательным документом: PDF формируется сразу."}
+            {orderModal === 'invoice'
+              ? 'Счёт создаётся черновиком: снапшоты реквизитов и позиций зафиксируются на момент создания.'
+              : 'Накладная создаётся окончательным документом: PDF формируется сразу.'}
           </p>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={issuing !== null}
+        title="Выпустить счёт"
+        confirmLabel="Выпустить"
+        loading={acting}
+        onClose={() => setIssuing(null)}
+        onConfirm={issue}
+      >
+        <p>
+          Выпустить счёт {issuing?.displayNumber} на сумму{' '}
+          {issuing ? formatMoney(issuing.totalAmount) : ''}? Счёт станет неизменяемым: снапшоты
+          реквизитов и позиций зафиксируются, PDF сформируется автоматически.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

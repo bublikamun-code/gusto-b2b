@@ -1,4 +1,4 @@
-import { Button } from "../components/ui";
+import { LinkButton } from "../components/ui";
 import styles from "./NotFoundPage.module.scss";
 
 export default function NotFoundPage() {
@@ -7,7 +7,7 @@ export default function NotFoundPage() {
       <main className={styles.wrapper}>
         <p className={styles.code}>404</p>
         <h1 className={styles.title}>Страница не найдена</h1>
-        <Button onClick={() => (window.location.href = "/")}>На главную</Button>
+        <LinkButton to="/">На главную</LinkButton>
       </main>
     </div>
   );

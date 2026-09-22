@@ -1,0 +1,138 @@
+@use "../../styles/tokens" as *;
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.875rem 2rem;
+  background-color: $color-bordeaux;
+  color: $color-cream;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  color: $color-cream;
+  text-decoration: none;
+}
+
+.logo__text {
+  font-family: $font-display;
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+
+.logo__sub {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  opacity: 0.85;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav__link {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: rgba($color-cream, 0.85);
+  text-decoration: none;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    color: $color-cream;
+  }
+
+  &_active {
+    color: $color-cream;
+    border-bottom-color: $color-yolk;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.actions__storefront {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: $color-cream;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover {
+    color: $color-yolk;
+  }
+}
+
+.actions__user {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+// secondary-кнопка бордо на бордо не видна — на тёмной шапке перекрашиваем в крем
+.actions .logout {
+  color: $color-cream;
+  border-color: rgba($color-cream, 0.55);
+
+  &:hover:not(:disabled) {
+    background: rgba($color-cream, 0.12);
+  }
+}
+
+.main {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    padding: 0.875rem 1rem;
+    row-gap: 0.5rem;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    row-gap: 0.375rem;
+  }
+
+  .nav__link {
+    font-size: 0.75rem;
+  }
+
+  .actions__user {
+    display: none;
+  }
+}

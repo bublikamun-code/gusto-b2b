@@ -1,94 +1,12 @@
 @use "sass:color";
 @use "../../styles/tokens" as *;
 
-.page {
-  min-height: 100vh;
-  background: $color-cream;
-  color: $color-graphite;
-  font-family: $font-body;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1.25rem;
-  background: $color-bordeaux;
-  color: $color-cream;
-
-  &__left,
-  &__right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  &__logo {
-    font-family: $font-display;
-    font-size: 1.25rem;
-    color: $color-cream;
-    text-decoration: none;
-  }
-
-  &__sub {
-    font-family: $font-heading;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.8rem;
-    opacity: 0.85;
-  }
-
-  &__cart {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.75rem;
-    background: rgba($color-cream, 0.12);
-    border-radius: 2px;
-  }
-
-  &__cartLabel {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  &__cartCount {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    background: $color-yolk;
-    color: $color-graphite;
-    border-radius: 50%;
-    font-weight: 600;
-    font-size: 0.8rem;
-  }
-
-  &__cartSum {
-    font-family: $font-display;
-    min-width: 5rem;
-    text-align: right;
-  }
-
-  &__user {
-    font-size: 0.9rem;
-  }
-
-  &__link {
-    color: $color-cream;
-    font-size: 0.85rem;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-}
+// Шапка и контейнер страницы — в CabinetLayout (общая навигация кабинета)
 
 .main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .bulk {
@@ -113,6 +31,12 @@
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
+
+    // на узких экранах кнопка «Добавить список» не влезает рядом — стопкой
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 
   &__textarea {
@@ -122,6 +46,10 @@
   &__button {
     flex: 0 0 auto;
     margin-top: 1.5rem;
+
+    @media (max-width: 640px) {
+      margin-top: 0;
+    }
   }
 
   &__error {

@@ -1,12 +1,10 @@
-import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Pagination, Select, Table, Textarea, useToast } from "../../components/ui";
 import { listBrands, listCategories } from "../../api/catalog";
 import { listCabinetProducts, type CabinetProduct } from "../../api/cabinetCatalog";
-import { putCartItem as putServerCartItem, getCart as getServerCart } from "../../api/cart";
-import { useAuthStore } from "../../store/authStore";
-import { logout } from "../../api/auth";
+import { putCartItem as putServerCartItem } from "../../api/cart";
 import { formatMoney } from "../../lib/format";
 import { stockStatusBadge } from "../../lib/stockStatus";
 import styles from "./CabinetCatalogPage.module.scss";
@@ -22,8 +20,6 @@ function splitSkuList(value: string): string[] {
 
 export default function CabinetCatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const user = useAuthStore((s) => s.user);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const categoryId = searchParams.get("categoryId") ?? "";
   const brandId = searchParams.get("brandId") ?? "";
@@ -35,19 +31,18 @@ export default function CabinetCatalogPage() {
   const [skuListError, setSkuListError] = useState<string | null>(null);
   const [skuListSuccess, setSkuListSuccess] = useState<string | null>(null);
   const [rowQuantities, setRowQuantities] = useState<Record<string, number>>({});
+  // plan-03: busy-стейт на время мутаций — повторный клик по «В корзину»/«Добавить список» невозможен
+  const busyRowsRef = useRef(new Set<string>());
+  const [busyRows, setBusyRows] = useState<ReadonlySet<string>>(new Set());
+  const [bulkAdding, setBulkAdding] = useState(false);
   const queryClient = useQueryClient();
   const { push: pushToast } = useToast();
 
-  // S21: корзина серверная — счётчик подтягиваем из /cart
-  const { data: serverCart } = useQuery({
-    queryKey: ["cart"],
-    queryFn: getServerCart,
-  });
-  const cartCount = useMemo(
-    () => serverCart?.items.reduce((acc, item) => acc + item.quantity, 0) ?? 0,
-    [serverCart],
-  );
-  const cartSum = serverCart?.totalAmount ?? 0;
+  const markRowBusy = useCallback((id: string, busy: boolean) => {
+    if (busy) busyRowsRef.current.add(id);
+    else busyRowsRef.current.delete(id);
+    setBusyRows(new Set(busyRowsRef.current));
+  }, []);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -59,7 +54,7 @@ export default function CabinetCatalogPage() {
     queryFn: listBrands,
   });
 
-  const { data: products, isLoading, isError, refetch } = useQuery({
+  const { data: products, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["cabinet-catalog", { page, size: PAGE_SIZE, search, categoryId, brandId }],
     queryFn: () => listCabinetProducts({ page, size: PAGE_SIZE, search, categoryId, brandId }),
   });
@@ -88,30 +83,28 @@ export default function CabinetCatalogPage() {
     setSearchParams(next, { replace: true });
   }
 
-  function handleLogout() {
-    logout().finally(() => {
-      clearAuth();
-      window.location.href = "/login";
-    });
-  }
-
   function handleRowQuantityChange(sku: string, value: string) {
     const quantity = Math.max(0, Number(value));
     setRowQuantities((prev) => ({ ...prev, [sku]: quantity }));
   }
 
   async function handleAddToCart(product: CabinetProduct) {
+    if (busyRows.has(product.id)) return;
     const quantity = rowQuantities[product.sku] || 1;
+    markRowBusy(product.id, true);
     try {
       await putServerCartItem(product.id, quantity);
       await queryClient.invalidateQueries({ queryKey: ["cart"] });
       setRowQuantities((prev) => ({ ...prev, [product.sku]: 0 }));
     } catch (err) {
       pushToast((err as Error).message, "error");
+    } finally {
+      markRowBusy(product.id, false);
     }
   }
 
   async function handleBulkAdd() {
+    if (bulkAdding) return;
     setSkuListError(null);
     setSkuListSuccess(null);
 
@@ -123,20 +116,33 @@ export default function CabinetCatalogPage() {
 
     const notFound: string[] = [];
     let added = 0;
+    let failed = 0;
 
-    for (const sku of skus) {
-      const product = allProductsBySku.get(sku);
-      if (!product) {
-        notFound.push(sku);
-        continue;
+    setBulkAdding(true);
+    try {
+      for (const sku of skus) {
+        const product = allProductsBySku.get(sku);
+        if (!product) {
+          notFound.push(sku);
+          continue;
+        }
+        try {
+          await putServerCartItem(product.id, 1);
+          added++;
+        } catch {
+          failed++;
+        }
       }
-      await putServerCartItem(product.id, 1).catch(() => undefined);
-      added++;
+      await queryClient.invalidateQueries({ queryKey: ["cart"] });
+    } finally {
+      setBulkAdding(false);
     }
-    await queryClient.invalidateQueries({ queryKey: ["cart"] });
 
     if (notFound.length > 0) {
       setSkuListError(`Не найдены: ${notFound.join(", ")}`);
+    }
+    if (failed > 0) {
+      pushToast(`Не добавлено позиций: ${failed}`, "error");
     }
     if (added > 0) {
       setSkuListSuccess(`Добавлено позиций: ${added}`);
@@ -193,7 +199,11 @@ export default function CabinetCatalogPage() {
       width: "15%",
       align: "center" as const,
       render: (row: CabinetProduct) => (
-        <Button size="sm" onClick={() => handleAddToCart(row)}>
+        <Button
+          size="sm"
+          loading={busyRows.has(row.id)}
+          onClick={() => handleAddToCart(row)}
+        >
           В корзину
         </Button>
       ),
@@ -202,29 +212,6 @@ export default function CabinetCatalogPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.header__left}>
-          <Link to="/cabinet" className={styles.header__logo}>
-            ГУСТО
-          </Link>
-          <span className={styles.header__sub}>Каталог</span>
-        </div>
-        <div className={styles.header__right}>
-          <Link to="/cabinet/cart" className={styles.header__cart}>
-            <span className={styles.header__cartLabel}>Корзина</span>
-            <span className={styles.header__cartCount}>{cartCount}</span>
-            <span className={styles.header__cartSum}>{formatMoney(cartSum)}</span>
-          </Link>
-          <span className={styles.header__user}>{user?.fullName ?? user?.email}</span>
-          <Link to="/cabinet" className={styles.header__link}>
-            Кабинет
-          </Link>
-          <Button size="sm" variant="secondary" onClick={handleLogout}>
-            Выйти
-          </Button>
-        </div>
-      </header>
-
       <main className={styles.main}>
         <section className={styles.bulk}>
           <h2 className={styles.bulk__title}>Массовое добавление по артикулам</h2>
@@ -233,12 +220,12 @@ export default function CabinetCatalogPage() {
           </p>
           <div className={styles.bulk__row}>
             <Textarea
-              placeholder="Например: KOLO-001, SOS-025"
+              placeholder="Например: bedro-kurinoye, steyk-ribay"
               value={skuListDraft}
               onChange={(event) => setSkuListDraft(event.target.value)}
               className={styles.bulk__textarea}
             />
-            <Button onClick={handleBulkAdd} className={styles.bulk__button}>
+            <Button onClick={handleBulkAdd} loading={bulkAdding} className={styles.bulk__button}>
               Добавить список
             </Button>
           </div>
@@ -275,7 +262,12 @@ export default function CabinetCatalogPage() {
         {isError ? (
           <p className={styles.loadError}>
             Не удалось загрузить каталог.{" "}
-            <Button size="sm" variant="secondary" onClick={() => refetch()}>
+            <Button
+              size="sm"
+              variant="secondary"
+              loading={isRefetching}
+              onClick={() => refetch()}
+            >
               Повторить
             </Button>
           </p>

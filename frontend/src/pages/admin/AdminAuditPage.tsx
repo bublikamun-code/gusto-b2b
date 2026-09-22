@@ -119,7 +119,7 @@ export default function AdminAuditPage() {
             onChange={(e) => setFilters({ ...filters, dateTo: e.target.value || undefined })}
           />
           <div className={styles.actions}>
-            <Button variant="accent" onClick={applyFilters} disabled={loading}>
+            <Button variant="accent" onClick={applyFilters} loading={loading}>
               Найти
             </Button>
             <Button

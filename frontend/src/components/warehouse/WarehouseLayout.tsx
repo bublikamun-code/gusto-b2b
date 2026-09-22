@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { BackofficeMenuButton, BackofficeMenuPanel, useBackofficeMenu } from "../admin/BackofficeMenu";
 import styles from "./WarehouseLayout.module.scss";
 
 const NAV_ITEMS = [
@@ -10,9 +11,12 @@ const NAV_ITEMS = [
 ];
 
 export function WarehouseLayout() {
+  const menu = useBackofficeMenu();
+
   return (
     <div className={styles.layout}>
       <header className={styles.header}>
+        <BackofficeMenuButton open={menu.open} onToggle={menu.toggle} />
         <span className={styles.title}>Склад</span>
         <nav className={styles.nav}>
           {NAV_ITEMS.map((item) => (
@@ -26,9 +30,12 @@ export function WarehouseLayout() {
           ))}
         </nav>
       </header>
-      <main className={styles.main}>
-        <Outlet />
-      </main>
+      <div className={styles.body}>
+        <BackofficeMenuPanel open={menu.open} />
+        <main className={styles.main}>
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

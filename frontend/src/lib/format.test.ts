@@ -12,8 +12,7 @@ describe("formatMoney", () => {
     expect(formatMoney(1234.5)).toMatch(/1.?234,50/);
   });
 
-  it("formats in BYN currency", () => {
-    const formatted = formatMoney(10);
-    expect(formatted).toMatch(/BYN|Br/i);
+  it("ends with the brandbook ruble suffix", () => {
+    expect(formatMoney(10)).toMatch(/10,00 р\.$/);
   });
 });

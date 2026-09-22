@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Badge, Button, Card, Table, Tabs, useToast } from "../../components/ui";
 import { assignLead, listLeads, type Lead } from "../../api/crm";
 import { listManagerOrders, takeOrder, type Order } from "../../api/orders";
@@ -124,10 +123,6 @@ export default function CrmInboxPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Единое окно входящих</h1>
-        <nav className={styles.nav}>
-          <Link to="/manager/leads">Воронка лидов</Link>
-          <Link to="/manager/clients">Клиенты</Link>
-        </nav>
       </header>
 
       <div className={styles.counters}>

@@ -11,18 +11,12 @@
 .header {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: 1rem;
 
   h1 {
     margin: 0;
     font-size: 1.4rem;
   }
-}
-
-.nav {
-  display: flex;
-  gap: 1rem;
 }
 
 .frequent {
@@ -53,7 +47,7 @@
 
 .frequentMeta {
   display: block;
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.8rem;
 }
 
@@ -63,44 +57,16 @@
   justify-content: flex-end;
 }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(38, 32, 28, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 50;
-}
-
-.modal {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.25rem;
-  max-width: 40rem;
-  width: 100%;
-  max-height: 85vh;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .modalHead {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-
-  h2 {
-    margin: 0;
-    font-size: 1.15rem;
-    flex: 1;
-  }
+  margin: 0 0 0.75rem;
 }
 
 .meta {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -125,7 +91,7 @@
 }
 
 .sku {
-  color: #6b7280;
+  color: rgba($color-graphite, 0.72);
   font-size: 0.8rem;
 }
 
