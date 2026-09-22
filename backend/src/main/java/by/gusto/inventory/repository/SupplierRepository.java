@@ -15,7 +15,7 @@ public interface SupplierRepository extends JpaRepository<Supplier, UUID> {
     Optional<Supplier> findByUnpAndActiveTrue(String unp);
 
     @Query("select s from Supplier s where "
-            + "(:search is null or lower(s.name) like lower(concat('%', :search, '%')) "
+            + "(:search = '' or lower(s.name) like lower(concat('%', :search, '%')) "
             + "or lower(s.contactPerson) like lower(concat('%', :search, '%'))) "
             + "and (:active is null or s.active = :active) "
             + "order by s.name asc")

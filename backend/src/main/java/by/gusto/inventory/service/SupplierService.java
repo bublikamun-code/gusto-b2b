@@ -41,8 +41,11 @@ public class SupplierService {
 
     @Transactional(readOnly = true)
     public Page<Response> search(String search, Boolean active, int page, int size) {
+        // Пустая строка вместо null: Hibernate 6 биндит null-String как bytea,
+        // и Postgres падает «function lower(bytea) does not exist» (S18.4)
         return supplierRepository
-                .search(blankToNull(search), active, PageRequest.of(page, Math.min(size, 100)))
+                .search(search == null ? "" : search.trim(), active,
+                        PageRequest.of(page, Math.min(size, 100)))
                 .map(this::toResponse);
     }
 
@@ -86,9 +89,5 @@ public class SupplierService {
         response.setActive(supplier.isActive());
         response.setCreatedAt(supplier.getCreatedAt());
         return response;
-    }
-
-    private String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
     }
 }

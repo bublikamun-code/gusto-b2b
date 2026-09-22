@@ -148,6 +148,12 @@ class SupplierPurchaseOrderIntegrationTest {
         assertThat(found.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat((List<Map<String, Object>>) found.getBody().getData()).isNotEmpty();
 
+        // Регрессия S18.4: загрузка списка без search (null-параметр) не должна падать
+        ResponseEntity<ApiResponse> all = request(token, HttpMethod.GET,
+                "/api/v1/warehouse/suppliers", Map.of());
+        assertThat(all.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((List<Map<String, Object>>) all.getBody().getData()).isNotEmpty();
+
         ResponseEntity<ApiResponse> deactivated = request(token, HttpMethod.DELETE,
                 "/api/v1/warehouse/suppliers/" + supplier.get("id"), Map.of());
         assertThat(deactivated.getStatusCode()).isEqualTo(HttpStatus.OK);
