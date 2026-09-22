@@ -55,3 +55,13 @@
   padding: 1.5rem;
   overflow: auto;
 }
+
+@media (max-width: 640px) {
+  .header {
+    padding: 0 1rem;
+  }
+
+  .user {
+    display: none;
+  }
+}

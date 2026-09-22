@@ -132,7 +132,7 @@ export default function CrmInboxPage() {
         </Card>
         <Card className={styles.counter}>
           <span className={styles.counterValue}>{tasks.length}</span>
-          <span>просроченные задачи</span>
+          <span>просроченных задач</span>
         </Card>
       </div>
 
