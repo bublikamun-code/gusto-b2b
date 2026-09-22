@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button, ConfirmModal, Input, Select, Table, useToast } from '../../components/ui';
+import { Button, ConfirmModal, Input, QuantityStepper, Select, Table, useToast } from '../../components/ui';
 import {
   clearCart,
   createOrder,
@@ -82,8 +82,9 @@ export default function CabinetCartPage() {
     }
   };
 
-  const commitQuantity = async (productId: string) => {
-    const draft = drafts[productId];
+  const commitQuantity = async (productId: string, override?: string) => {
+    // override — значение сразу после −/+, когда стейт-черновик ещё не обновился
+    const draft = override ?? drafts[productId];
     if (draft === undefined || busyRef.current.has(productId)) return;
     const parsed = parseQuantityInput(draft);
     if (parsed.kind === 'empty' || parsed.kind === 'invalid') {
@@ -171,20 +172,19 @@ export default function CabinetCartPage() {
       title: 'Кол-во',
       align: 'center' as const,
       render: (row: ServerCart['items'][number]) => (
-        <Input
-          type="number"
-          min={0.001}
-          step={0.001}
+        <QuantityStepper
           value={drafts[row.productId] ?? String(row.quantity)}
-          onChange={(event) => setDraft(row.productId, event.target.value)}
+          onChange={(next) => setDraft(row.productId, next)}
+          onStep={(next) => commitQuantity(row.productId, next)}
           onBlur={() => commitQuantity(row.productId)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') commitQuantity(row.productId);
             if (event.key === 'Escape') clearDraft(row.productId);
           }}
+          min={0.001}
+          step={0.001}
           disabled={busyIds.has(row.productId)}
-          aria-label={`Количество: ${row.productName}`}
-          className={styles.quantityInput}
+          ariaLabel={`Количество: ${row.productName}`}
         />
       ),
     },

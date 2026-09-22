@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Input, Pagination, Select, Table, Textarea, useToast } from "../../components/ui";
+import { Button, Input, Pagination, QuantityStepper, Select, Table, Textarea, useToast } from "../../components/ui";
 import { listBrands, listCategories } from "../../api/catalog";
 import { listCabinetProducts, type CabinetProduct } from "../../api/cabinetCatalog";
 import { putCartItem as putServerCartItem } from "../../api/cart";
@@ -162,7 +162,7 @@ export default function CabinetCatalogPage() {
   ];
 
   const columns = [
-    { key: "sku", title: "Артикул", width: "12%" },
+    { key: "sku", title: "Артикул", width: "12%", mobileHidden: true },
     { key: "name", title: "Название", width: "35%" },
     { key: "unit", title: "Ед. изм.", width: "10%", mobileHidden: true },
     {
@@ -184,13 +184,13 @@ export default function CabinetCatalogPage() {
       width: "12%",
       align: "center" as const,
       render: (row: CabinetProduct) => (
-        <Input
-          type="number"
+        <QuantityStepper
+          value={String(rowQuantities[row.sku] ?? 1)}
+          onChange={(next) => handleRowQuantityChange(row.sku, next)}
           min={0}
           step={row.weightStep ?? 1}
-          value={rowQuantities[row.sku] ?? 1}
-          onChange={(event) => handleRowQuantityChange(row.sku, event.target.value)}
-          className={styles.quantityInput}
+          disabled={busyRows.has(row.id)}
+          ariaLabel={`Количество: ${row.name}`}
         />
       ),
     },
@@ -204,6 +204,7 @@ export default function CabinetCatalogPage() {
           size="sm"
           loading={busyRows.has(row.id)}
           onClick={() => handleAddToCart(row)}
+          className={styles.cartButton}
         >
           В корзину
         </Button>

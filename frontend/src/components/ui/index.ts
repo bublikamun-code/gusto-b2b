@@ -8,6 +8,8 @@ export { Textarea } from './Textarea/Textarea';
 export type { TextareaProps } from './Textarea/Textarea';
 export { Select } from './Select/Select';
 export type { SelectOption, SelectProps } from './Select/Select';
+export { QuantityStepper } from './QuantityStepper/QuantityStepper';
+export type { QuantityStepperProps } from './QuantityStepper/QuantityStepper';
 export { Badge } from './Badge/Badge';
 export type { BadgeProps, BadgeVariant } from './Badge/Badge';
 export { Card } from './Card/Card';

@@ -1,0 +1,74 @@
+@use "../../../styles/tokens" as *;
+
+// единая высота контрола — в строке таблицы карточек он не выше текстовых полей
+$stepper-height: 1.75rem;
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.button {
+  flex-shrink: 0;
+  width: $stepper-height;
+  height: $stepper-height;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-heading;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: $color-bordeaux;
+  background: $color-card;
+  border: 1px solid $color-line;
+  border-radius: 2px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: $color-bordeaux;
+    border-color: $color-bordeaux;
+    color: $color-cream;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.input {
+  width: 2.4rem;
+  height: $stepper-height;
+  text-align: center;
+  font-family: $font-body;
+  font-size: 0.9rem;
+  color: $color-graphite;
+  background: $color-card;
+  border: 1px solid $color-line;
+  border-radius: 2px;
+  padding: 0;
+
+  &:focus {
+    outline: none;
+    border-color: $color-bordeaux;
+  }
+
+  &:disabled {
+    background: rgba($color-graphite, 0.06);
+    cursor: not-allowed;
+  }
+
+  // системные стрелки не стилизуются — убираем
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
