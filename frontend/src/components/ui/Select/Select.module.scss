@@ -18,9 +18,12 @@
   position: relative;
 }
 
-.select {
+// триггер дропдауна — выглядит как прежний <select>
+.trigger {
   appearance: none;
+  display: block;
   width: 100%;
+  text-align: left;
   font-family: $font-body;
   font-size: 0.95rem;
   color: $color-graphite;
@@ -29,6 +32,9 @@
   border-radius: 2px;
   padding: 0.6rem 2rem 0.6rem 0.8rem;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:focus {
     outline: none;
@@ -40,13 +46,13 @@
     cursor: not-allowed;
   }
 
-  // раскрытый список стилизуется частично (Chrome/Windows); на мобильных
-  // popup рисует ОС и CSS на него не действует
-  option {
-    background: $color-card;
-    color: $color-graphite;
-    font-family: $font-body;
+  &[aria-expanded="true"] {
+    border-color: $color-bordeaux;
   }
+}
+
+.placeholder {
+  color: rgba($color-graphite, 0.45);
 }
 
 .arrow {
@@ -56,6 +62,48 @@
   transform: translateY(-50%);
   color: $color-bordeaux;
   pointer-events: none;
+}
+
+// стилизованный список вместо системного popup
+.popup {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 60;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: $color-card;
+  border: 1px solid $color-line;
+  border-radius: 2px;
+  box-shadow: 0 8px 24px rgba($color-graphite, 0.18);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  color: $color-graphite;
+  cursor: pointer;
+
+  &.optionActive {
+    background: $color-cream;
+  }
+
+  &.optionSelected {
+    color: $color-bordeaux;
+    font-weight: 600;
+  }
+}
+
+.check {
+  color: $color-bordeaux;
 }
 
 .invalid {
