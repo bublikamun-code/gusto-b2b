@@ -53,21 +53,20 @@ export function WarehouseLayout() {
         </div>
       </header>
 
-      <nav className={styles.subnav} aria-label="Разделы склада">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) => (isActive ? styles.active : undefined)}
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
-
       <div className={adminStyles.body}>
         <BackofficeMenuPanel open={menu.open} />
         <main className={adminStyles.main}>
+          <nav className={styles.subnav} aria-label="Разделы склада">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => (isActive ? styles.active : undefined)}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
           <Outlet />
         </main>
       </div>

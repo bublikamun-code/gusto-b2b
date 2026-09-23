@@ -7,14 +7,14 @@
   color: rgba($color-graphite, 0.6);
 }
 
-// Полоска подразделов склада под общей шапкой
+// Подразделы склада — внутри контентной колонки, под заголовком страницы:
+// между шапкой и выпадающим меню бэк-офиса ничего стоять не должно,
+// чтобы панель открывалась так же, как в админке и CRM.
 .subnav {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  padding: 0.5rem 1.5rem;
-  background: $color-card;
-  border-bottom: 1px solid $color-line;
+  margin-bottom: 1rem;
 
   a {
     font-family: $font-heading;
@@ -33,11 +33,5 @@
       background: $color-bordeaux;
       color: $color-cream;
     }
-  }
-}
-
-@media (max-width: 640px) {
-  .subnav {
-    padding: 0.5rem 1rem;
   }
 }
