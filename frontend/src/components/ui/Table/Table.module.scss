@@ -9,7 +9,8 @@
   border-collapse: collapse;
   background: $color-card;
   border-radius: 2px;
-  overflow: hidden;
+  // без overflow: hidden: на свёрнутой таблице он провоцирует сдвиг thead
+  // в Chromium при появлении абсолютных элементов внутри ячеек
   font-family: $font-body;
   font-size: 0.9rem;
   color: $color-graphite;
