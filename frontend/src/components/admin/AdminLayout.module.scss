@@ -65,3 +65,11 @@
     display: none;
   }
 }
+
+// На узких экранах панель меню полноширинная (см. BackofficeMenu.module.scss),
+// поэтому сетка складывается в колонку — иначе main сжимается до минимума.
+@media (max-width: 720px) {
+  .body {
+    flex-direction: column;
+  }
+}

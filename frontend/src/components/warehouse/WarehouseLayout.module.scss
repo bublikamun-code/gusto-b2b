@@ -1,29 +1,20 @@
 @use "../../styles/tokens" as *;
 
-.layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  border-bottom: 2px solid $color-bordeaux;
-  padding-bottom: 0.5rem;
-}
-
+// Название раздела рядом с логотипом в единой шапке бэк-офиса
 .title {
   font-family: $font-display;
-  font-size: 1.25rem;
-  color: $color-bordeaux;
+  font-size: 1.125rem;
+  color: rgba($color-graphite, 0.6);
 }
 
-.nav {
+// Полоска подразделов склада под общей шапкой
+.subnav {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
+  padding: 0.5rem 1.5rem;
+  background: $color-card;
+  border-bottom: 1px solid $color-line;
 
   a {
     font-family: $font-heading;
@@ -45,37 +36,8 @@
   }
 }
 
-.body {
-  display: flex;
-  align-items: stretch;
-}
-
-.main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.toolbar {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.deficit {
-  background: rgba(229, 163, 60, 0.25); // желток-акцент: ниже min_stock
-}
-
-@media (max-width: 720px) {
-  .header {
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-
-  .body {
-    flex-direction: column;
+@media (max-width: 640px) {
+  .subnav {
+    padding: 0.5rem 1rem;
   }
 }
