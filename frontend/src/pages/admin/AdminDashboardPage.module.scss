@@ -8,8 +8,11 @@
 
 .title {
   margin: 0;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .subtitle {

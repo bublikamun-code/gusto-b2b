@@ -47,7 +47,12 @@
   margin-top: 0.5rem;
 }
 
+// flex с gap: соседние <Link> в JSX рендерятся вплотную
+// («Забыли пароль?Регистрация»), пробел между ними не гарантируется
 .auth-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   text-align: center;
   font-size: 0.875rem;
   color: $color-graphite;

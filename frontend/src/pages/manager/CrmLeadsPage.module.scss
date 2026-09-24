@@ -12,7 +12,11 @@
 .header {
   h1 {
     margin: 0;
+    font-family: $font-heading;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     font-size: 1.4rem;
+    font-weight: 600;
   }
 }
 
