@@ -9,6 +9,15 @@
   align-items: stretch;
 }
 
+.title {
+  margin: 0;
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
 .bulk {
   background: $color-card;
   padding: 0.75rem 1.25rem;

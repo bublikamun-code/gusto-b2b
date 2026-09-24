@@ -26,6 +26,19 @@
 .headerActions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// Две кнопки действий не влезают в строку на телефоне — «Оформить накладную»
+// уезжала за правый край на 390px. Та же схема переноса, что в AdminPages.
+@media (max-width: 640px) {
+  .headerActions {
+    width: 100%;
+  }
+
+  .headerActions > * {
+    flex: 1 1 auto;
+  }
 }
 
 .filters {

@@ -214,7 +214,9 @@ export default function CabinetCatalogPage() {
 
   return (
     <div className={styles.page}>
-      <main className={styles.main}>
+      <div className={styles.main}>
+        <h1 className={styles.title}>Каталог товаров</h1>
+
         <section className={styles.bulk}>
           <button
             type="button"
@@ -308,7 +310,7 @@ export default function CabinetCatalogPage() {
             />
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

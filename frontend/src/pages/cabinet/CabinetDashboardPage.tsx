@@ -6,7 +6,7 @@ export default function CabinetDashboardPage() {
 
   return (
     <div className="page">
-      <main className="card">
+      <section className="card">
         <h1>Личный кабинет</h1>
         <p>Пользователь: {user?.fullName ?? user?.email}</p>
         <div className="actions">
@@ -18,7 +18,7 @@ export default function CabinetDashboardPage() {
           )}
           <LinkButton to="/cabinet/catalog">Перейти в каталог</LinkButton>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

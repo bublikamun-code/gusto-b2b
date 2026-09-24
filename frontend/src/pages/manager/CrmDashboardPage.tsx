@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Card } from "../../components/ui";
 import { getDashboard, type CrmDashboard } from "../../api/crm";
 import { formatMoney } from "../../lib/format";
@@ -78,44 +90,56 @@ export default function CrmDashboardPage() {
       <div className={styles.charts}>
         <Card className={styles.chart}>
           <h2>Топ товаров</h2>
-          <BarChart width={420} height={260} data={dashboard.topProducts}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" hide />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="total" name="Сумма, BYN" fill={BORDO} />
-          </BarChart>
+          <div className={styles.chartBox}>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={dashboard.topProducts}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" hide />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total" name="Сумма, BYN" fill={BORDO} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
 
         <Card className={styles.chart}>
           <h2>Топ клиентов</h2>
-          <BarChart width={420} height={260} data={dashboard.topCustomers}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" hide />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="total" name="Сумма, BYN" fill={YELTOK} />
-          </BarChart>
+          <div className={styles.chartBox}>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={dashboard.topCustomers}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" hide />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total" name="Сумма, BYN" fill={YELTOK} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
 
         <Card className={styles.chart}>
           <h2>Лиды</h2>
-          <PieChart width={420} height={260}>
-            <Pie
-              data={funnel}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              innerRadius={50}
-              outerRadius={90}
-            >
-              <Cell fill={KRAFT} />
-              <Cell fill={GRAPHIT} />
-            </Pie>
-            <Legend />
-            <Tooltip />
-          </PieChart>
+          <div className={styles.chartBox}>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={funnel}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                >
+                  <Cell fill={KRAFT} />
+                  <Cell fill={GRAPHIT} />
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </div>
     </div>

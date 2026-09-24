@@ -31,7 +31,10 @@
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  // auto-fit вместо repeat(4, 1fr): на 390px четыре колонки не влезают,
+  // auto-fit схлопывает их в одну, а фиксированный repeat уводит плитки
+  // за правый край.
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 1rem;
 }
 
@@ -56,7 +59,7 @@
 
 .charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(26rem, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -65,4 +68,10 @@
     margin: 0 0 0.5rem;
     font-size: 1rem;
   }
+}
+
+// ResponsiveContainer измеряет родителя — без явной ширины он схлопывается в 0.
+.chartBox {
+  width: 100%;
+  min-width: 0;
 }
