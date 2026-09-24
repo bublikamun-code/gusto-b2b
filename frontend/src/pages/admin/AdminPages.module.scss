@@ -11,12 +11,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.25rem;
 }
 
 .title {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
   margin: 0;
 }
 
@@ -36,6 +40,16 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+// Заголовок и кнопка действия не влезают в одну строку на телефоне —
+// та же схема переноса, что у «Массового добавления» каталога кабинета.
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
 }
 
 .pagination {

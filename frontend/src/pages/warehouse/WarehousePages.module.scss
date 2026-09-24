@@ -17,8 +17,11 @@
 }
 
 .title {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 600;
   margin: 0;
 }
 

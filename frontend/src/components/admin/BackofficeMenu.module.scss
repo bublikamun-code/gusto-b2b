@@ -44,7 +44,12 @@
     padding: 0.75rem 1.25rem;
     color: $color-graphite;
     text-decoration: none;
-    font-size: 0.9375rem;
+    // Пункты меню — как вся навигация в бренде (Oswald прописные,
+    // схема полоски подразделов склада из WarehouseLayout.subnav)
+    font-family: $font-heading;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
     border-left: 3px solid transparent;
     transition: background 0.15s ease, color 0.15s ease;
 

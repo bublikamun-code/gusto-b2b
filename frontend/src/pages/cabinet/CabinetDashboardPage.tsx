@@ -11,7 +11,11 @@ export default function CabinetDashboardPage() {
         <p>Пользователь: {user?.fullName ?? user?.email}</p>
         <div className="actions">
           <LinkButton to="/cabinet/orders">Мои заказы</LinkButton>
-          <LinkButton to="/cabinet/documents">Документы</LinkButton>
+          {/* Документы — только юрлицам, как в шапке CabinetLayout:
+              для физлица маршрут /cabinet/documents редиректит на витрину */}
+          {user?.role === "CUSTOMER_LEGAL" && (
+            <LinkButton to="/cabinet/documents">Документы</LinkButton>
+          )}
           <LinkButton to="/cabinet/catalog">Перейти в каталог</LinkButton>
         </div>
       </main>
