@@ -57,8 +57,9 @@ jobs:
         run: npm run build --prefix frontend
 
   # S40: сканирование зависимостей backend. Информационная (continue-on-error):
-  # без NVD_API_KEY OWASP упирается в rate limit NVD. Когда появится секрет
-  # NVD_API_KEY (S41) — убрать continue-on-error и джоба станет блокирующей.
+  # гейт CVSS сейчас красный (см. docs/security-checklist.md, S41), а без
+  # NVD_API_KEY база NVD тянется анонимно и занимает ~30 минут. Когда появятся
+  # секрет NVD_API_KEY и зелёный скан — убрать continue-on-error.
   dependency-scan:
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -69,11 +70,27 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - name: Cache OWASP dependency-check data
+        uses: actions/cache@v4
+        with:
+          # БД NVD (~400k записей) лежит в локальном репозитории Maven —
+          # без кеша каждый прогон тянет её заново.
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: dependency-check-data-${{ runner.os }}
       - name: Outdated dependencies report
         run: mvn -B versions:display-dependency-updates -f backend/pom.xml -DprocessDependencyManagement=false || true
       - name: OWASP dependency-check
-        run: >
-          mvn -B org.owasp:dependency-check-maven:check -f backend/pom.xml
-          -DfailBuildOnCVSS=9
-          -DnvdApiKey=${{ secrets.NVD_API_KEY || '' }}
-          -Dformat=HTML
+        env:
+          # 13+ отправляет заголовок apiKey всегда: NVD отвечает 404 на пустой
+          # ключ (и на невалидный тоже), но 200 без заголовка. Поэтому флаг
+          # добавляется только когда секрет непустой.
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          set -euo pipefail
+          ARGS=(-DfailBuildOnCVSS=9 -Dformat=HTML)
+          if [ -n "${NVD_API_KEY}" ]; then
+            ARGS+=("-DnvdApiKey=${NVD_API_KEY}")
+          else
+            echo "::warning::NVD_API_KEY не задан — сканирование без ключа, база NVD обновится анонимно (долго при первом прогоне)"
+          fi
+          mvn -B org.owasp:dependency-check-maven:12.1.8:check -f backend/pom.xml "${ARGS[@]}"
