@@ -239,9 +239,9 @@ class CrmIntegrationTest {
                 "/api/v1/crm/tasks/" + taskId + "/status?status=CANCELLED", null);
         assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 
-        // заметка по компании
+        // заметка по компании: менеджер пишет только по своим клиентам (S44)
         Company company = companyRepository.save(Company.builder()
-                .name("ООО «Заметки»").unp("192953720").build());
+                .name("ООО «Заметки»").unp("192953720").managerId(managerId).build());
         ResponseEntity<ApiResponse> note = exchange(manager, HttpMethod.POST, "/api/v1/crm/notes", Map.of(
                 "companyId", company.getId().toString(),
                 "body", "Договорились о пробной поставке"));

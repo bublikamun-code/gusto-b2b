@@ -119,8 +119,8 @@ class TelegramIntegrationTest {
         String code = ((Map<String, Object>) codeResponse.getBody().getData()).get("code").toString();
 
         ResponseEntity<String> linked = restTemplate.postForEntity(
-                "/api/v1/notifications/telegram/webhook?secret=test-secret",
-                httpJson(webhookBody("/start " + code)), String.class);
+                "/api/v1/notifications/telegram/webhook",
+                httpJson(webhookBody("/start " + code), "test-secret"), String.class);
         assertThat(linked.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // подписка создана и видна в списке
@@ -134,8 +134,8 @@ class TelegramIntegrationTest {
 
         // повторный /start с тем же кодом не работает (одноразовый)
         ResponseEntity<String> replay = restTemplate.postForEntity(
-                "/api/v1/notifications/telegram/webhook?secret=test-secret",
-                httpJson(webhookBody("/start " + code)), String.class);
+                "/api/v1/notifications/telegram/webhook",
+                httpJson(webhookBody("/start " + code), "test-secret"), String.class);
         assertThat(replay.getStatusCode()).isEqualTo(HttpStatus.OK);
         // подписка не задублировалась (unique по user+channel+destination)
         Integer count = jdbcTemplate.queryForObject(
@@ -153,8 +153,16 @@ class TelegramIntegrationTest {
     }
 
     private HttpEntity<String> httpJson(String body) {
+        return httpJson(body, null);
+    }
+
+    /** Telegram передаёт секрет заголовком; query-параметр больше не принимается (S44). */
+    private HttpEntity<String> httpJson(String body, String webhookSecret) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        if (webhookSecret != null) {
+            headers.set("X-Telegram-Bot-Api-Secret-Token", webhookSecret);
+        }
         return new HttpEntity<>(body, headers);
     }
 
