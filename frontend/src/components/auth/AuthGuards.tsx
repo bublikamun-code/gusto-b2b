@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import ForbiddenPage from "../../pages/ForbiddenPage";
 import { DASHBOARD_BY_ROLE } from "./dashboardByRole";
 import type { Role } from "../../types/admin";
 
@@ -31,7 +32,8 @@ export function RoleGuard({ allowed }: { allowed: Role[] }) {
   }
 
   if (!allowed.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    // Раньше был тихий редирект на «/»: пользователь не понимал, куда его не пустили (S44)
+    return <ForbiddenPage />;
   }
 
   return <Outlet />;

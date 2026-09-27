@@ -231,7 +231,7 @@ export default function DocumentsPage() {
         </div>
       </header>
 
-      <Card className={styles.filters}>
+      <Card bodyClassName={styles.filters}>
         <Tabs
           items={[
             { key: 'invoices', label: 'Счета' },

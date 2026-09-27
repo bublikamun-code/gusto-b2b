@@ -54,7 +54,7 @@ export default function BecomeClientPage() {
   if (done) {
     return (
       <div className={styles.page}>
-        <Card className={styles.card}>
+        <Card className={styles.card} bodyClassName={styles.cardBody}>
           <h1>Заявка принята</h1>
           <p>
             Спасибо! Менеджер свяжется с вами в рабочее время. Вопросы можно задать
@@ -72,7 +72,7 @@ export default function BecomeClientPage() {
 
   return (
     <div className={styles.page}>
-      <Card className={styles.card}>
+      <Card className={styles.card} bodyClassName={styles.cardBody}>
         <h1>Стать клиентом</h1>
         <p className={styles.hint}>
           Оставьте заявку — менеджер подберёт условия поставок для вашего бизнеса.

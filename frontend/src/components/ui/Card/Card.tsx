@@ -5,9 +5,23 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title">
   title?: ReactNode;
   actions?: ReactNode;
   accent?: boolean;
+  /**
+   * Класс для обёртки контента. className попадает на корень карточки, а дети
+   * лежат на уровень ниже — раскладку (flex/grid/gap) нужно вешать именно сюда,
+   * иначе она молча ничего не делает (S44).
+   */
+  bodyClassName?: string;
 }
 
-export function Card({ title, actions, accent = false, className, children, ...rest }: CardProps) {
+export function Card({
+  title,
+  actions,
+  accent = false,
+  className,
+  bodyClassName,
+  children,
+  ...rest
+}: CardProps) {
   return (
     <div
       className={[styles.card, accent ? styles.accent : "", className].filter(Boolean).join(" ")}
@@ -19,7 +33,7 @@ export function Card({ title, actions, accent = false, className, children, ...r
           {actions && <div className={styles.actions}>{actions}</div>}
         </header>
       )}
-      <div className={styles.body}>{children}</div>
+      <div className={[styles.body, bodyClassName].filter(Boolean).join(" ")}>{children}</div>
     </div>
   );
 }

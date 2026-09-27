@@ -24,16 +24,17 @@ export function backofficeNavItems(role?: Role): BackofficeNavItem[] {
     { to: "/admin/dashboard", label: "Дашборд" },
     { to: "/admin/documents", label: "Документы" },
     { to: "/warehouse/balance", label: "Склад" },
-    // CRM (S30): маршруты /manager/* открыты MANAGER и ADMIN
-    { to: "/manager/inbox", label: "Единое окно" },
-    { to: "/manager/orders", label: "Заказы" },
-    { to: "/manager/dashboard", label: "CRM" },
     // Обмен 1С (S38): права как у импорта S35 — ADMIN/ACCOUNTANT
     ...(role === "ADMIN" || role === "ACCOUNTANT"
       ? [{ to: "/admin/integration", label: "Обмен 1С" }]
       : []),
     ...(role === "ADMIN"
       ? [
+          // CRM (S30): маршруты /manager/* открыты только MANAGER и ADMIN —
+          // бухгалтеру эти ссылки вели в 403 (S44)
+          { to: "/manager/inbox", label: "Единое окно" },
+          { to: "/manager/orders", label: "Заказы" },
+          { to: "/manager/dashboard", label: "CRM" },
           { to: "/admin/users", label: "Пользователи" },
           { to: "/admin/companies", label: "Компании" },
           { to: "/admin/products", label: "Товары" },

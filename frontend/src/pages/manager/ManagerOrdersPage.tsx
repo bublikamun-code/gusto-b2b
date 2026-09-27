@@ -205,7 +205,7 @@ export default function ManagerOrdersPage() {
         <h1>Заказы</h1>
       </header>
 
-      <Card className={styles.filters}>
+      <Card bodyClassName={styles.filters}>
         <Tabs
           items={tabs}
           active={scope}

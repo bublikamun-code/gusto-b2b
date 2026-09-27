@@ -126,17 +126,17 @@ export default function CrmInboxPage() {
       </header>
 
       <div className={styles.counters}>
-        <Card className={styles.counter}>
+        <Card bodyClassName={styles.counter}>
           <span className={styles.counterValue}>{staleCount}</span>
           <span>без ответа &gt; 24 ч</span>
         </Card>
-        <Card className={styles.counter}>
+        <Card bodyClassName={styles.counter}>
           <span className={styles.counterValue}>{tasks.length}</span>
           <span>просроченных задач</span>
         </Card>
       </div>
 
-      <Card className={styles.tabsCard}>
+      <Card bodyClassName={styles.tabsCard}>
         <Tabs
           items={[
             { key: "orders", label: `Заказы (${orders.length})` },
@@ -169,7 +169,7 @@ export default function CrmInboxPage() {
       )}
 
       {tab === "tasks" && (
-        <Card className={styles.tasks}>
+        <Card bodyClassName={styles.tasks}>
           {tasks.length === 0 && <p className={styles.empty}>Просроченных задач нет</p>}
           {tasks.map((task) => (
             <div key={task.id} className={styles.taskRow}>

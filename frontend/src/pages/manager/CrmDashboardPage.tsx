@@ -57,19 +57,19 @@ export default function CrmDashboardPage() {
       </header>
 
       <div className={styles.kpis}>
-        <Card className={styles.kpi}>
+        <Card bodyClassName={styles.kpi}>
           <span className={styles.kpiLabel}>Выручка (COMPLETED)</span>
           <span className={styles.kpiValue}>{formatMoney(dashboard.revenue)}</span>
         </Card>
-        <Card className={styles.kpi}>
+        <Card bodyClassName={styles.kpi}>
           <span className={styles.kpiLabel}>Выполнено заказов</span>
           <span className={styles.kpiValue}>{dashboard.completedOrders}</span>
         </Card>
-        <Card className={styles.kpi}>
+        <Card bodyClassName={styles.kpi}>
           <span className={styles.kpiLabel}>Задолженность</span>
           <span className={styles.kpiValue}>{formatMoney(dashboard.debt)}</span>
         </Card>
-        <Card className={styles.kpi}>
+        <Card bodyClassName={styles.kpi}>
           <span className={styles.kpiLabel}>Конверсия лидов</span>
           <span className={styles.kpiValue}>{dashboard.leadConversionPercent}%</span>
         </Card>

@@ -83,7 +83,7 @@ export default function CabinetProfilePage() {
     <div className={styles.page}>
       <h1 className={styles.title}>Профиль</h1>
 
-      <Card className={styles.card}>
+      <Card className={styles.card} bodyClassName={styles.cardBody}>
         <h2>Данные</h2>
         <p className={styles.email}>{profile?.email}</p>
         <Input
@@ -97,7 +97,7 @@ export default function CabinetProfilePage() {
         </Button>
       </Card>
 
-      <Card className={styles.card}>
+      <Card className={styles.card} bodyClassName={styles.cardBody}>
         <h2>Смена пароля</h2>
         <Input
           label="Текущий пароль"

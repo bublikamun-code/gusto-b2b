@@ -103,7 +103,7 @@ export default function CrmLeadsPage() {
                 </div>
                 {items.length === 0 && <div className={styles.emptyCard}>пусто</div>}
                 {items.map((lead) => (
-                  <Card key={lead.id} className={styles.leadCard}>
+                  <Card key={lead.id} bodyClassName={styles.leadCard}>
                     <strong>{lead.name}</strong>
                     {lead.companyName && <span className={styles.meta}>{lead.companyName}</span>}
                     {lead.phone && <span className={styles.meta}>{lead.phone}</span>}

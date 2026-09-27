@@ -92,7 +92,7 @@ export default function ManagerOrderCreatePage() {
         <Link className="pageLink" to="/manager/orders">К списку заказов</Link>
       </header>
 
-      <Card className={styles.card}>
+      <Card bodyClassName={styles.card}>
         <h2>Клиент</h2>
         <Select
           value={companyId}
@@ -105,7 +105,7 @@ export default function ManagerOrderCreatePage() {
         />
       </Card>
 
-      <Card className={styles.card}>
+      <Card bodyClassName={styles.card}>
         <h2>Позиции</h2>
         <Input
           label="Поиск товара"
@@ -154,7 +154,7 @@ export default function ManagerOrderCreatePage() {
         <p className={styles.hint}>Итоговая сумма рассчитается по ценам этого клиента при создании заказа.</p>
       </Card>
 
-      <Card className={styles.card}>
+      <Card bodyClassName={styles.card}>
         <h2>Доставка</h2>
         <Select
           value={deliveryType}

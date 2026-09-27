@@ -27,7 +27,8 @@ function renderAt(path: string, guard: ReactNode) {
         <Route path="/" element={<div>home-page</div>} />
         <Route path="/admin/users" element={<div>admin-users</div>} />
         <Route path="/admin/dashboard" element={<div>admin-dashboard</div>} />
-        <Route path="/manager" element={<div>manager-page</div>} />
+        {/* S44: у менеджера нет дашборда /manager — его рабочий экран /manager/orders */}
+        <Route path="/manager/orders" element={<div>manager-page</div>} />
         <Route path="/cabinet" element={<div>cabinet-page</div>} />
         <Route path="/guarded" element={guard}>
           <Route index element={<div>guarded-content</div>} />
@@ -72,11 +73,16 @@ describe("RoleGuard", () => {
     expect(queryByText("guarded-content")).toBeInTheDocument();
   });
 
-  it("redirects disallowed role to home", () => {
+  // S44: тихий редирект на «домой» выглядел как баг — пользователь уходил на
+  // главную без объяснения. Теперь показывается 403 со ссылкой в свой кабинет.
+  it("shows the forbidden page for a disallowed role", () => {
     useAuthStore.setState({ user: user("ACCOUNTANT"), isLoading: false });
-    const { queryByText } = renderAt("/guarded", <RoleGuard allowed={["ADMIN"]} />);
-    expect(queryByText("home-page")).toBeInTheDocument();
+    const { queryByText, container } = renderAt(
+      "/guarded",
+      <RoleGuard allowed={["ADMIN"]} />,
+    );
     expect(queryByText("guarded-content")).not.toBeInTheDocument();
+    expect(container.textContent).toContain("403");
   });
 
   it("redirects anonymous user to /login", () => {

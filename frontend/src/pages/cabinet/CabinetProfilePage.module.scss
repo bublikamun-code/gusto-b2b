@@ -21,18 +21,18 @@
 }
 
 .card {
-  // Card оборачивает контент в .body — gap снаружи до содержимого не доходит,
-  // поэтому раскладку задаём внутреннему блоку (иначе поля/кнопки «слитно»)
-  > div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
+  // Раскладку вешаем на bodyClassName: Card оборачивает контент в .body,
+  // и gap на корне до содержимого не доходит (S44)
   h2 {
     margin: 0;
     font-size: 1.05rem;
   }
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .email {

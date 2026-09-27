@@ -9,14 +9,18 @@
 .card {
   width: 100%;
   max-width: 32rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
 
   h1 {
     margin: 0;
     font-size: 1.5rem;
   }
+}
+
+// Раскладка — на bodyClassName: дети лежат внутри обёртки Card (S44)
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 
 .hint {

@@ -111,7 +111,7 @@ export default function CabinetDocumentsPage() {
         <h1>Документы</h1>
       </header>
 
-      <Card className={styles.filters}>
+      <Card bodyClassName={styles.filters}>
         <Tabs
           items={[
             { key: "invoices", label: "Счета" },
