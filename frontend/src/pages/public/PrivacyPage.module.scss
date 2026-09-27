@@ -25,6 +25,10 @@
   font-size: 2.75rem;
   color: $color-graphite;
   margin: 0;
+  // «конфиденциальности» в Russo One шире контейнера на 390px — без переноса
+  // страница уезжала в горизонтальный скролл на 4px (S44).
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .privacy__content {

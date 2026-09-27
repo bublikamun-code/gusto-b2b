@@ -118,5 +118,11 @@
 
   .nav__link {
     font-size: 0.75rem;
+    // на тач-экране строка 19px — мимо неё легко промахнуться. Растягиваем
+    // область клика до 44px (WCAG 2.5.5), не увеличивая сам текст (S44).
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.25rem;
   }
 }

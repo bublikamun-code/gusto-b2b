@@ -130,6 +130,13 @@
 
   .nav__link {
     font-size: 0.75rem;
+    // 0.75rem даёт строку в 29px — это уже перекрывает требование WCAG 2.5.8
+    // (минимум 24px), но палец промахивается. Растягиваем область клика до
+    // 44px, текст и подчёркивание активной ссылки не трогаем (S44).
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.25rem;
   }
 
   .actions__user {
