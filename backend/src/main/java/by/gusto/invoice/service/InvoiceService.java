@@ -2,6 +2,7 @@ package by.gusto.invoice.service;
 
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
+import by.gusto.auth.service.AuthorizationService;
 import by.gusto.auth.entity.User;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -56,6 +57,7 @@ public class InvoiceService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CompanyRepository companyRepository;
+    private final AuthorizationService authz;
     private final SettingsService settingsService;
     private final AuditService auditService;
     private final OutboxService outboxService;
@@ -67,6 +69,10 @@ public class InvoiceService {
     public InvoiceResponse createFromOrder(UUID orderId, User actor) {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Заказ не найден"));
+
+        // Мутации счёта требовали заказа, но не требовали принадлежности компании
+        // актору: менеджер выписывал счёт по чужому заказу (S44).
+        authz.requireOrderAccess(order.getCustomerCompanyId(), order.getCustomerUserId(), order.getManagerId(), actor);
 
         if (order.getStatus() == OrderEntity.Status.CANCELLED) {
             throw new GustoException(ErrorCode.VALIDATION_FAILED, "Заказ отменён — счёт не выставляется");
@@ -140,6 +146,7 @@ public class InvoiceService {
     @Transactional
     public InvoiceResponse issue(UUID invoiceId, User actor) {
         InvoiceEntity invoice = loadInvoice(invoiceId);
+        requireCanView(invoice, actor);
         if (invoice.getStatus() != Status.DRAFT) {
             throw new GustoException(ErrorCode.INVOICE_INVALID_STATE,
                     "Выпустить можно только черновик, текущий статус: " + invoice.getStatus());
@@ -167,6 +174,7 @@ public class InvoiceService {
     @Transactional
     public InvoiceResponse cancel(UUID invoiceId, User actor) {
         InvoiceEntity invoice = loadInvoice(invoiceId);
+        requireCanView(invoice, actor);
         if (invoice.getStatus() != Status.DRAFT && invoice.getStatus() != Status.ISSUED) {
             throw new GustoException(ErrorCode.INVOICE_INVALID_STATE,
                     "Отменить можно черновик или выпущенный счёт, текущий статус: " + invoice.getStatus());
@@ -227,13 +235,9 @@ public class InvoiceService {
     }
 
     private void requireCanView(InvoiceEntity invoice, User actor) {
-        boolean staff = actor.getRole() == Role.ADMIN || actor.getRole() == Role.ACCOUNTANT
-                || actor.getRole() == Role.MANAGER;
-        boolean ownCompany = actor.getCompanyId() != null
-                && actor.getCompanyId().equals(invoice.getCustomerCompanyId());
-        if (!staff && !ownCompany) {
-            throw new GustoException(ErrorCode.ACCESS_DENIED);
-        }
+        // Раньше для staff проверка была безусловной — менеджер читал счёт любой
+        // компании по id; теперь та же матрица, что и в списках (S44).
+        authz.requireCompanyAccess(invoice.getCustomerCompanyId(), actor);
     }
 
     @SuppressWarnings("unchecked")

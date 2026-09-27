@@ -113,6 +113,9 @@ export default function App() {
               Единый каркас бэк-офиса: то же меню, что на админке и складе. */}
           <Route element={<RoleGuard allowed={["MANAGER", "ADMIN"]} />}>
             <Route element={<ManagerLayout />}>
+              {/* Адрес раздела без раздела: менеджеру нужен конкретный экран,
+                  иначе /manager уходит в 404 (S44). */}
+              <Route path="/manager" element={<Navigate to="/manager/orders" replace />} />
               <Route path="/manager/orders" element={<ManagerOrdersPage />} />
               <Route path="/manager/orders/new" element={<ManagerOrderCreatePage />} />
               <Route path="/manager/documents" element={<DocumentsPage />} />

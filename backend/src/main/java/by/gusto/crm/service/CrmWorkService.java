@@ -38,11 +38,14 @@ public class CrmWorkService {
     private final CrmNoteRepository noteRepository;
     private final UserRepository userRepository;
     private final by.gusto.company.repository.CompanyRepository companyRepository;
+    private final by.gusto.auth.service.AuthorizationService authz;
 
     // ----- задачи ----------------------------------------------------------------
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request, User actor) {
+        // Задачу нельзя было повесить на чужую компанию (S44).
+        authz.requireCompanyAccess(request.getCompanyId(), actor);
         UUID assigneeId = request.getAssigneeId() != null ? request.getAssigneeId() : actor.getId();
         CrmTaskEntity task = taskRepository.save(CrmTaskEntity.builder()
                 .assigneeId(assigneeId)
@@ -103,6 +106,8 @@ public class CrmWorkService {
         if (!companyRepository.existsById(request.getCompanyId())) {
             throw new GustoException(ErrorCode.NOT_FOUND, "Компания не найдена");
         }
+        // Заметки по чужому клиенту были и читаемы, и записываемы (S44).
+        authz.requireCompanyAccess(request.getCompanyId(), actor);
         CrmNoteEntity note = noteRepository.save(CrmNoteEntity.builder()
                 .companyId(request.getCompanyId())
                 .authorId(actor.getId())
@@ -112,7 +117,8 @@ public class CrmWorkService {
     }
 
     @Transactional(readOnly = true)
-    public List<NoteResponse> notes(UUID companyId) {
+    public List<NoteResponse> notes(UUID companyId, User actor) {
+        authz.requireCompanyAccess(companyId, actor);
         return noteRepository.findAllByCompanyIdOrderByCreatedAtDesc(companyId).stream()
                 .map(this::toResponse)
                 .toList();

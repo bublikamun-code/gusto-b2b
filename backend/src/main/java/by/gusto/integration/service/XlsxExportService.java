@@ -1,6 +1,7 @@
 package by.gusto.integration.service;
 
 import by.gusto.audit.AuditService;
+import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -23,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,18 +45,44 @@ public class XlsxExportService {
     private final OrderRepository orderRepository;
     private final AuditService auditService;
 
+    /**
+     * Скоуп выгрузки по матрице 2.1 (S44): менеджер выгружает только заказы и
+     * документы своих клиентов, ADMIN/ACCOUNTANT — всю базу. Раньше роль учитывалась
+     * только в audit_log, и один GET отдавал менеджеру XLSX по всей компании.
+     */
+    private Filter managerScope(User actor, String predicate, int placeholders) {
+        if (actor.getRole() != Role.MANAGER) {
+            return new Filter("", List.of());
+        }
+        List<Object> args = new ArrayList<>(placeholders);
+        for (int i = 0; i < placeholders; i++) {
+            args.add(actor.getId());
+        }
+        return new Filter(predicate, args);
+    }
+
+    private List<Map<String, Object>> query(String sql, LocalDate from, LocalDate to, Filter filter) {
+        List<Object> args = new ArrayList<>(List.of(java.sql.Date.valueOf(from), java.sql.Date.valueOf(to)));
+        args.addAll(filter.args());
+        return jdbcTemplate.queryForList(sql, args.toArray());
+    }
+
+    private record Filter(String sql, List<Object> args) {}
+
     @Transactional
     public byte[] exportOrders(LocalDate from, LocalDate to, User actor) {
+        Filter filter = managerScope(actor, " and (o.manager_id = ? or o.customer_company_id in "
+                + "(select id from companies where manager_id = ?)) ", 2);
         String sql = """
                 select o.number, o.created_at, o.status, o.delivery_type,
                        coalesce(c.name, 'Розница') as client, o.total_amount, o.total_vat
                 from orders o left join companies c on c.id = o.customer_company_id
                 where o.created_at >= ?::date and o.created_at < ?::date + interval '1 day'
+                """ + filter.sql() + """
                 order by o.created_at
                 """;
         String[] headers = {"Номер", "Дата", "Статус", "Доставка", "Клиент", "Сумма, BYN", "НДС, BYN"};
-        byte[] bytes = buildWorkbook(headers, jdbcTemplate.queryForList(sql,
-                java.sql.Date.valueOf(from), java.sql.Date.valueOf(to)), row -> new Object[]{
+        byte[] bytes = buildWorkbook(headers, query(sql, from, to, filter), row -> new Object[]{
                 row.get("number"), row.get("created_at"), row.get("status"), row.get("delivery_type"),
                 row.get("client"), row.get("total_amount"), row.get("total_vat")});
         register("ORDERS", from, to, bytes, actor);
@@ -63,16 +91,18 @@ public class XlsxExportService {
 
     @Transactional
     public byte[] exportInvoices(LocalDate from, LocalDate to, User actor) {
+        Filter filter = managerScope(actor,
+                " and i.customer_company_id in (select id from companies where manager_id = ?) ", 1);
         String sql = """
                 select i.number, i.issue_date, i.status, c.name as client, c.unp,
                        i.total_amount, i.total_vat
                 from invoices i left join companies c on c.id = i.customer_company_id
                 where i.issue_date >= ? and i.issue_date <= ?
+                """ + filter.sql() + """
                 order by i.issue_date
                 """;
         String[] headers = {"Счёт", "Дата", "Статус", "Покупатель", "УНП", "Сумма, BYN", "НДС, BYN"};
-        byte[] bytes = buildWorkbook(headers, jdbcTemplate.queryForList(sql,
-                java.sql.Date.valueOf(from), java.sql.Date.valueOf(to)), row -> new Object[]{
+        byte[] bytes = buildWorkbook(headers, query(sql, from, to, filter), row -> new Object[]{
                 row.get("number"), row.get("issue_date"), row.get("status"), row.get("client"),
                 row.get("unp"), row.get("total_amount"), row.get("total_vat")});
         register("INVOICES", from, to, bytes, actor);
@@ -81,16 +111,18 @@ public class XlsxExportService {
 
     @Transactional
     public byte[] exportWaybills(LocalDate from, LocalDate to, User actor) {
+        Filter filter = managerScope(actor, " and (o.manager_id = ? or o.customer_company_id in "
+                + "(select id from companies where manager_id = ?)) ", 2);
         String sql = """
                 select w.number, w.type, w.issue_date, c.name as client, w.total_amount
                 from waybills w left join orders o on o.id = w.order_id
                 left join companies c on c.id = o.customer_company_id
                 where w.issue_date >= ? and w.issue_date <= ?
+                """ + filter.sql() + """
                 order by w.issue_date
                 """;
         String[] headers = {"Накладная", "Тип", "Дата", "Покупатель", "Сумма, BYN"};
-        byte[] bytes = buildWorkbook(headers, jdbcTemplate.queryForList(sql,
-                java.sql.Date.valueOf(from), java.sql.Date.valueOf(to)), row -> new Object[]{
+        byte[] bytes = buildWorkbook(headers, query(sql, from, to, filter), row -> new Object[]{
                 row.get("number"), row.get("type"), row.get("issue_date"), row.get("client"),
                 row.get("total_amount")});
         register("WAYBILLS", from, to, bytes, actor);

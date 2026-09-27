@@ -2,6 +2,7 @@ package by.gusto.waybill.service;
 
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
+import by.gusto.auth.service.AuthorizationService;
 import by.gusto.auth.entity.User;
 import by.gusto.catalog.entity.Product;
 import by.gusto.catalog.repository.ProductRepository;
@@ -65,6 +66,7 @@ public class WaybillService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final CompanyRepository companyRepository;
+    private final AuthorizationService authz;
     private final InvoiceRepository invoiceRepository;
     private final SettingsService settingsService;
     private final AuditService auditService;
@@ -79,6 +81,8 @@ public class WaybillService {
     public WaybillResponse create(CreateRequest request, User actor) {
         OrderEntity order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Заказ не найден"));
+        // Оформление накладной по чужому заказу было доступно любому MANAGER (S44).
+        authz.requireOrderAccess(order.getCustomerCompanyId(), order.getCustomerUserId(), order.getManagerId(), actor);
         if (order.getStatus() == OrderEntity.Status.CANCELLED) {
             throw new GustoException(ErrorCode.VALIDATION_FAILED, "Заказ отменён — накладная не оформляется");
         }
@@ -215,17 +219,13 @@ public class WaybillService {
     }
 
     private void requireCanView(WaybillEntity waybill, User actor) {
-        boolean staff = actor.getRole() == Role.ADMIN || actor.getRole() == Role.ACCOUNTANT
-                || actor.getRole() == Role.MANAGER;
-        if (staff) {
-            return;
-        }
+        // Раньше для staff проверка была безусловной — менеджер читал накладную
+        // любой компании по id; теперь та же матрица, что и в списках (S44).
         OrderEntity order = orderRepository.findById(waybill.getOrderId()).orElse(null);
-        boolean ownCompany = order != null && actor.getCompanyId() != null
-                && actor.getCompanyId().equals(order.getCustomerCompanyId());
-        if (!ownCompany) {
-            throw new GustoException(ErrorCode.ACCESS_DENIED);
+        if (order == null) {
+            throw new GustoException(ErrorCode.NOT_FOUND, "Заказ накладной не найден");
         }
+        authz.requireOrderAccess(order.getCustomerCompanyId(), order.getCustomerUserId(), order.getManagerId(), actor);
     }
 
     /** Масса позиции: количество × вес единицы товара (пример ТТН); без веса — null. */

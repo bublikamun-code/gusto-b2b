@@ -68,7 +68,7 @@ public class CrmDashboardService {
                         + "sum(i.quantity) as quantity, sum(i.total) as total "
                         + "from order_items i join orders o on i.order_id = o.id "
                         + "where o.status = 'COMPLETED' and o.created_at >= cast(? as date) and o.created_at < cast(? as date) + interval '1 day'"
-                        + managerFilter.replaceAll("o\\.", "o.")
+                        + managerFilter
                         + "group by 1 order by 3 desc limit 5",
                 args.toArray());
 
@@ -76,7 +76,9 @@ public class CrmDashboardService {
                 ? " and (o.manager_id = ? or o.customer_company_id in "
                   + "(select id from companies where manager_id = ?)) "
                 : "";
-        List<Object> customerArgs = new ArrayList<>(args.subList(0, 2));
+        // customerManagerFilter добавляет ровно столько же плейсхолдеров,
+        // сколько managerFilter добавил в args, — берём args целиком (S44).
+        List<Object> customerArgs = new ArrayList<>(args);
         List<Map<String, Object>> topCustomers = jdbcTemplate.queryForList(
                 "select c.name as name, count(o.id) as orders, coalesce(sum(o.total_amount), 0) as total "
                         + "from companies c join orders o on o.customer_company_id = c.id "

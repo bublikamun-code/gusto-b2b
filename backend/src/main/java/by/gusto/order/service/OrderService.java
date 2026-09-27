@@ -1,6 +1,7 @@
 package by.gusto.order.service;
 
 import by.gusto.auth.entity.Role;
+import by.gusto.auth.service.AuthorizationService;
 import by.gusto.auth.entity.User;
 import by.gusto.catalog.entity.Product;
 import by.gusto.catalog.repository.ProductRepository;
@@ -50,6 +51,7 @@ public class OrderService {
     private final StockService stockService;
     private final OutboxService outboxService;
     private final JdbcTemplate jdbcTemplate;
+    private final AuthorizationService authz;
 
     @Transactional
     public Response create(CreateRequest request, User user) {
@@ -180,14 +182,9 @@ public class OrderService {
     }
 
     private void checkAccess(OrderEntity order, User user) {
-        boolean staff = user.getRole() == Role.ADMIN
-                || user.getRole() == Role.MANAGER
-                || user.getRole() == Role.ACCOUNTANT;
-        boolean own = order.getCustomerUserId().equals(user.getId())
-                || (user.getCompanyId() != null && user.getCompanyId().equals(order.getCustomerCompanyId()));
-        if (!staff && !own) {
-            throw new GustoException(ErrorCode.ACCESS_DENIED);
-        }
+        // Раньше для ADMIN/MANAGER/ACCOUNTANT проверка выходила безусловно,
+        // и менеджер читал заказ любой компании по id (S44).
+        authz.requireOrderAccess(order.getCustomerCompanyId(), order.getCustomerUserId(), order.getManagerId(), user);
     }
 
     private Map<UUID, BigDecimal> cartQuantities(UUID userId, UUID companyId) {
@@ -217,6 +214,11 @@ public class OrderService {
                 if (request.getItems() == null || request.getItems().isEmpty()) {
                     throw new GustoException(ErrorCode.VALIDATION_FAILED,
                             "Заказ от имени клиента создаётся с явными позициями");
+                }
+                // Раньше customerCompanyId брался из тела как есть: менеджер мог
+                // завести заказ от имени любой компании и выписать по нему счёт (S44).
+                if (user.getRole() == Role.MANAGER) {
+                    authz.requireCompanyAccess(request.getCustomerCompanyId(), user);
                 }
                 return request.getCustomerCompanyId();
             }

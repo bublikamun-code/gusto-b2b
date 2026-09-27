@@ -117,7 +117,7 @@ public class CrmController {
 
     @GetMapping("/notes")
     public ResponseEntity<ApiResponse<List<NoteResponse>>> notes(@RequestParam UUID companyId) {
-        return ResponseEntity.ok(ApiResponse.success(crmWorkService.notes(companyId)));
+        return ResponseEntity.ok(ApiResponse.success(crmWorkService.notes(companyId, authContext.getCurrentUser())));
     }
 
     // ----- дашборд ---------------------------------------------------------------

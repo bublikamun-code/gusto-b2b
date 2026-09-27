@@ -99,6 +99,9 @@ public class LeadService {
     public LeadResponse assign(UUID leadId, AssignLeadRequest request, User actor) {
         LeadEntity lead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Лид не найден"));
+        // Раньше переназначение было доступно любому менеджеру, включая лиды,
+        // закреплённые за коллегой (S44).
+        requireCanManage(lead, actor);
         UUID before = lead.getAssignedManagerId();
         lead.setAssignedManagerId(request.getManagerId());
         leadRepository.save(lead);
