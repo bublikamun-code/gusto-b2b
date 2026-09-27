@@ -34,7 +34,8 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAll(int page, int size, String search, UUID categoryId, UUID brandId, Boolean active) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        // size приходит от клиента без верхней границы (S44)
+        PageRequest pageable = PageRequest.of(page, Math.min(size, 100), Sort.by("name").ascending());
         Page<Product> products = productRepository.findAll(
                 by.gusto.catalog.repository.ProductSpecification.filter(categoryId, brandId, active, search),
                 pageable);

@@ -44,8 +44,12 @@ public class CrmWorkService {
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request, User actor) {
-        // Задачу нельзя было повесить на чужую компанию (S44).
-        authz.requireCompanyAccess(request.getCompanyId(), actor);
+        // Задачу нельзя было повесить на чужую компанию (S44). companyId
+        // опционален: без него задача личная и принадлежит только исполнителю,
+        // поэтому проверять доступ не к чему.
+        if (request.getCompanyId() != null) {
+            authz.requireCompanyAccess(request.getCompanyId(), actor);
+        }
         UUID assigneeId = request.getAssigneeId() != null ? request.getAssigneeId() : actor.getId();
         CrmTaskEntity task = taskRepository.save(CrmTaskEntity.builder()
                 .assigneeId(assigneeId)

@@ -55,14 +55,16 @@ public class SiteRequestController {
         siteRequestService.recordAttempt(clientIp);
 
         String requestHash = idempotencyService.sha256(serialize(request));
-        var saved = idempotencyService.findCompleted(idempotencyKey, "/site/requests", requestHash);
+        // Анонимная форма: область идемпотентности — IP посетителя, иначе чужой
+        // Idempotency-Key вернул бы сохранённую заявку другого клиента (S44)
+        var saved = idempotencyService.findCompleted(clientIp, idempotencyKey, "/site/requests", requestHash);
         if (saved.isPresent()) {
             SiteRequestResponse response = objectMapper.convertValue(saved.get(), SiteRequestResponse.class);
             return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
         }
 
         var created = siteRequestService.create(request, idempotencyKey);
-        idempotencyService.store(idempotencyKey, "/site/requests", null, requestHash, created.request());
+        idempotencyService.store(clientIp, idempotencyKey, "/site/requests", null, requestHash, created.request());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(created.request()));
     }
 
@@ -74,8 +76,16 @@ public class SiteRequestController {
         }
     }
 
+    /** Последний элемент XFF дописывает наш прокси, левее — то, что прислал клиент (S44). */
     private String clientIp(HttpServletRequest http) {
         String forwarded = http.getHeader("X-Forwarded-For");
-        return forwarded != null ? forwarded.split(",")[0].trim() : http.getRemoteAddr();
+        if (forwarded != null && !forwarded.isBlank()) {
+            String[] hops = forwarded.split(",");
+            String last = hops[hops.length - 1].trim();
+            if (!last.isEmpty()) {
+                return last;
+            }
+        }
+        return http.getRemoteAddr();
     }
 }

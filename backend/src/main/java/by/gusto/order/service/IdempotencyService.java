@@ -36,11 +36,12 @@ public class IdempotencyService {
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
-    public Optional<Map<String, Object>> findCompleted(String key, String endpoint, String requestHash) {
-        if (key == null || key.isBlank()) {
+    public Optional<Map<String, Object>> findCompleted(String scope, String key, String endpoint, String requestHash) {
+        String scoped = scopedKey(scope, key);
+        if (scoped == null) {
             return Optional.empty();
         }
-        return repository.findByKey(key).flatMap(saved -> {
+        return repository.findByKey(scoped).flatMap(saved -> {
             if (!saved.getEndpoint().equals(endpoint) || !saved.getRequestHash().equals(requestHash)) {
                 throw new GustoException(ErrorCode.IDEMPOTENCY_CONFLICT,
                         "Идемпотентный ключ уже использован с другим запросом");
@@ -51,15 +52,16 @@ public class IdempotencyService {
 
     /** Отдельная транзакция: результат заказа сохраняется, даже если вызывающая tx уже закрыта. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void store(String key, String endpoint, UUID userId, String requestHash, Object response) {
-        if (key == null || key.isBlank()) {
+    public void store(String scope, String key, String endpoint, UUID userId, String requestHash, Object response) {
+        String scoped = scopedKey(scope, key);
+        if (scoped == null) {
             return;
         }
         Map<String, Object> asMap = objectMapper.convertValue(response, new TypeReference<Map<String, Object>>() {
         });
         try {
             repository.save(IdempotencyKey.builder()
-                    .key(key)
+                    .key(scoped)
                     .endpoint(endpoint)
                     .userId(userId)
                     .requestHash(requestHash)
@@ -69,6 +71,18 @@ public class IdempotencyService {
         } catch (DataIntegrityViolationException e) {
             // параллельный дубль с тем же ключом; ответ уже сохранён победителем
         }
+    }
+
+    /**
+     * Ключ ложится в TEXT-колонку, поэтому «область|ключ» помещается без правки
+     * схемы. Без области чужой Idempotency-Key возвращал бы сохранённый ответ
+     * другого пользователя (S44).
+     */
+    private String scopedKey(String scope, String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        return (scope == null || scope.isBlank() ? "anon" : scope) + "|" + key.trim();
     }
 
     public String sha256(String input) {

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 
 /**
@@ -59,11 +61,18 @@ public class TelegramWebhookController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    /**
+     * Секрет принимается только из заголовка: в query он попадал в access-логи
+     * nginx и в Referer. Сравнение — постоянного времени, иначе подбор по таймингу (S44).
+     */
     private boolean secretMatches(HttpServletRequest request) {
-        String header = request.getHeader("X-Telegram-Bot-Api-Secret-Token");
-        String query = request.getParameter("secret");
-        String provided = header != null ? header : query;
-        return properties.getWebhookSecret().equals(provided);
+        String provided = request.getHeader("X-Telegram-Bot-Api-Secret-Token");
+        if (provided == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                properties.getWebhookSecret().getBytes(StandardCharsets.UTF_8),
+                provided.getBytes(StandardCharsets.UTF_8));
     }
 
     private void reply(TelegramProperties properties, String chatId, String text) {

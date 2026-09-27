@@ -2,6 +2,9 @@ package by.gusto.auth.repository;
 
 import by.gusto.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,4 +25,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findAllByCompanyIdAndDeletedAtIsNull(UUID companyId);
 
     List<User> findAllByDeletedAtIsNull();
+
+    /**
+     * Атомарно помечает TOTP-шаг использованным: сработает, только если счётчик
+     * не ушёл вперёд. Так два параллельных входа с одним кодом не пройдут оба (S44).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update User u set u.totpLastCounter = :counter "
+            + "where u.id = :id and (u.totpLastCounter is null or u.totpLastCounter < :counter)")
+    int consumeTotpCounter(@Param("id") UUID id, @Param("counter") long counter);
 }

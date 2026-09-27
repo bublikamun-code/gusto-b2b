@@ -72,6 +72,8 @@ public class AdminUserService {
     @Transactional
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = findActiveUser(id);
+        boolean roleChanged = false;
+        boolean accessRevoked = false;
 
         if (request.getFullName() != null) {
             user.setFullName(request.getFullName());
@@ -81,6 +83,7 @@ public class AdminUserService {
         }
         if (request.getRole() != null) {
             validateRole(request.getRole());
+            roleChanged = request.getRole() != user.getRole();
             user.setRole(request.getRole());
         }
         if (request.getCompanyId() != null) {
@@ -91,10 +94,19 @@ public class AdminUserService {
             user.setCompanyId(null);
         }
         if (request.getActive() != null) {
+            if (!request.getActive() && user.isActive()) {
+                accessRevoked = true;
+            }
             user.setActive(request.getActive());
         }
 
-        return userMapper.toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        // Смена роли и снятие активности обрывают живую сессию: иначе refresh-кука
+        // продлевала бы доступ ещё семь дней (S44).
+        if (accessRevoked || roleChanged) {
+            refreshTokenService.revokeAllUserTokens(saved);
+        }
+        return userMapper.toResponse(saved);
     }
 
     @Transactional

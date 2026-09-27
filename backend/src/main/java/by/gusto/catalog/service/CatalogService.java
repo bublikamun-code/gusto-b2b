@@ -59,7 +59,8 @@ public class CatalogService {
     public Page<CatalogProductResponse> getProducts(ProductFilterRequest filter) {
         PageRequest pageable = PageRequest.of(
                 filter.getPage() == null ? 0 : filter.getPage(),
-                filter.getSize() == null ? 20 : filter.getSize(),
+                // size приходит от клиента без верхней границы (S44)
+                Math.min(filter.getSize() == null ? 20 : filter.getSize(), 100),
                 Sort.by("name").ascending());
 
         Page<Product> page = productRepository.findAll(

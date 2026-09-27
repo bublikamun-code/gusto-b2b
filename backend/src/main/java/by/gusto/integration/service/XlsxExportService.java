@@ -12,6 +12,7 @@ import by.gusto.integration.entity.IntegrationFileEntity;
 import by.gusto.integration.repository.IntegrationFileRepository;
 import by.gusto.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -36,6 +37,7 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class XlsxExportService {
 
     private final JdbcTemplate jdbcTemplate;
@@ -193,7 +195,9 @@ public class XlsxExportService {
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new GustoException(ErrorCode.INTERNAL, "Не удалось сформировать .xlsx: " + e.getMessage());
+            // Текст исключения POI наружу не отдаём — только в лог (S44)
+            log.warn("Не удалось сформировать .xlsx: {}", e.toString());
+            throw new GustoException(ErrorCode.INTERNAL, "Не удалось сформировать .xlsx");
         }
     }
 

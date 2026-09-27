@@ -241,8 +241,11 @@ public class XlsxImportService {
         } catch (GustoException e) {
             throw e;
         } catch (Exception e) {
+            // Текст исключения POI уходил клиенту и раскрывал внутренности разбора
+            // файла; в лог пишем, наружу отдаём нейтральное сообщение (S44).
+            log.warn("Не удалось разобрать .xlsx-файл: {}", e.toString());
             throw new GustoException(ErrorCode.VALIDATION_FAILED,
-                    "Не удалось прочитать .xlsx: " + e.getMessage());
+                    "Не удалось прочитать .xlsx: проверьте, что файл не повреждён и в нём есть колонки");
         }
         return rows;
     }

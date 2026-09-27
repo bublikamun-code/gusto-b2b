@@ -22,7 +22,8 @@ public class AuthContext {
             throw new GustoException(ErrorCode.AUTH_UNAUTHORIZED);
         }
         String email = authentication.getName();
-        return userRepository.findByEmailIgnoreCase(email)
+        // DeletedAtIsNull: удалённый пользователь не проходит по живому токену (S44)
+        return userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new GustoException(ErrorCode.AUTH_UNAUTHORIZED));
     }
 

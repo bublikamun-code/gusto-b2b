@@ -1,6 +1,5 @@
 package by.gusto.auth.config;
 
-import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthUserDetailsService;
 import by.gusto.auth.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -10,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -19,7 +17,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -43,12 +40,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtService.parseToken(token);
             UUID userId = UUID.fromString(claims.getSubject());
-            Role role = Role.valueOf(claims.get("role", String.class));
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(claims.get("email", String.class));
+            // Роль и активность берём из БД, а не из claim токена: иначе разжалование
+            // или блокировка пользователя не действовали, пока живёт выданный токен (S44).
+            if (!userDetails.isEnabled()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception e) {

@@ -123,7 +123,11 @@ public class AuthController {
 
     @PostMapping("/2fa/verify")
     @PreAuthorize("hasAnyRole('ADMIN','ACCOUNTANT')")
-    public ResponseEntity<ApiResponse<TotpRecoveryResponse>> verify2fa(@Valid @RequestBody TotpVerifyRequest request) {
+    public ResponseEntity<ApiResponse<TotpRecoveryResponse>> verify2fa(
+            @Valid @RequestBody TotpVerifyRequest request,
+            HttpServletRequest httpRequest) {
+        // Перебор шестизначного кода ограничиваем отдельно от входа (S44)
+        checkRateLimit("2fa-verify", httpRequest, authContext.getCurrentUser().getEmail());
         User user = authContext.getCurrentUser();
         List<String> codes = totpService.verifyAndEnable(user, request.getCode());
         return ResponseEntity.ok(ApiResponse.success(TotpRecoveryResponse.builder()
@@ -174,10 +178,20 @@ public class AuthController {
         rateLimitService.recordAttempt(endpoint, ip, email);
     }
 
+    /**
+     * Берём ПОСЛЕДНИЙ элемент X-Forwarded-For: nginx дописывает туда $remote_addr
+     * от ближайшего прокси, всё левее — то, что прислал сам клиент и чему
+     * доверять нельзя. Раньше читался первый элемент, поэтому лимит входа
+     * обходился подменой заголовка (S44).
+     */
     private String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+            String[] hops = forwarded.split(",");
+            String last = hops[hops.length - 1].trim();
+            if (!last.isEmpty()) {
+                return last;
+            }
         }
         return request.getRemoteAddr();
     }

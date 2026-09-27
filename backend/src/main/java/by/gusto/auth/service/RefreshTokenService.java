@@ -63,6 +63,12 @@ public class RefreshTokenService {
         }
 
         User user = current.getUser();
+        // Заблокированный или удалённый пользователь не должен продлевать сессию
+        // refresh-кукой ещё семь дней после деактивации (S44).
+        if (!user.isActive() || user.getDeletedAt() != null) {
+            revokeAllUserTokens(user);
+            return Optional.empty();
+        }
         current.setRevoked(true);
         refreshTokenRepository.save(current);
 

@@ -5,6 +5,8 @@ import by.gusto.order.entity.OrderItem;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -23,18 +25,28 @@ public final class OrderDtos {
         /** Только для MANAGER/ADMIN: заказ от имени клиента (4.1). */
         private UUID customerCompanyId;
 
-        /** Пусто → позиции берутся из серверной корзины пользователя. */
+        /**
+         * Пусто → позиции берутся из серверной корзины пользователя.
+         * Список может быть null, но если передан — вложенные позиции обязаны
+         * быть валидны, а их количество ограничено (S44).
+         */
+        @Valid
+        @Size(max = 200, message = "Не больше 200 позиций в заказе")
         private List<ItemRequest> items;
 
         @NotNull
         private OrderEntity.DeliveryType deliveryType;
 
+        @Size(max = 500)
         private String deliveryAddress;
 
+        @Size(max = 200)
         private String recipientName;
 
+        @Size(max = 40)
         private String recipientPhone;
 
+        @Size(max = 2000)
         private String note;
     }
 

@@ -71,16 +71,34 @@ public class TotpService {
         return rawCodes;
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Проверяет код и помечает текущий шаг израсходованным: номер шага пишется в
+     * users.totp_last_counter, поэтому один и тот же код второй раз не примет
+     * (S44). Проверку самого кода делает validateCurrentNumber — он же считает
+     * и variance в миллисекундах, поэтому TOTP_VARIANCE здесь намеренно равен 1.
+     */
+    @Transactional
     public boolean verifyCode(User user, String code) {
         if (code == null || code.isBlank() || user.getTotpSecret() == null) {
             return false;
         }
+        long counter = System.currentTimeMillis()
+                / (TimeBasedOneTimePasswordUtil.DEFAULT_TIME_STEP_SECONDS * 1000L);
+        Long last = user.getTotpLastCounter();
+        if (last != null && last >= counter) {
+            return false;
+        }
         try {
-            return TimeBasedOneTimePasswordUtil.validateCurrentNumber(user.getTotpSecret(), Integer.parseInt(code), TOTP_VARIANCE);
+            if (!TimeBasedOneTimePasswordUtil.validateCurrentNumber(
+                    user.getTotpSecret(), Integer.parseInt(code.trim()), TOTP_VARIANCE)) {
+                return false;
+            }
         } catch (NumberFormatException | java.security.GeneralSecurityException e) {
             return false;
         }
+        // Возвращает 1, только если счётчик не ушёл вперёд: два параллельных
+        // входа с одним кодом не пройдут оба.
+        return userRepository.consumeTotpCounter(user.getId(), counter) == 1;
     }
 
     @Transactional
@@ -103,6 +121,7 @@ public class TotpService {
     public void disable(User user) {
         user.setTotpEnabled(false);
         user.setTotpSecret(null);
+        user.setTotpLastCounter(null);
         userRepository.save(user);
         recoveryCodeRepository.deleteAllByIdInBatch(
                 recoveryCodeRepository.findAllByUserIdAndUsedFalse(user.getId()).stream()

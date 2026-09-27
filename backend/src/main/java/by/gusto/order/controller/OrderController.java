@@ -43,15 +43,17 @@ public class OrderController {
         User user = authContext.getCurrentUser();
         String requestHash = idempotencyService.sha256(serialize(request));
 
-        // Повтор с тем же ключом и телом → сохранённый ответ, новый заказ не создаётся (1.6)
-        var saved = idempotencyService.findCompleted(idempotencyKey, "/orders", requestHash);
+        // Повтор с тем же ключом и телом → сохранённый ответ, новый заказ не создаётся (1.6).
+        // Ключ ограничен пользователем: чужой Idempotency-Key не должен отдавать его ответ (S44).
+        var saved = idempotencyService.findCompleted(user.getId().toString(), idempotencyKey, "/orders", requestHash);
         if (saved.isPresent()) {
             Response response = objectMapper.convertValue(saved.get(), Response.class);
             return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
         }
 
         Response response = orderService.create(request, user);
-        idempotencyService.store(idempotencyKey, "/orders", user.getId(), requestHash, response);
+        idempotencyService.store(user.getId().toString(), idempotencyKey, "/orders",
+                user.getId(), requestHash, response);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 

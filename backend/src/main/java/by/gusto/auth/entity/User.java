@@ -58,6 +58,10 @@ public class User {
     @Builder.Default
     private boolean totpEnabled = false;
 
+    /** Номер последнего принятого TOTP-шага: тот же код больше не пройдёт (S44). */
+    @Column(name = "totp_last_counter")
+    private Long totpLastCounter;
+
     /** NULL = email не подтверждён (S08.1). Админ-заведённые пользователи подтверждения не проходят. */
     @Column(name = "email_confirmed_at")
     private Instant emailConfirmedAt;
