@@ -1,13 +1,15 @@
 # Прод-окружение (S41): docker-compose -f docker-compose.prod.yml up -d
 # Все переменные обязательны и заполняются из секретов сервера (.env.prod).
+# Обязательные заданы через ${VAR:?текст} — без них compose падает на старте,
+# а не поднимается с пустым паролем (S44).
 services:
   postgres:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?задайте POSTGRES_USER в .env.prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:?задайте POSTGRES_DB в .env.prod}
     volumes:
       - pgdata-prod:/var/lib/postgresql/data
     healthcheck:
@@ -38,12 +40,12 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis
-      JWT_SECRET: ${JWT_SECRET}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?задайте JWT_SECRET в .env.prod}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?задайте ADMIN_EMAIL в .env.prod}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?задайте ADMIN_PASSWORD в .env.prod}
       APP_STORAGE_PATH: /app/data/files
-      APP_BASE_URL: ${APP_BASE_URL}
-      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS}
+      APP_BASE_URL: ${APP_BASE_URL:?задайте APP_BASE_URL в .env.prod}
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:?задайте APP_CORS_ORIGINS в .env.prod}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
       SMTP_HOST: ${SMTP_HOST:-}
