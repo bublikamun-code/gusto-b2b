@@ -5,6 +5,7 @@ import { listCategories, listProducts } from "../../api/catalog";
 import { getPublicLanding } from "../../api/adminOperations";
 import { resolveLanding, type PublicLanding } from "../../lib/landingTexts";
 import { ProductCard } from "../../components/public/ProductCard";
+import { AiAdvisorSection } from "../../components/public/AiAdvisorSection";
 import styles from "./HomePage.module.scss";
 
 const RUNNING_ITEMS = [
@@ -138,6 +139,8 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <AiAdvisorSection />
 
       <section className={styles.delivery}>
         <div className={styles.delivery__inner}>

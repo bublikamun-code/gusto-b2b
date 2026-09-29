@@ -58,6 +58,8 @@ public class SecurityConfig {
                         .requestMatchers("/healthz", "/readyz", "/actuator/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/catalog/**").permitAll()
+                        // ИИ-советник лендинга (S45): публичный, свой rate limit по IP
+                        .requestMatchers("/api/v1/ai/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/site/requests").permitAll()
                         .requestMatchers("/api/v1/cms/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/notifications/telegram/webhook").permitAll()

@@ -69,6 +69,16 @@ app:
     path: ${APP_STORAGE_PATH:./data/files}
     max-file-size: ${APP_STORAGE_MAX_FILE_SIZE:10485760}
     allowed-mime-types: ${APP_STORAGE_ALLOWED_MIME_TYPES:image/jpeg,image/png,image/webp}
+  # ИИ-советник лендинга (S45). Любой OpenAI-совместимый endpoint; без ключа
+  # блок рецептов работает, а чат отвечает детерминированным советником.
+  ai:
+    enabled: ${APP_AI_ENABLED:true}
+    base-url: ${APP_AI_BASE_URL:https://api.openai.com}
+    api-key: ${APP_AI_API_KEY:}
+    model: ${APP_AI_MODEL:gpt-4o-mini}
+    history-limit: ${APP_AI_HISTORY_LIMIT:8}
+    max-message-length: ${APP_AI_MAX_MESSAGE_LENGTH:1000}
+    requests-per-hour: ${APP_AI_REQUESTS_PER_HOUR:20}
 
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}

@@ -42,6 +42,7 @@ tags:
   - name: warehouse
   - name: invoices
   - name: crm
+  - name: ai
 
 paths:
   /healthz:
@@ -1326,6 +1327,52 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CatalogProductResponse" }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /ai/recipes:
+    get:
+      tags: [ai]
+      summary: Рекомендованные рецепты из ассортимента
+      description: |
+        Публичный блок рецептов лендинга (S45). Рецепты отбираются по наличию:
+        сперва идут те, ингредиенты которых есть в каталоге сейчас. Ингредиенты,
+        ссылающиеся на удалённый или неактивный SKU, в ответ не попадают.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 12, default: 6 }
+      responses:
+        "200":
+          description: Список рецептов с товарами каталога
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipeListResponse" }
+
+  /ai/chat:
+    post:
+      tags: [ai]
+      summary: Диалог с ИИ-советником
+      description: |
+        Публичный диалог без авторизации (S45), rate limit по IP — не более
+        `app.ai.requests-per-hour` вопросов в час. `history` — до 10 последних
+        реплик; роль из тела запроса не доверяется, кроме `user`/`assistant`.
+
+        Текст ответа даёт модель (любой OpenAI-совместимый endpoint). Если ключ
+        не задан или модель недоступна, `fromModel` будет `false`, а `reply`
+        соберётся детерминированно из рецептов — эндпоинт не падает.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AiChatRequest" }
+      responses:
+        "200":
+          description: Ответ советника с подходящими рецептами
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiChatResponse" }
+        "400": { $ref: "#/components/responses/ValidationFailed" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
 
   /cabinet/company:
     get:
@@ -3735,6 +3782,75 @@ components:
       type: string
       enum: [IN_STOCK, PREORDER]
       description: "Наличие по доступному остатку склада по умолчанию (S18)"
+
+    # --- ИИ-советник лендинга (S45) ------------------------------------------------
+    Recipe:
+      type: object
+      required: [slug, title, summary, tags, products]
+      properties:
+        slug: { type: string, description: "ЧПУ рецепта, используется как ключ в UI" }
+        title: { type: string }
+        summary: { type: string }
+        cookingMinutes: { type: integer, nullable: true, description: "Время приготовления, минут" }
+        difficulty: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+          description: "Ключи подбора к реплике (в нижнем регистре)"
+        products:
+          type: array
+          description: "Ингредиенты, обогащённые данными товара каталога"
+          items: { $ref: "#/components/schemas/RecipeProduct" }
+    RecipeProduct:
+      type: object
+      required: [sku, name, stockStatus, productUrl]
+      properties:
+        sku: { type: string }
+        name: { type: string, description: "Название товара из каталога" }
+        quantity: { type: string, nullable: true, description: "Норма из рецепта, например «250 г на порцию»" }
+        unit: { type: string, nullable: true, description: "Единица каталога: кг, шт, десяток" }
+        retailPrice: { type: string, nullable: true, description: "Розничная цена строкой; null — прайс-листа нет" }
+        stockStatus: { $ref: "#/components/schemas/StockStatus" }
+        productUrl: { type: string, description: "Путь на витрине, например /products/steyk-ribay" }
+    AiChatTurn:
+      type: object
+      required: [role, content]
+      properties:
+        role: { type: string, enum: [user, assistant], description: "Другие значения отбрасываются" }
+        content: { type: string, maxLength: 1000 }
+    AiChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 1000 }
+        history:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/AiChatTurn" }
+    AiChatResponse:
+      type: object
+      required: [reply, fromModel, recipes, suggestedQuestions]
+      properties:
+        reply: { type: string, description: "Текст ответа советника" }
+        fromModel:
+          type: boolean
+          description: "true — ответ сгенерирован моделью, false — детерминированный советник"
+        recipes:
+          type: array
+          description: "Рецепты, подобранные под вопрос; пустой массив, если совпадений нет"
+          items: { $ref: "#/components/schemas/Recipe" }
+        suggestedQuestions:
+          type: array
+          items: { type: string }
+          description: "Подсказки для быстрого старта диалога"
+    RecipeListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Recipe" }
+        meta: { type: object }
+
     WarehouseDocumentType:
       type: string
       enum: [INCOMING, OUTGOING, TRANSFER, WRITE_OFF, INVENTORY]

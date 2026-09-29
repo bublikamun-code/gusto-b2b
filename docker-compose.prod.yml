@@ -46,6 +46,13 @@ services:
       APP_STORAGE_PATH: /app/data/files
       APP_BASE_URL: ${APP_BASE_URL:?задайте APP_BASE_URL в .env.prod}
       APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:?задайте APP_CORS_ORIGINS в .env.prod}
+      # ИИ-советник лендинга (S45). Пустой ключ — не поломка: блок рецептов
+      # работает, чат отвечает детерминированным советником по каталогу.
+      APP_AI_ENABLED: ${APP_AI_ENABLED:-true}
+      APP_AI_BASE_URL: ${APP_AI_BASE_URL:-}
+      APP_AI_API_KEY: ${APP_AI_API_KEY:-}
+      APP_AI_MODEL: ${APP_AI_MODEL:-}
+      APP_AI_REQUESTS_PER_HOUR: ${APP_AI_REQUESTS_PER_HOUR:-20}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
       SMTP_HOST: ${SMTP_HOST:-}

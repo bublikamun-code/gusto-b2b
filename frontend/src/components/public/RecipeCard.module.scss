@@ -1,0 +1,106 @@
+@use "../../styles/tokens" as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background-color: $color-card;
+  border: 1px solid $color-line;
+  padding: 1rem;
+}
+
+.card_compact {
+  padding: 0.75rem 0.85rem;
+  background-color: $color-cream;
+}
+
+.card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.card__title {
+  font-family: $font-heading;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+  color: $color-graphite;
+}
+
+.card_compact .card__title {
+  font-size: 0.9rem;
+}
+
+.card__time {
+  font-family: $font-heading;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: $color-bordeaux;
+  white-space: nowrap;
+}
+
+.card__summary {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: $line-height-body;
+  color: rgba($color-graphite, 0.8);
+}
+
+.card__products {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card__product {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba($color-graphite, 0.12);
+}
+
+.card__productName {
+  font-size: 0.9rem;
+  color: $color-graphite;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-bordeaux;
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 600px) {
+  // на тач-экране ссылка на позицию каталога — строка 22px, мимо неё
+  // легко промахнуться. Растягиваем область клика до 44px (WCAG 2.5.5),
+  // не увеличивая сам текст (правило S44 из шапки лендинга).
+  .card__productName {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+.card__productMeta {
+  font-size: 0.78rem;
+  color: rgba($color-graphite, 0.65);
+}
+
+.card__footer {
+  margin-top: auto;
+}
+
+.card__difficulty {
+  font-family: $font-heading;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba($color-graphite, 0.6);
+}

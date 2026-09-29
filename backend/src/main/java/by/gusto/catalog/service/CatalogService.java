@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -91,6 +92,60 @@ public class CatalogService {
                 statuses.get(product.getId()));
     }
 
+    /**
+     * Товары по списку SKU с сохранением порядка запроса; отсутствующие, неактивные
+     * и удалённые пропускаются (S45 — блок рецептов ссылается на SKU, а не на id).
+     */
+    @Transactional(readOnly = true)
+    public List<CatalogProductResponse> getProductsBySku(Collection<String> skus) {
+        if (skus == null || skus.isEmpty()) {
+            return List.of();
+        }
+        Map<String, Product> bySku = productRepository.findAllBySkuInAndDeletedAtIsNull(skus).stream()
+                .filter(Product::isActive)
+                .collect(Collectors.toMap(Product::getSku, p -> p, (a, b) -> a));
+        List<Product> ordered = skus.stream().map(bySku::get).filter(java.util.Objects::nonNull).toList();
+        if (ordered.isEmpty()) {
+            return List.of();
+        }
+        return toCatalogResponses(ordered);
+    }
+
+    /** Общая сборка ответа: цена, картинки и наличие считаются пачкой, не по одному. */
+    private List<CatalogProductResponse> toCatalogResponses(List<Product> products) {
+        List<UUID> ids = products.stream().map(Product::getId).toList();
+        Map<UUID, BigDecimal> prices = retailPriceService.getRetailPrices(
+                products.stream().map(Product::getId).collect(Collectors.toSet()));
+        Map<UUID, List<String>> imageUrls = imageUrlResolver.resolveUrls(ids);
+        Map<UUID, StockStatus> stockStatuses = stockStatuses(ids);
+
+        Map<UUID, Category> categories = categoriesOf(products);
+        Map<UUID, Brand> brands = brandsOf(products);
+        return products.stream()
+                .map(product -> toCatalogResponse(
+                        product, prices.get(product.getId()),
+                        imageUrls.getOrDefault(product.getId(), List.of()),
+                        stockStatuses.get(product.getId()),
+                        categories.get(product.getId()), brands.get(product.getId())))
+                .toList();
+    }
+
+    private Map<UUID, Category> categoriesOf(List<Product> products) {
+        List<UUID> ids = products.stream().map(Product::getCategoryId).filter(java.util.Objects::nonNull)
+                .distinct().toList();
+        return ids.isEmpty() ? Map.of()
+                : categoryRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+    }
+
+    private Map<UUID, Brand> brandsOf(List<Product> products) {
+        List<UUID> ids = products.stream().map(Product::getBrandId).filter(java.util.Objects::nonNull)
+                .distinct().toList();
+        return ids.isEmpty() ? Map.of()
+                : brandRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Brand::getId, b -> b));
+    }
+
     /** Статус наличия из доступного остатка склада по умолчанию (S18). */
     private Map<UUID, StockStatus> stockStatuses(List<UUID> productIds) {
         UUID locationId = stockService.defaultLocationId();
@@ -110,7 +165,11 @@ public class CatalogService {
         Brand brand = product.getBrandId() != null
                 ? brandRepository.findById(product.getBrandId()).orElse(null)
                 : null;
+        return toCatalogResponse(product, retailPrice, imageUrls, stockStatus, category, brand);
+    }
 
+    private CatalogProductResponse toCatalogResponse(Product product, BigDecimal retailPrice, List<String> imageUrls,
+                                                     StockStatus stockStatus, Category category, Brand brand) {
         return CatalogProductResponse.builder()
                 .id(product.getId())
                 .sku(product.getSku())

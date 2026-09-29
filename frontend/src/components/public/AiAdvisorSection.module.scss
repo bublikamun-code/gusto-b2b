@@ -1,0 +1,123 @@
+@use "../../styles/tokens" as *;
+
+.section {
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+.section__header {
+  max-width: 44rem;
+  margin-bottom: 2.5rem;
+}
+
+.eyebrow {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  color: $color-bordeaux;
+}
+
+.title {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.75rem;
+  margin: 0.5rem 0 0;
+  color: $color-graphite;
+}
+
+.subtitle {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  line-height: $line-height-body;
+  color: rgba($color-graphite, 0.8);
+}
+
+.layout {
+  display: grid;
+  // чат — рабочая область, рецепты — справка; на узком экране встают в столбец
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.chatColumn {
+  min-width: 0;
+}
+
+.recipesColumn {
+  min-width: 0;
+}
+
+.recipesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.recipesTitle {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.1rem;
+  margin: 0;
+  color: $color-graphite;
+}
+
+.recipesLink {
+  font-family: $font-heading;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: $color-bordeaux;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.recipesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba($color-graphite, 0.65);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .recipesGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 3rem 1rem;
+  }
+
+  .recipesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  // на тач-экране ссылка — строка 19px; растягиваем область клика до 44px
+  // (WCAG 2.5.5), не увеличивая сам текст (правило S44 из шапки).
+  .recipesLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

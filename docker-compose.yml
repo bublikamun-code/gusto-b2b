@@ -38,6 +38,13 @@ services:
       APP_STORAGE_PATH: /app/data/files
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-http://localhost:5173}
+      # ИИ-советник лендинга (S45). Пустой ключ — не поломка: блок рецептов
+      # работает, чат отвечает детерминированным советником по каталогу.
+      APP_AI_ENABLED: ${APP_AI_ENABLED:-true}
+      APP_AI_BASE_URL: ${APP_AI_BASE_URL:-}
+      APP_AI_API_KEY: ${APP_AI_API_KEY:-}
+      APP_AI_MODEL: ${APP_AI_MODEL:-}
+      APP_AI_REQUESTS_PER_HOUR: ${APP_AI_REQUESTS_PER_HOUR:-20}
     volumes:
       - filedata:/app/data/files
     ports:
