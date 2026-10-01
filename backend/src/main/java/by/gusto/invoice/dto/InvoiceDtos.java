@@ -51,6 +51,14 @@ public final class InvoiceDtos {
         private Map<String, Object> buyerSnapshot;
         private BigDecimal totalAmount;
         private BigDecimal totalVat;
+        /**
+         * Уже оплачено по счёту, BYN. Клиенту нужно видеть не только «оплачен/нет»,
+         * но и сколько осталось доплатить по частично оплаченному счёту — для B2B
+         * это и есть «остаток задолженности» по конкретному документу.
+         */
+        private BigDecimal paidAmount;
+        /** Остаток к оплате: totalAmount − paidAmount, не меньше нуля. */
+        private BigDecimal balanceDue;
         private InvoiceEntity.Status status;
         private Instant createdAt;
         private List<ItemResponse> items;

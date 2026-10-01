@@ -21,6 +21,10 @@ export interface Invoice {
   customerCompanyId?: string | null;
   totalAmount: number;
   totalVat: number;
+  /** Σ зарегистрированных оплат по счёту, BYN. */
+  paidAmount: number;
+  /** Остаток к оплате: totalAmount − paidAmount, не меньше нуля. */
+  balanceDue: number;
   status: InvoiceStatus;
   createdAt: string;
   items: Array<{

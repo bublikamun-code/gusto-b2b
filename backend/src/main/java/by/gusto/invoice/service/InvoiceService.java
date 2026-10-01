@@ -293,6 +293,20 @@ public class InvoiceService {
         return String.format("СЧ-%d", next);
     }
 
+    /** Сумма зарегистрированных оплат по счёту. Отменённые платежи не учитываются. */
+    private BigDecimal paidAmountOf(UUID invoiceId) {
+        BigDecimal paid = jdbcTemplate.queryForObject(
+                "select coalesce(sum(amount), 0) from payments where invoice_id = ?", BigDecimal.class, invoiceId);
+        return paid == null ? BigDecimal.ZERO.setScale(2) : paid.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** Остаток к оплате; не уходит в минус при переплате. */
+    private BigDecimal balanceDue(InvoiceEntity invoice) {
+        BigDecimal total = invoice.getTotalAmount() == null ? BigDecimal.ZERO : invoice.getTotalAmount();
+        BigDecimal due = total.subtract(paidAmountOf(invoice.getId()));
+        return due.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+    }
+
     private InvoiceResponse toResponse(InvoiceEntity invoice, List<InvoiceItem> items) {
         InvoiceResponse response = new InvoiceResponse();
         response.setId(invoice.getId());
@@ -305,6 +319,8 @@ public class InvoiceService {
         response.setBuyerSnapshot(invoice.getBuyerSnapshot());
         response.setTotalAmount(invoice.getTotalAmount());
         response.setTotalVat(invoice.getTotalVat());
+        response.setPaidAmount(paidAmountOf(invoice.getId()));
+        response.setBalanceDue(balanceDue(invoice));
         response.setStatus(invoice.getStatus());
         response.setCreatedAt(invoice.getCreatedAt());
         response.setItems(items.stream().map(item -> {

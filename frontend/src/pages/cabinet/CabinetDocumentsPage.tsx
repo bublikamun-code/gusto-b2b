@@ -62,6 +62,29 @@ export default function CabinetDocumentsPage() {
       render: (i: Invoice) => formatMoney(i.totalAmount),
     },
     {
+      // Отдельная колонка «Оплачено» и «Остаток»: одного статуса клиенту мало —
+      // по частично оплаченному счёту нужно видеть, сколько ещё платить (S47).
+      key: "paid",
+      title: "Оплачено",
+      align: "right" as const,
+      render: (i: Invoice) => {
+        const paid = Number(i.paidAmount ?? 0);
+        return paid > 0 ? formatMoney(paid) : <span className={styles.muted}>—</span>;
+      },
+    },
+    {
+      key: "balance",
+      title: "Остаток",
+      align: "right" as const,
+      render: (i: Invoice) => {
+        const due = Number(i.balanceDue ?? 0);
+        // Ноль показываем явно: «оплачен полностью» — это ответ на вопрос клиента,
+        // и молчаливая пустая ячейка его не даёт.
+        if (due > 0) return <strong className={styles.due}>{formatMoney(due)}</strong>;
+        return <span className={styles.paidFull}>оплачен</span>;
+      },
+    },
+    {
       key: "actions",
       title: "",
       align: "right" as const,

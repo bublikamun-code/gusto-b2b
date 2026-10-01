@@ -4186,6 +4186,12 @@ components:
           additionalProperties: true
         totalAmount: { type: number, description: "Σ позиций; цены НДС-включённые (2.3)" }
         totalVat: { type: number, description: "НДС выделен расчётно: Σ total × rate / (100 + rate)" }
+        paidAmount:
+          type: number
+          description: "Σ зарегистрированных оплат по счёту, BYN. Клиенту нужен, чтобы видеть остаток по частично оплаченному счёту"
+        balanceDue:
+          type: number
+          description: "Остаток к оплате: totalAmount − paidAmount, не меньше нуля"
         status: { $ref: "#/components/schemas/InvoiceStatus" }
         createdAt: { type: string, format: date-time }
         items:
