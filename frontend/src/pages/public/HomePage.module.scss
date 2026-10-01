@@ -145,11 +145,27 @@
   padding: 0.85rem 0;
 }
 
+.runningLine {
+  // WCAG 2.2.2 (уровень A): движущийся контент должен останавливаться.
+  &:hover &__track,
+  &:focus-within &__track {
+    animation-play-state: paused;
+  }
+}
+
 .runningLine__track {
   display: flex;
   gap: 2.5rem;
   width: max-content;
   animation: scroll 30s linear infinite;
+  animation-play-state: var(--running-line-state, running);
+}
+
+// WCAG 2.3.3: уважаем системную настройку «уменьшить движение».
+@media (prefers-reduced-motion: reduce) {
+  .runningLine__track {
+    animation: none;
+  }
 }
 
 .runningLine__item {

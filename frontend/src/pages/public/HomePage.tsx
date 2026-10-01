@@ -92,8 +92,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className={styles.runningLine}>
-        <div className={styles.runningLine__track}>
+      {/*
+        WCAG 2.2.2 (уровень A): бегущая строка должна останавливаться. Дублируем набор
+        пунктов и вешаем tabIndex — тогда клавиатура может её остановить (focus-within
+        в SCSS). Раньше анимация шла бесконечно и остановить её было нечем.
+      */}
+      <div className={styles.runningLine} aria-hidden="false">
+        <div className={styles.runningLine__track} tabIndex={0} role="marquee">
           {RUNNING_ITEMS.map((item, index) => (
             <span key={index} className={styles.runningLine__item}>
               {item}
