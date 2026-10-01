@@ -5,6 +5,7 @@ import by.gusto.admin.service.AdminUserService;
 import by.gusto.auth.dto.CreateUserRequest;
 import by.gusto.auth.dto.TemporaryPasswordResponse;
 import by.gusto.auth.dto.UpdateUserRequest;
+import by.gusto.auth.entity.Role;
 import by.gusto.auth.dto.UserResponse;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.company.dto.CompanyResponse;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -36,8 +39,17 @@ public class AdminController {
     private final AdminCompanyService adminCompanyService;
 
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> listUsers() {
-        return ResponseEntity.ok(ApiResponse.success(adminUserService.listUsers()));
+    public ResponseEntity<ApiResponse<List<UserResponse>>> listUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        var result = adminUserService.listUsers(search, role, isActive, page, size);
+        return ResponseEntity.ok(ApiResponse.success(
+                result.getContent(),
+                Map.of("page", result.getNumber(), "size", result.getSize(),
+                        "total", result.getTotalElements(), "pages", result.getTotalPages())));
     }
 
     @GetMapping("/users/{id}")
@@ -69,8 +81,15 @@ public class AdminController {
     }
 
     @GetMapping("/companies")
-    public ResponseEntity<ApiResponse<List<CompanyResponse>>> listCompanies() {
-        return ResponseEntity.ok(ApiResponse.success(adminCompanyService.listCompanies()));
+    public ResponseEntity<ApiResponse<List<CompanyResponse>>> listCompanies(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        var result = adminCompanyService.listCompanies(search, page, size);
+        return ResponseEntity.ok(ApiResponse.success(
+                result.getContent(),
+                Map.of("page", result.getNumber(), "size", result.getSize(),
+                        "total", result.getTotalElements(), "pages", result.getTotalPages())));
     }
 
     @GetMapping("/companies/{id}")

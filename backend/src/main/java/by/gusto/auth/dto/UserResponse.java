@@ -24,6 +24,12 @@ public class UserResponse {
 
     private UUID companyId;
 
+    /**
+     * Заполняется ТОЛЬКО при создании пользователя без явного пароля: один раз
+     * показывается администратору, чтобы передать учётку. В списках всегда null.
+     */
+    private String temporaryPassword;
+
     @JsonProperty("isActive")
     private boolean active;
 

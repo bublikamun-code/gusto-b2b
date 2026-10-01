@@ -196,8 +196,14 @@ export default function AdminUsersPage() {
 
   const createMutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => {
-      push('Пользователь создан', 'success');
+    onSuccess: (data) => {
+      // Если пароль не задавали в форме, сервер сгенерировал его и вернул один раз —
+      // показываем, иначе созданную учётку невозможно разблокировать (аудит 2026-09-30).
+      if (data.temporaryPassword) {
+        setResetResult(data.temporaryPassword);
+      } else {
+        push('Пользователь создан', 'success');
+      }
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       setIsFormOpen(false);
     },

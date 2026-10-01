@@ -3477,6 +3477,12 @@ components:
         isActive: { type: boolean }
         totpEnabled: { type: boolean }
         emailConfirmed: { type: boolean, description: "Подтверждён ли email; требование — только для саморегистрации физлиц (S08.1)" }
+        temporaryPassword:
+          type: string
+          nullable: true
+          description: >-
+            Заполняется только в ответе POST /admin/users, когда пароль не задан в запросе
+            и был сгенерирован сервером. Показывается один раз; в списках всегда null.
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     LoginRequest:
@@ -3609,6 +3615,14 @@ components:
         phone: { type: string, nullable: true }
         role: { $ref: "#/components/schemas/Role" }
         companyId: { type: string, format: uuid, nullable: true, description: "Обязательна для CUSTOMER_LEGAL" }
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: >-
+            Необязательный. Если не задан, сервер сгенерирует временный пароль и вернёт
+            его в User.temporaryPassword. Поле присутствует в UI, но раньше сервер его
+            игнорировал, из-за чего созданную учётку было невозможно разблокировать.
     UpdateUserRequest:
       type: object
       properties:
