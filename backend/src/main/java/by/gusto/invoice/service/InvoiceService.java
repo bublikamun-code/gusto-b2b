@@ -219,11 +219,12 @@ public class InvoiceService {
                 invoiceItemRepository.findAllByInvoiceId(invoice.getId())));
     }
 
-    /** Кабинет юрлица: только счета своей компании (2.1). */
+    /** Кабинет юрлица: только выданные счета своей компании (2.1); черновики скрыты. */
     @Transactional(readOnly = true)
     public Page<InvoiceResponse> listForCompany(UUID companyId, int page, int size) {
         PageRequest pageable = Pages.of(page, size);
-        return invoiceRepository.findAllByCustomerCompanyIdOrderByCreatedAtDesc(companyId, pageable)
+        return invoiceRepository
+                .findAllByCustomerCompanyIdAndStatusNotOrderByCreatedAtDesc(companyId, Status.DRAFT, pageable)
                 .map(invoice -> toResponse(invoice,
                         invoiceItemRepository.findAllByInvoiceId(invoice.getId())));
     }
@@ -239,6 +240,16 @@ public class InvoiceService {
         // Раньше для staff проверка была безусловной — менеджер читал счёт любой
         // компании по id; теперь та же матрица, что и в списках (S44).
         authz.requireCompanyAccess(invoice.getCustomerCompanyId(), actor);
+
+        // Черновик клиенту не показываем: это незавершённая работа бухгалтера. Раньше
+        // клиент получал счёт и по прямой ссылке на id, и PDF (ensurePdf сгенерировал
+        // его на лету, а отличать черновик от выданного в самом PDF нечем)
+        // — аудит 2026-09-30, группа «Цифры»/документы.
+        if (invoice.getStatus() == Status.DRAFT
+                && (actor.getRole() == Role.CUSTOMER_LEGAL
+                    || actor.getRole() == Role.CUSTOMER_INDIVIDUAL)) {
+            throw new GustoException(ErrorCode.NOT_FOUND, "Счёт не найден");
+        }
     }
 
     @SuppressWarnings("unchecked")

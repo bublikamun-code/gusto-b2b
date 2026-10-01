@@ -13,6 +13,7 @@ import by.gusto.integration.repository.IntegrationFileRepository;
 import by.gusto.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -24,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,8 +167,8 @@ public class XlsxExportService {
                                where cd.company_id = ?
                                  and cd.valid_from <= now()::date
                                  and (cd.valid_to is null or cd.valid_to >= now()::date)
-                                 and ((cd.brand_id is not null and cd.brand_id = p.brand_id)
-                                   or (cd.category_id is not null and cd.category_id = p.category_id))
+                                 and ((cd.brand_id is null or cd.brand_id = p.brand_id)
+                                   and (cd.category_id is null or cd.category_id = p.category_id))
                           ), 0)) / 100
                             from product_prices pp
                            where pp.product_id = p.id
@@ -208,6 +211,12 @@ public class XlsxExportService {
                 headerRow.createCell(i).setCellValue(headers[i]);
                 sheet.setColumnWidth(i, 16 * 256);
             }
+            // Даты пишем настоящей датой с форматом DD.MM.YYYY, а не value.toString().
+            // Раньше сюда попадало «2026-09-19 15:04:05.0» — текстом, который в Excel
+            // не сортируется и не фильтруется по дате (аудит 2026-09-30, группа «Цифры»).
+            CellStyle dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("DD.MM.YYYY"));
+
             int r = 1;
             for (Map<String, Object> row : rows) {
                 Row dataRow = sheet.createRow(r++);
@@ -217,6 +226,21 @@ public class XlsxExportService {
                     Object value = values[c];
                     if (value instanceof Number number) {
                         cell.setCellValue(number.doubleValue());
+                    } else if (value instanceof java.sql.Timestamp ts) {
+                        cell.setCellValue(ts.toLocalDateTime());
+                        cell.setCellStyle(dateStyle);
+                    } else if (value instanceof java.sql.Date sqlDate) {
+                        cell.setCellValue(sqlDate.toLocalDate());
+                        cell.setCellStyle(dateStyle);
+                    } else if (value instanceof LocalDate localDate) {
+                        cell.setCellValue(localDate);
+                        cell.setCellStyle(dateStyle);
+                    } else if (value instanceof LocalDateTime localDateTime) {
+                        cell.setCellValue(localDateTime);
+                        cell.setCellStyle(dateStyle);
+                    } else if (value instanceof Instant instant) {
+                        cell.setCellValue(instant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+                        cell.setCellStyle(dateStyle);
                     } else if (value != null) {
                         cell.setCellValue(value.toString());
                     }
