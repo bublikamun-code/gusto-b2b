@@ -86,7 +86,52 @@ public class StockService {
                 .build());
     }
 
-    /** Освобождение резерва (отмена заказа, отгрузка). */
+    /**
+     * Отгрузка заказа (аудит 2026-09-30, P0-2). Товар физически уходит: уменьшаем и
+     * остаток, и резерв под одной блокировкой строки баланса, записывая пару движений
+     * OUTGOING + RELEASE. Раньше резерв снимался только при отмене заказа, поэтому после
+     * SHIPPED/COMPLETED резерв оставался навсегда и «доступный» остаток деградировал.
+     * 3.1 требует движения по заказу — до отгрузки их не было вовсе.
+     */
+    @Transactional
+    public void ship(UUID productId, UUID locationId, BigDecimal quantity,
+                     String referenceType, UUID referenceId, UUID createdBy) {
+        if (quantity.signum() <= 0) {
+            return;
+        }
+        StockBalance balance = lockBalance(productId, locationId);
+        if (balance.getReserved().compareTo(quantity) < 0) {
+            throw new GustoException(ErrorCode.STOCK_DOCUMENT_INVALID,
+                    "Отгрузка больше зарезервированного: reserved=" + balance.getReserved()
+                            + ", отгружается " + quantity);
+        }
+        balance.setQuantity(balance.getQuantity().subtract(quantity));
+        balance.setReserved(balance.getReserved().subtract(quantity));
+        balance.setUpdatedAt(Instant.now());
+        balanceRepository.save(balance);
+        movementRepository.save(StockMovement.builder()
+                .productId(productId)
+                .locationId(locationId)
+                .type(StockMovement.Type.OUTGOING)
+                .quantity(quantity.abs().negate())
+                .referenceType(referenceType)
+                .referenceId(referenceId)
+                .note("Отгрузка по заказу")
+                .createdBy(createdBy)
+                .build());
+        movementRepository.save(StockMovement.builder()
+                .productId(productId)
+                .locationId(locationId)
+                .type(StockMovement.Type.RELEASE)
+                .quantity(quantity)
+                .referenceType(referenceType)
+                .referenceId(referenceId)
+                .note("Снятие резерва при отгрузке")
+                .createdBy(createdBy)
+                .build());
+    }
+
+    /** Освобождение резерва (отмена заказа). */
     @Transactional
     public void release(UUID productId, UUID locationId, BigDecimal quantity,
                         String referenceType, UUID referenceId, UUID createdBy) {

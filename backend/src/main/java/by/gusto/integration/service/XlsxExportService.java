@@ -116,9 +116,14 @@ public class XlsxExportService {
         Filter filter = managerScope(actor, " and (o.manager_id = ? or o.customer_company_id in "
                 + "(select id from companies where manager_id = ?)) ", 2);
         String sql = """
-                select w.number, w.type, w.issue_date, c.name as client, w.total_amount
+                select w.number, w.type, w.issue_date, c.name as client,
+                       coalesce(wi.total_sum, 0) as total_amount
                 from waybills w left join orders o on o.id = w.order_id
                 left join companies c on c.id = o.customer_company_id
+                left join lateral (
+                    select sum(wi2.total) as total_sum
+                    from waybill_items wi2 where wi2.waybill_id = w.id
+                ) wi on true
                 where w.issue_date >= ? and w.issue_date <= ?
                 """ + filter.sql() + """
                 order by w.issue_date
@@ -137,25 +142,51 @@ public class XlsxExportService {
         if (client.getCompanyId() == null) {
             throw new GustoException(ErrorCode.VALIDATION_FAILED, "К пользователю не привязана компания");
         }
+        // Приоритет цены повторяет PricingService/RetailPriceService (2.5): персональная цена →
+        // скидка бренда/категории → базовая цена АКТИВНОГО прайс-листа. Раньше здесь стоял
+        // отдельный SQL без скидок, без фильтра по периоду персональных цен и без отбора
+        // активного прайс-листа, а lateral по customer_prices без limit 1 размножал SKU
+        // по числу редакций цены — выгрузка расходилась с ценой покупки (аудит, P1-2).
         String sql = """
                 select p.sku, p.name, p.unit, p.weight_per_unit,
-                       coalesce(cp.price, pp.price) as price
+                       round(coalesce(
+                         (select cp.price
+                            from customer_prices cp
+                           where cp.product_id = p.id
+                             and cp.company_id = ?
+                             and cp.valid_from <= now()::date
+                             and (cp.valid_to is null or cp.valid_to >= now()::date)
+                           order by cp.valid_from desc
+                           limit 1),
+                         (select pp.price * (100 - coalesce((
+                              select max(cd.discount_percent)
+                                from customer_discounts cd
+                               where cd.company_id = ?
+                                 and cd.valid_from <= now()::date
+                                 and (cd.valid_to is null or cd.valid_to >= now()::date)
+                                 and ((cd.brand_id is not null and cd.brand_id = p.brand_id)
+                                   or (cd.category_id is not null and cd.category_id = p.category_id))
+                          ), 0)) / 100
+                            from product_prices pp
+                           where pp.product_id = p.id
+                             and pp.price_list_id = (select pl.id from price_lists pl
+                                                      where pl.is_active
+                                                        and pl.valid_from <= now()::date
+                                                        and (pl.valid_to is null or pl.valid_to >= now()::date)
+                                                      order by pl.valid_from desc limit 1)
+                             and pp.valid_from <= now()::date
+                             and (pp.valid_to is null or pp.valid_to >= now()::date)
+                           order by pp.valid_from desc
+                           limit 1)
+                       ), 2) as price
                 from products p
-                left join lateral (
-                    select price from product_prices pp
-                    where pp.product_id = p.id and pp.valid_from <= now()::date
-                      and (pp.valid_to is null or pp.valid_to >= now()::date)
-                    order by pp.valid_from desc limit 1
-                ) pp on true
-                left join lateral (
-                    select price from customer_prices cp
-                    where cp.product_id = p.id and cp.company_id = ?
-                ) cp on true
                 where p.deleted_at is null and p.is_active
                 order by p.sku
                 """;
         String[] headers = {"Артикул", "Наименование", "Ед.", "Вес ед., кг", "Цена, BYN"};
-        byte[] bytes = buildWorkbook(headers, jdbcTemplate.queryForList(sql, client.getCompanyId()),
+        UUID companyId = client.getCompanyId();
+        byte[] bytes = buildWorkbook(headers,
+                jdbcTemplate.queryForList(sql, companyId, companyId),
                 row -> new Object[]{
                         row.get("sku"), row.get("name"), row.get("unit"),
                         row.get("weight_per_unit"), row.get("price")});

@@ -259,16 +259,25 @@ public class InvoiceService {
         if (company.getShortName() != null) buyer.put("shortName", company.getShortName());
         if (company.getUnp() != null) buyer.put("unp", company.getUnp());
         if (company.getLegalAddress() != null) buyer.put("address", company.getLegalAddress());
-        if (company.getBankAccount() != null) buyer.put("bankAccount", company.getBankAccount());
-        if (company.getBankName() != null) buyer.put("bankName", company.getBankName());
-        if (company.getBankBic() != null) buyer.put("bankBic", company.getBankBic());
+        // Ключи — как у продавца (seller.requisites, snake_case): рендерер читает именно
+        // bank_account/bank_name/bank_bic. Раньше здесь были camelCase-ключи, множества ключей
+        // не пересекались, и банковские реквизиты покупателя не попадали в PDF счёта вообще
+        // (аудит 2026-09-30, P1-4).
+        if (company.getBankAccount() != null) buyer.put("bank_account", company.getBankAccount());
+        if (company.getBankName() != null) buyer.put("bank_name", company.getBankName());
+        if (company.getBankBic() != null) buyer.put("bank_bic", company.getBankBic());
         return buyer;
     }
 
     /** СЧ-<N> (2.2): sequence на год, max(number)+1 запрещён; ротация — S31. */
     private String nextNumber() {
         int year = Year.now().getValue();
-        long next = jdbcTemplate.queryForObject("select nextval('doc_seq_invoice_" + year + "')", Long.class);
+        // Как и в накладных (аудит 2026-09-30, P1): сначала создаём sequence, затем nextval.
+        // Раньше fallback'а не было вовсе — смена года/сбой планировщика в 00:05 давали 500
+        // на оформлении счёта.
+        String sequence = "doc_seq_invoice_" + year;
+        jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
+        long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
         return String.format("СЧ-%d", next);
     }
 

@@ -88,7 +88,7 @@ public class WarehouseDocumentService {
     /** Подтверждение: создаёт движения по всем позициям в одной транзакции. */
     @Transactional
     public Response confirm(UUID documentId, UUID userId) {
-        WarehouseDocument document = documentRepository.findById(documentId)
+        WarehouseDocument document = documentRepository.findByIdForUpdate(documentId)
                 .orElseThrow(() -> new GustoException(ErrorCode.NOT_FOUND, "Документ не найден"));
         if (document.getStatus() != WarehouseDocument.Status.DRAFT) {
             throw new GustoException(ErrorCode.STOCK_DOCUMENT_INVALID,
@@ -217,6 +217,9 @@ public class WarehouseDocumentService {
     private String nextNumber(WarehouseDocument.Type type) {
         int year = Year.now().getValue();
         String sequence = "doc_seq_warehouse_" + type.name().toLowerCase() + "_" + year;
+        // Создаём sequence до nextval (аудит 2026-09-30, P1-20) — иначе 01.01.2027
+        // приёмка и списание падали бы в 500.
+        jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
         Long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
         return NUMBER_PREFIXES.get(type) + "-" + next;
     }

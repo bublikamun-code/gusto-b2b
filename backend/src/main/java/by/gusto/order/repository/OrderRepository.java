@@ -15,10 +15,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
 
     Page<OrderEntity> findAllByCustomerCompanyIdOrderByCreatedAtDesc(UUID customerCompanyId, Pageable pageable);
 
-    // «свои + пул» (2.7): заказы клиента, взятые менеджером, и не назначенные (пул).
-    // Пул раньше терялся — модалка «Выставить счёт из заказа» была пуста (нашёл E2E S39).
+    // «свои + пул» (2.7): заказы, взятые менеджером, и розничный пул «не назначено».
+    // Пул — ТОЛЬКО заказы без компании. Раньше условие было `or o.managerId is null` без
+    // проверки customer_company_id, поэтому менеджер видел в списке B2B-заказы чужих клиентов
+    // (ФИО, телефон, адрес, суммы), хотя открыть их всё равно не мог — canAccessOrder скоупит
+    // правильно (аудит 2026-09-30, P0-1).
     @Query("select o from OrderEntity o where "
-            + "(o.customerUserId = :userId or o.managerId = :userId or o.managerId is null) "
+            + "(o.customerUserId = :userId or o.managerId = :userId "
+            + " or (o.managerId is null and o.customerCompanyId is null)) "
             + "order by o.createdAt desc")
     Page<OrderEntity> findAllVisibleTo(@Param("userId") UUID userId, Pageable pageable);
 
@@ -28,9 +32,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
     Page<OrderEntity> findAllByManagerIdAndStatusOrderByCreatedAtDesc(UUID managerId,
             OrderEntity.Status status, Pageable pageable);
 
-    Page<OrderEntity> findAllByManagerIdIsNullOrderByCreatedAtDesc(Pageable pageable);
+    // Пул «не назначено» — ТОЛЬКО розница. Методы с CustomerCompanyIdIsNull добавлены
+    // в аудите 2026-09-30 (P0-1): прежние findAllByManagerIdIsNull* отдавали менеджеру
+    // в пул ещё и B2B-заказы компаний, закреплённых за другими менеджерами.
+    Page<OrderEntity> findAllByManagerIdIsNullAndCustomerCompanyIdIsNullOrderByCreatedAtDesc(Pageable pageable);
 
-    Page<OrderEntity> findAllByManagerIdIsNullAndStatusOrderByCreatedAtDesc(
+    Page<OrderEntity> findAllByManagerIdIsNullAndCustomerCompanyIdIsNullAndStatusOrderByCreatedAtDesc(
             OrderEntity.Status status, Pageable pageable);
 
     Page<OrderEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
