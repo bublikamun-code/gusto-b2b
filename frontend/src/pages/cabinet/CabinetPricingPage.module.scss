@@ -1,0 +1,60 @@
+@use "../../styles/tokens" as *;
+
+/* Экран «Прайс и скидки» кабинета (матрица 2.1). */
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  // На узком экране кнопка выгрузки уезжает под заголовок, а не сжимает его в ноль.
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.title {
+  font-family: $font-heading;
+  font-size: 1.75rem;
+  margin: 0;
+  color: $color-graphite;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: rgba($color-graphite, 0.7);
+  font-size: 0.9rem;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.pagination {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Розничная цена — справочная, поэтому приглушена: важна колонка «Ваша цена». */
+.retail {
+  color: rgba($color-graphite, 0.6);
+}
+
+.noDiscount {
+  color: rgba($color-graphite, 0.4);
+}
+
+/* Узкий экран: таблица прайса не должна вызывать горизонтальную прокрутку всей страницы. */
+@media (max-width: 720px) {
+  .tableScroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

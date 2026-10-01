@@ -1374,6 +1374,42 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "429": { $ref: "#/components/responses/RateLimited" }
 
+  /cabinet/summary:
+    get:
+      tags: [cabinet]
+      summary: Сводка дашборда клиента — заказы в работе, неоплаченные счета, долг
+      responses:
+        "200":
+          description: конверт ApiResponse со сводкой
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/CabinetSummary" }
+
+  /cabinet/pricing/discounts:
+    get:
+      tags: [cabinet]
+      summary: Правила скидок компании клиента (матрица 2.1 — «Прайс/скидки в кабинете»)
+      responses:
+        "200":
+          description: конверт ApiResponse со списком правил
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/ClientDiscount" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /cabinet/company:
     get:
       tags: [cabinet]
@@ -4794,6 +4830,32 @@ components:
               number: { type: string }
               title: { type: string }
               text: { type: string }
+    ClientDiscount:
+      type: object
+      required: [id, discountPercent, validFrom, active]
+      properties:
+        id: { type: string, format: uuid }
+        brandName: { type: string, nullable: true, description: "null — правило действует на весь каталог" }
+        categoryName: { type: string, nullable: true, description: "null — правило действует на весь каталог" }
+        discountPercent: { type: number, format: double }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+        active: { type: boolean, description: "Срок покрывает сегодняшний день" }
+
+    CabinetSummary:
+      type: object
+      required: [activeOrdersCount, activeOrdersTotal, awaitingConfirmationCount, unpaidInvoicesCount, outstandingDebt]
+      properties:
+        companyName: { type: string, nullable: true }
+        activeOrdersCount: { type: integer, format: int64 }
+        activeOrdersTotal: { type: number, format: double }
+        awaitingConfirmationCount: { type: integer, format: int64 }
+        unpaidInvoicesCount: { type: integer, format: int64 }
+        outstandingDebt: { type: number, format: double, description: "Счета минус зарегистрированные оплаты, BYN" }
+        lastOrderNumber: { type: string, nullable: true }
+        lastOrderStatus: { type: string, nullable: true }
+        lastOrderAt: { type: string, format: date-time, nullable: true }
+
     PublicArticle:
       type: object
       required: [slug, title, body, publishedAt]
