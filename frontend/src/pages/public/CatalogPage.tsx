@@ -44,7 +44,12 @@ export default function CatalogPage() {
     } else {
       next.delete(key);
     }
-    next.set("page", "0");
+    // Сбрасываем страницу только при смене фильтра. Безусловный next.set("page","0") после
+    // next.set(key,value) затирал собственный выбор страницы: Pagination зовёт
+    // updateParam("page", …), и страница 2 была недостижима (аудит 2026-09-30, P1-10).
+    if (key !== "page") {
+      next.set("page", "0");
+    }
     setSearchParams(next, { replace: true });
   }
 

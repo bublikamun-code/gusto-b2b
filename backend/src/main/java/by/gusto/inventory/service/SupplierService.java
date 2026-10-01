@@ -1,5 +1,6 @@
 package by.gusto.inventory.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
 import by.gusto.inventory.dto.SupplierDtos.Request;
@@ -45,7 +46,7 @@ public class SupplierService {
         // и Postgres падает «function lower(bytea) does not exist» (S18.4)
         return supplierRepository
                 .search(search == null ? "" : search.trim(), active,
-                        PageRequest.of(page, Math.min(size, 100)))
+                        Pages.of(page, size))
                 .map(this::toResponse);
     }
 

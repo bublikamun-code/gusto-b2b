@@ -1,5 +1,6 @@
 package by.gusto.invoice.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthorizationService;
@@ -207,7 +208,7 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Page<InvoiceResponse> list(User actor, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<InvoiceEntity> invoices;
         if (actor.getRole() == Role.MANAGER) {
             invoices = invoiceRepository.findAllVisibleTo(actor.getId(), pageable);
@@ -221,7 +222,7 @@ public class InvoiceService {
     /** Кабинет юрлица: только счета своей компании (2.1). */
     @Transactional(readOnly = true)
     public Page<InvoiceResponse> listForCompany(UUID companyId, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         return invoiceRepository.findAllByCustomerCompanyIdOrderByCreatedAtDesc(companyId, pageable)
                 .map(invoice -> toResponse(invoice,
                         invoiceItemRepository.findAllByInvoiceId(invoice.getId())));

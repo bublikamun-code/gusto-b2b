@@ -1,5 +1,6 @@
 package by.gusto.catalog.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.catalog.dto.ProductRequest;
 import by.gusto.catalog.dto.ProductResponse;
 import by.gusto.catalog.entity.Product;
@@ -35,7 +36,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAll(int page, int size, String search, UUID categoryId, UUID brandId, Boolean active) {
         // size приходит от клиента без верхней границы (S44)
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100), Sort.by("name").ascending());
+        PageRequest pageable = Pages.of(page, size, Sort.by("name").ascending());
         Page<Product> products = productRepository.findAll(
                 by.gusto.catalog.repository.ProductSpecification.filter(categoryId, brandId, active, search),
                 pageable);

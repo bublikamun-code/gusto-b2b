@@ -94,14 +94,22 @@ public class CrmDashboardService {
                     .map(row -> row.debt())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         } else {
+            // Считаем долг по компаниям: ранний вариант ссылался на i.customer_company_id из внешнего
+            // запроса, который тут же агрегирует sum(i.total_amount), — PostgreSQL отвечал
+            // «subquery uses ungrouped column ... from outer query» и ручка отдавала 500
+            // менеджеру (аудит 2026-09-30, P1-14). Теперь внешний уровень сгруппирован.
             debt = jdbcTemplate.queryForObject(
-                    "select coalesce(sum(i.total_amount), 0) - coalesce(("
-                            + "select sum(p.amount) from payments p join invoices i2 on p.invoice_id = i2.id "
+                    "select coalesce(sum(x.total_amount - x.paid), 0) from ("
+                            + "select i.customer_company_id, sum(i.total_amount) as total_amount, "
+                            + "coalesce((select sum(p.amount) from payments p "
+                            + "join invoices i2 on p.invoice_id = i2.id "
                             + "where i2.customer_company_id = i.customer_company_id "
-                            + "and i2.status in ('ISSUED','PARTIALLY_PAID')), 0) "
+                            + "and i2.status in ('ISSUED','PARTIALLY_PAID')), 0) as paid "
                             + "from invoices i join companies c on i.customer_company_id = c.id "
                             + "where i.status in ('ISSUED','PARTIALLY_PAID') "
-                            + "and c.manager_id = ?",
+                            + "and c.manager_id = ? "
+                            + "group by i.customer_company_id"
+                            + ") x",
                     BigDecimal.class, actor.getId());
             if (debt == null) debt = BigDecimal.ZERO;
             debt = debt.setScale(2, RoundingMode.HALF_UP);

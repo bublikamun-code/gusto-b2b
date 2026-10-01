@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -37,13 +39,24 @@ public class OutboxPoller {
     private final OutboxMessageRepository repository;
     private final JdbcTemplate jdbcTemplate;
     private final List<OutboxChannel> channels;
-    private final CircuitBreaker circuitBreaker = CircuitBreaker.of("outbox",
-            CircuitBreakerConfig.custom()
-                    .failureRateThreshold(50)
-                    .minimumNumberOfCalls(5)
-                    .slidingWindowSize(10)
-                    .waitDurationInOpenState(Duration.ofSeconds(30))
-                    .build());
+    /**
+     * Circuit breaker — на КАНАЛ, а не на поллер. Один общий экземпляр означал, что опечатка
+     * в токене Telegram (10 подряд 401) открывала breaker и для email: CallNotPermittedException
+     * летел в исправный канал, попытка тратилась впустую, а после 5 попыток сообщение уходило
+     * в FAILED навсегда (аудит 2026-09-30, P1-18).
+     */
+    private final Map<String, CircuitBreaker> breakers = new ConcurrentHashMap<>();
+
+    private CircuitBreaker breakerFor(OutboxChannel channel) {
+        return breakers.computeIfAbsent(channel.getClass().getName(), name ->
+                CircuitBreaker.of("outbox-" + name,
+                        CircuitBreakerConfig.custom()
+                                .failureRateThreshold(50)
+                                .minimumNumberOfCalls(5)
+                                .slidingWindowSize(10)
+                                .waitDurationInOpenState(Duration.ofSeconds(30))
+                                .build()));
+    }
 
     /** Все специализированные каналы типа; если ни один — канал-лог (низший приоритет). */
     private List<OutboxChannel> channelsFor(String type) {
@@ -91,7 +104,7 @@ public class OutboxPoller {
         try {
             boolean allSent = true;
             for (OutboxChannel channel : targets) {
-                boolean sent = circuitBreaker.executeSupplier(() -> channel.send(message));
+                boolean sent = breakerFor(channel).executeSupplier(() -> channel.send(message));
                 allSent = allSent && sent;
             }
             if (allSent) {

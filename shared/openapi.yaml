@@ -3247,10 +3247,58 @@ paths:
       security: []
       responses:
         "200":
-          description: hero и delivery (могут быть пустыми объектами)
+          description: конверт ApiResponse; hero и delivery (могут быть пустыми объектами)
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PublicLanding" }
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/PublicLanding" }
+
+  /cms/pages/{slug}:
+    get:
+      tags: [cms]
+      summary: Публичная CMS-страница по slug; только PUBLISHED, иначе 404
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: конверт ApiResponse со статьёй
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/PublicArticle" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /cms/pages:
+    get:
+      tags: [cms]
+      summary: Все опубликованные CMS-страницы (для меню и поиска)
+      security: []
+      responses:
+        "200":
+          description: конверт ApiResponse со списком статей
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/PublicArticleSummary" }
 
 components:
   securitySchemes:
@@ -4732,12 +4780,30 @@ components:
               number: { type: string }
               title: { type: string }
               text: { type: string }
+    PublicArticle:
+      type: object
+      required: [slug, title, body, publishedAt]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        body: { type: string }
+        publishedAt: { type: string, format: date-time, nullable: true }
+
+    PublicArticleSummary:
+      type: object
+      required: [slug, title]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        publishedAt: { type: string, format: date-time, nullable: true }
+
     PublicLanding:
       type: object
       description: Значения настроек; пустой объект — показать дефолт витрины
       properties:
         hero: { type: object, additionalProperties: true }
         delivery: { type: object, additionalProperties: true }
+
     AuditEntry:
       type: object
       required: [id, action, createdAt]

@@ -53,9 +53,13 @@ export default function LoginPage() {
         totpCode: values.totpCode,
       });
       setAuth(payload.accessToken, payload.user);
-      useCartStore.getState().setOwner(payload.user.id);
-      // Перенос локальной корзины витрины в серверную (S21)
+      // Перенос локальной корзины витрины в серверную (S21).
+      // Сначала ЧИТАЕМ items, потом меняем владельца: setOwner() при смене ownerId
+      // очищает items, а раньше вызывался ДО чтения — из-за этого localItems всегда был
+      // пуст и перенос не выполнялся никогда: корзина анонимного визита молча терялась
+      // при входе (аудит 2026-09-30, P1-11).
       const localItems = useCartStore.getState().items;
+      useCartStore.getState().setOwner(payload.user.id);
       if (localItems.length > 0) {
         for (const line of mergeLocalCartItems(localItems)) {
           await putCartItem(line.productId, line.quantity).catch(() => undefined);

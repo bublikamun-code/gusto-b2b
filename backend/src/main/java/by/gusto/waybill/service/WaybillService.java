@@ -1,5 +1,6 @@
 package by.gusto.waybill.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthorizationService;
@@ -167,7 +168,7 @@ public class WaybillService {
 
     @Transactional(readOnly = true)
     public Page<WaybillResponse> list(User actor, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<WaybillEntity> waybills = actor.getRole() == Role.MANAGER
                 ? waybillRepository.findAllVisibleTo(actor.getId(), pageable)
                 : waybillRepository.findAllByOrderByCreatedAtDesc(pageable);
@@ -177,7 +178,7 @@ public class WaybillService {
     /** Кабинет юрлица: накладные заказов своей компании (2.1). */
     @Transactional(readOnly = true)
     public Page<WaybillResponse> listForCompany(UUID companyId, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         return waybillRepository.findAllByCompanyOrderByCreatedAtDesc(companyId, pageable)
                 .map(w -> toResponse(w, waybillItemRepository.findAllByWaybillId(w.getId())));
     }

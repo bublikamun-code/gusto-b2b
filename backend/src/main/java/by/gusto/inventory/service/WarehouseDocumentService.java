@@ -1,5 +1,6 @@
 package by.gusto.inventory.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -174,7 +175,7 @@ public class WarehouseDocumentService {
     @Transactional(readOnly = true)
     public Page<Response> search(WarehouseDocument.Type type, WarehouseDocument.Status status,
                                  UUID locationId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+        Pageable pageable = Pages.of(page, size);
         Page<WarehouseDocument> documents = documentRepository.search(type, status, locationId, pageable);
         return documents.map(d -> toResponse(d, itemRepository.findAllByDocumentId(d.getId())));
     }

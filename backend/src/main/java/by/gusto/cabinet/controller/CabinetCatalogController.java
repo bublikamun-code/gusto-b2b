@@ -17,10 +17,21 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Каталог кабинета. Данные публичные: тот же перечень и цены отдаёт
+ * permitAll-ручка {@code GET /api/v1/catalog/products}, поэтому расширение ролей
+ * на чтение ничего не раскрывает сверх витрины.
+ *
+ * <p>MANAGER/ADMIN добавлены из-за S22: «Заказ от имени клиента»
+ * ({@code ManagerOrderCreatePage}) звал {@code /cabinet/catalog} и получал 403 —
+ * фича не работала вовсе (аудит 2026-09-30, P1-13). Цена при этом считается по
+ * компании самого пользователя, то есть у менеджера показывается розничная; итоговую
+ * сумму сервер всё равно считает по ценам выбранного клиента (2.5).
+ */
 @RestController
 @RequestMapping("/api/v1/cabinet/catalog")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('CUSTOMER_LEGAL','CUSTOMER_INDIVIDUAL')")
+@PreAuthorize("hasAnyRole('CUSTOMER_LEGAL','CUSTOMER_INDIVIDUAL','MANAGER','ADMIN')")
 public class CabinetCatalogController {
 
     private final AuthContext authContext;

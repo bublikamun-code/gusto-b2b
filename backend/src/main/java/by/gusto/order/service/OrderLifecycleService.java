@@ -1,5 +1,6 @@
 package by.gusto.order.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -118,7 +119,7 @@ public class OrderLifecycleService {
      */
     @Transactional(readOnly = true)
     public Page<Response> managerList(User actor, String scope, Status status, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         boolean isManager = actor.getRole() == Role.MANAGER;
         UUID actorId = actor.getId();
 

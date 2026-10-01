@@ -1,5 +1,6 @@
 package by.gusto.inventory.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -104,7 +105,7 @@ public class PurchaseOrderService {
 
     @Transactional(readOnly = true)
     public Page<Response> search(PurchaseOrder.Status status, UUID supplierId, int page, int size) {
-        return orderRepository.search(status, supplierId, PageRequest.of(page, Math.min(size, 100)))
+        return orderRepository.search(status, supplierId, Pages.of(page, size))
                 .map(o -> toResponse(o, itemRepository.findAllByPurchaseOrderId(o.getId())));
     }
 

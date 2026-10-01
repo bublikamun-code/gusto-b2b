@@ -1,5 +1,6 @@
 package by.gusto.order.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthorizationService;
 import by.gusto.auth.entity.User;
@@ -175,7 +176,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<Response> listVisible(User user, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<OrderEntity> orders;
         if (user.getRole() == Role.CUSTOMER_LEGAL && user.getCompanyId() != null) {
             orders = orderRepository.findAllByCustomerCompanyIdOrderByCreatedAtDesc(user.getCompanyId(), pageable);

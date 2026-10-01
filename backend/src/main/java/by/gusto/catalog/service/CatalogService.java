@@ -1,5 +1,6 @@
 package by.gusto.catalog.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.catalog.dto.BrandResponse;
 import by.gusto.catalog.dto.CatalogProductResponse;
 import by.gusto.catalog.dto.CategoryResponse;
@@ -58,10 +59,11 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public Page<CatalogProductResponse> getProducts(ProductFilterRequest filter) {
-        PageRequest pageable = PageRequest.of(
+        // Клампим обе границы: раньше page не клампился вовсе, а size — только сверху,
+        // поэтому ?page=-1 и ?size=0 давали 500 (в т.ч. на публичной permitAll-ручке).
+        PageRequest pageable = Pages.of(
                 filter.getPage() == null ? 0 : filter.getPage(),
-                // size приходит от клиента без верхней границы (S44)
-                Math.min(filter.getSize() == null ? 20 : filter.getSize(), 100),
+                filter.getSize() == null ? 20 : filter.getSize(),
                 Sort.by("name").ascending());
 
         Page<Product> page = productRepository.findAll(
