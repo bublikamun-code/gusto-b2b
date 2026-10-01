@@ -32,16 +32,16 @@ public class CabinetSummaryService {
             return retailSummary(userId, companyName);
         }
 
-        Map<String, Object> orders = jdbcTemplate.queryForMap("""
+        Map<String, Object> orders = firstRow(jdbcTemplate.queryForList("""
                 select count(*)::int as active_count,
                        coalesce(sum(total_amount), 0) as active_total,
                        count(*) filter (where status = 'NEW')::int as awaiting_count
                 from orders
                 where customer_company_id = ?
                   and status in ('NEW','CONFIRMED','PROCESSING','READY','SHIPPED')
-                """, companyId);
+                """, companyId));
 
-        Map<String, Object> invoices = jdbcTemplate.queryForMap("""
+        Map<String, Object> invoices = firstRow(jdbcTemplate.queryForList("""
                 select count(*)::int as unpaid_count,
                        coalesce(sum(total_amount), 0) - coalesce((select sum(p.amount)
                             from payments p
@@ -51,17 +51,17 @@ public class CabinetSummaryService {
                 from invoices
                 where customer_company_id = ?
                   and status in ('ISSUED','PARTIALLY_PAID')
-                """, companyId, companyId);
+                """, companyId, companyId));
 
-        Map<String, Object> lastOrder = jdbcTemplate.queryForMap("""
+        Map<String, Object> lastOrder = firstRow(jdbcTemplate.queryForList("""
                 select number, status, created_at
                 from orders
                 where customer_company_id = ?
                 order by created_at desc
                 limit 1
-                """, companyId);
+                """, companyId));
 
-        Timestamp lastAt = (Timestamp) lastOrder.get("created_at");
+        Timestamp lastAt = lastOrder.get("created_at") instanceof Timestamp ts ? ts : null;
 
         return CabinetSummaryResponse.builder()
                 .companyName(companyName)
@@ -78,7 +78,7 @@ public class CabinetSummaryService {
 
     /** Розница: заказы видны, расчёты — нет. */
     private CabinetSummaryResponse retailSummary(UUID userId, String companyName) {
-        Map<String, Object> orders = jdbcTemplate.queryForMap("""
+        Map<String, Object> orders = firstRow(jdbcTemplate.queryForList("""
                 select count(*)::int as active_count,
                        coalesce(sum(total_amount), 0) as active_total,
                        count(*) filter (where status = 'NEW')::int as awaiting_count
@@ -86,7 +86,7 @@ public class CabinetSummaryService {
                 where customer_company_id is null
                   and customer_user_id = ?
                   and status in ('NEW','CONFIRMED','PROCESSING','READY','SHIPPED')
-                """, userId);
+                """, userId));
         return CabinetSummaryResponse.builder()
                 .companyName(companyName)
                 .activeOrdersCount(toLong(orders.get("active_count")))
@@ -95,6 +95,18 @@ public class CabinetSummaryService {
                 .unpaidInvoicesCount(0)
                 .outstandingDebt(BigDecimal.ZERO)
                 .build();
+    }
+
+    /**
+     * Первая строка результата либо пустая карта.
+     *
+     * <p>queryForMap на пустом результате бросает EmptyResultDataAccessException, а
+     * пустой результат здесь — норма: у нового клиента нет ни заказов, ни счетов.
+     * Наивная версия отдавала 500 именно тем клиентам, которым кабинет нужнее всего
+     * (проверено на стенде: у только что заведённой компании дашборд был 500).
+     */
+    private Map<String, Object> firstRow(java.util.List<Map<String, Object>> rows) {
+        return rows.isEmpty() ? Map.of() : rows.get(0);
     }
 
     private long toLong(Object value) {

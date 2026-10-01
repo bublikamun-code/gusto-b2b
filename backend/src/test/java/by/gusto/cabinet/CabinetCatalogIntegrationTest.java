@@ -251,6 +251,29 @@ class CabinetCatalogIntegrationTest {
         assertThat(targetItem.get("customerPrice")).isEqualTo(90.00);   // пересечение — скидка есть
     }
 
+    /**
+     * Дашборд должен открываться клиенту, у которого ещё нет ни заказов, ни счетов.
+     *
+     * <p>Именно этот случай ломался: агрегаты брались через queryForMap, который на
+     * пустом результате бросает EmptyResultDataAccessException, и новый клиент вместо
+     * пустого дашборда получал 500 — то есть кабинет не открывался ровно тем, кому он
+     * нужнее всего. Проверено на стенде до исправления (аудит 2026-09-30).
+     */
+    @Test
+    void cabinetSummaryWorksForClientWithoutOrders() {
+        createCustomerAndLogin();
+
+        ResponseEntity<ApiResponse> response = get("/api/v1/cabinet/summary", customerToken);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) response.getBody().getData();
+        assertThat(data.get("activeOrdersCount")).isEqualTo(0);
+        assertThat(data.get("awaitingConfirmationCount")).isEqualTo(0);
+        assertThat(data.get("unpaidInvoicesCount")).isEqualTo(0);
+        assertThat(data.get("lastOrderNumber")).isNull();
+    }
+
     private void createCustomerAndLogin() {
         Company company = companyRepository.save(Company.builder().name("ООО Тест").status("ACTIVE").build());
         companyId = company.getId();
