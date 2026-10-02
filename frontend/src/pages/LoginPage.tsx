@@ -50,7 +50,10 @@ export default function LoginPage() {
       const payload = await login({
         email: values.email,
         password: values.password,
-        totpCode: values.totpCode,
+        // Форма инициализирует totpCode пустой строкой, а бэкенд на totpCode стоит
+        // @Pattern и пустое значение не пропускает: запрос уходил с totpCode: "" и
+        // вход без 2FA завершался 400 VALIDATION_FAILED. Шлём undefined (S47).
+        totpCode: values.totpCode || undefined,
       });
       setAuth(payload.accessToken, payload.user);
       // Перенос локальной корзины витрины в серверную (S21).
