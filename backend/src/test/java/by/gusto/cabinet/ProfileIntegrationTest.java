@@ -1,6 +1,8 @@
 package by.gusto.cabinet;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.common.api.ApiResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +41,9 @@ class ProfileIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -62,7 +67,14 @@ class ProfileIntegrationTest {
         return headers;
     }
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     @SuppressWarnings("unchecked")
     void getAndUpdateProfile() {
         String token = registerAndLogin();

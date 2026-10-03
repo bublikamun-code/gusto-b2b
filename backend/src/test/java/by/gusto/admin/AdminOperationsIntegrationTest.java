@@ -1,5 +1,6 @@
 package by.gusto.admin;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -7,6 +8,7 @@ import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.company.entity.Company;
 import by.gusto.company.repository.CompanyRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -60,6 +62,9 @@ class AdminOperationsIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -205,7 +210,14 @@ class AdminOperationsIntegrationTest {
 
     // ----- настройки ------------------------------------------------------------
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     @SuppressWarnings("unchecked")
     void settingsShowSeedValuesAndRequireAdmin() {
         String admin = login("admin@gustomeat.by", "change-me");

@@ -76,5 +76,15 @@
 
   .nav a {
     padding: 0.6rem 1rem;
+    min-height: 44px;
+    // 0.6rem по вертикали давали 33px — до тап-таргета 44px не дотягивали
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  // Кнопка «Меню» (бургер) — единственная точка входа в разделы на телефоне
+  .trigger {
+    min-height: 44px;
   }
 }

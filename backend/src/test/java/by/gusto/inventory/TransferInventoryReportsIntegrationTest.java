@@ -1,5 +1,6 @@
 package by.gusto.inventory;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.catalog.entity.Product;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.api.ApiResponse;
@@ -51,6 +52,9 @@ class TransferInventoryReportsIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -69,6 +73,7 @@ class TransferInventoryReportsIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         // второй склад для перемещения
         secondLocation = locationRepository.save(by.gusto.inventory.entity.StockLocation.builder()

@@ -29,7 +29,9 @@ export function PublicFooter() {
         </div>
 
         <div className={styles.footer__nav}>
-          <h4 className={styles.footer__title}>Навигация</h4>
+          {/* h2, а не h4: колонки футера идут сразу после заголовков страницы
+              (h1/h2), и h4 давал пропуск уровня — WCAG 1.3.1 */}
+          <h2 className={styles.footer__title}>Навигация</h2>
           <ul>
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
@@ -40,7 +42,7 @@ export function PublicFooter() {
         </div>
 
         <div className={styles.footer__contacts}>
-          <h4 className={styles.footer__title}>Контакты</h4>
+          <h2 className={styles.footer__title}>Контакты</h2>
           <p>+375 29 123-45-67</p>
           <p>info@gustomeat.by</p>
           <p>Ежедневно 9:00–21:00</p>

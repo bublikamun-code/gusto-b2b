@@ -74,6 +74,7 @@ export default function AdminDashboardPage() {
 
       <Card
         title="Позиции ниже min_stock"
+        titleAs="h2"
         actions={
           <LinkButton to="/warehouse/balance" variant="secondary" size="sm">
             Остатки склада
@@ -98,7 +99,7 @@ export default function AdminDashboardPage() {
         />
       </Card>
 
-      <Card title="Просроченные задачи менеджеров">
+      <Card title="Просроченные задачи менеджеров" titleAs="h2">
         <Table<OverdueTask>
           columns={[
             { key: "title", title: "Задача", render: (row) => row.title },

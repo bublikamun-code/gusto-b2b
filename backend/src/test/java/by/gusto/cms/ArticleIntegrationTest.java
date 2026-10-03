@@ -1,9 +1,11 @@
 package by.gusto.cms;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
 import by.gusto.common.api.ApiResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,6 +46,9 @@ class ArticleIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -77,7 +82,14 @@ class ArticleIntegrationTest {
         return headers;
     }
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     @SuppressWarnings("unchecked")
     void articleLifecycleDraftPublishedArchived() {
         String admin = createStaffAndLogin(Role.ADMIN);

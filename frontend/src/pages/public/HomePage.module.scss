@@ -84,7 +84,8 @@
   max-width: 32rem;
   aspect-ratio: 4 / 5;
   border-radius: 50% 50% 0 0;
-  background: linear-gradient(135deg, rgba($color-bordeaux, 0.08) 0%, rgba($color-yolk, 0.08) 100%);
+  // Плоская заливка вместо градиента: бренд-книга (1.7) запрещает градиенты.
+  background: rgba($color-bordeaux, 0.08);
   display: grid;
   place-items: center;
   align-content: center;
@@ -257,7 +258,8 @@
   &__image {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba($color-bordeaux, 0.4) 0%, rgba($color-graphite, 0.7) 100%);
+    // Затемняющая подложка под фото — плоская (бренд-книга 1.7: без градиентов)
+    background: rgba($color-graphite, 0.55);
   }
 
   &__name {
@@ -369,5 +371,13 @@
 
   .hero__stats {
     gap: 1.5rem;
+  }
+
+  // «Все товары →» / «Перейти в каталог →» — строка 20px, ниже даже минимума
+  // WCAG 2.5.8 (24px). Растягиваем область клика, кегль не трогаем.
+  .section__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }

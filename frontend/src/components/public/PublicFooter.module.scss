@@ -133,4 +133,20 @@
     gap: 0.5rem;
     text-align: center;
   }
+
+  // Ссылки футера были 20px и 17px по высоте — ниже минимума WCAG 2.5.8 (24px)
+  // и тем более 44px, на которые сам проект подписался в S44. Растягиваем
+  // область нажатия, не трогая кегль и разрядку.
+  .footer__nav a,
+  .footer__bottom a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .footer__contacts a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }

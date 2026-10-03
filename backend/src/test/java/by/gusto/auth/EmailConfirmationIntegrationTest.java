@@ -1,5 +1,6 @@
 package by.gusto.auth;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.common.api.ApiResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,9 @@ class EmailConfirmationIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -54,6 +58,7 @@ class EmailConfirmationIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         setGate(false);
     }

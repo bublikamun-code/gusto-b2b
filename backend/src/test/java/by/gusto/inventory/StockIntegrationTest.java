@@ -1,5 +1,6 @@
 package by.gusto.inventory;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.common.exception.GustoException;
@@ -8,6 +9,7 @@ import by.gusto.inventory.entity.StockMovement;
 import by.gusto.inventory.repository.StockBalanceRepository;
 import by.gusto.inventory.repository.StockMovementRepository;
 import by.gusto.inventory.service.StockService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,6 +53,9 @@ class StockIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private StockService stockService;
 
     @Autowired
@@ -77,7 +82,14 @@ class StockIntegrationTest {
         return balanceRepository.findById(id).orElseThrow();
     }
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     void defaultLocationAndSeedBalancesApplied() {
         assertThat(stockService.defaultLocationId()).isEqualTo(DEFAULT_LOCATION);
         assertThat(stockService.availableByProduct(DEFAULT_LOCATION, List.of(productId("steyk-ribay"))))

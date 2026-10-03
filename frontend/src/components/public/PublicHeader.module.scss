@@ -123,6 +123,19 @@
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    padding: 0 0.25rem;
+    // +1px по горизонтали: «О нас» — самая узкая подпись, 43px не дотягивали
+    // до минимальных 44px по обеим осям
+    padding: 0 0.3125rem;
+  }
+
+  // «Войти»/имя клиента в шапке — те же 21px, что и были у пунктов меню
+  .actions__login {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .logo {
+    min-height: 44px;
   }
 }

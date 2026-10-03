@@ -1,5 +1,6 @@
 package by.gusto.admin;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -56,6 +57,9 @@ class SecurityHardeningIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -72,6 +76,7 @@ class SecurityHardeningIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         // лимиты живут в Redis между тестами
         redisTemplate.getConnectionFactory().getConnection().flushAll();
     }

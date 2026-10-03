@@ -1,5 +1,6 @@
 package by.gusto.integration;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -61,6 +62,9 @@ class ImportIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -83,6 +87,7 @@ class ImportIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         StockBalance balance = balanceRepository
                 .findById(new StockBalance.StockBalanceId(productId("steyk-ribay"), LOCATION))

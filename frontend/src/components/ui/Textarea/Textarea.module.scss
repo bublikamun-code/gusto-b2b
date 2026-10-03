@@ -44,6 +44,14 @@
   border-color: $color-bordeaux;
 }
 
+// iOS зумит страницу при фокусе поля с шрифтом меньше 16px. Для Textarea bump'а
+// не было вовсе, поэтому комментарий к заказу или заявка с телефона «отъезжали».
+@media (max-width: 600px) {
+  .area {
+    font-size: 1rem;
+  }
+}
+
 .error {
   margin: 0;
   font-size: 0.8rem;

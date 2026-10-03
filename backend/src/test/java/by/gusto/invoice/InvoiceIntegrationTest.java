@@ -1,5 +1,6 @@
 package by.gusto.invoice;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -56,6 +57,9 @@ class InvoiceIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -84,6 +88,7 @@ class InvoiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         // тесты класса делят одну БД: возвращаем seed-реквизиты продавца (V2),
         // которые меняет тест неизменности снапшота

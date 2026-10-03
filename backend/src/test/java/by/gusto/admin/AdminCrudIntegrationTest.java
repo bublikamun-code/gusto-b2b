@@ -1,5 +1,6 @@
 package by.gusto.admin;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.CreateUserRequest;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.dto.UpdateUserRequest;
@@ -50,6 +51,9 @@ class AdminCrudIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -75,8 +79,11 @@ class AdminCrudIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Журнал аудита чистим ПЕРВЫМ: он ссылается на users, а userRepository.deleteAll()
-        // ниже — жёсткое удаление. Порядок важен, иначе FK рвётся.
+        // Снимаем рабочие данные разом: ручная цепочка deleteAll() ломалась на
+        // каждой новой сид-миграции, которая заводила строки в таблицы, ссылающиеся
+        // на products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+        // поверх — собственные пользователи этого класса
         jdbcTemplate.update("delete from audit_log");
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();

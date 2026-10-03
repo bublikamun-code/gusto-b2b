@@ -12,7 +12,43 @@ import type {
 } from "../types/auth";
 
 export function login(body: LoginRequest): Promise<LoginPayload> {
-  return apiRequest<LoginPayload>("/auth/login", { method: "POST", body });
+  return apiRequest<LoginPayload>("/auth/login", { method: "POST", body }).then((r) => {
+    markSession();
+    return r;
+  });
+}
+
+/**
+ * Refresh-токен лежит в httpOnly-куке и JS его не видит. Поэтому remember-флаг
+ * «в этом браузере был вход» — единственный способ отличить гостя, у которого
+ * токена нет и не будет, от вернувшегося пользователя. Без него AuthInit
+ * дёргал POST /auth/refresh на КАЖДОЙ публичной странице и получал 401:
+ * лишний запрос и красная ошибка в консоли у каждого анонимного посетителя.
+ */
+const SESSION_FLAG = "gusto.session";
+
+function markSession() {
+  try {
+    localStorage.setItem(SESSION_FLAG, "1");
+  } catch {
+    /* приватный режим — просто всегда пробуем refresh */
+  }
+}
+
+export function hasSessionCookieHint(): boolean {
+  try {
+    return localStorage.getItem(SESSION_FLAG) === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function clearSessionCookieHint() {
+  try {
+    localStorage.removeItem(SESSION_FLAG);
+  } catch {
+    /* игнорируем */
+  }
 }
 
 export function refresh(): Promise<{ accessToken: string; expiresIn: number }> {
@@ -22,6 +58,9 @@ export function refresh(): Promise<{ accessToken: string; expiresIn: number }> {
 
 export function logout(): Promise<void> {
   const token = useAuthStore.getState().accessToken ?? undefined;
+  // снимаем remember-флаг вместе с выходом: на общем компьютере следующий
+  // посетитель не должен получать попытку silent-refresh
+  clearSessionCookieHint();
   return apiRequest<void>("/auth/logout", { method: "POST", token });
 }
 

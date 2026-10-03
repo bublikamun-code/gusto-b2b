@@ -1,5 +1,6 @@
 package by.gusto.catalog;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -62,6 +63,9 @@ class CatalogIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -105,6 +109,11 @@ class CatalogIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Снимаем всю БД разом: ручная цепочка deleteAll() ломалась на каждой
+        // новой сид-миграции, которая заводила строки в таблицы, ссылающиеся на
+        // products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();

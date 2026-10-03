@@ -1,5 +1,6 @@
 package by.gusto.file;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -59,6 +60,9 @@ class FileIntegrationTest {
     @Container
     @ServiceConnection("redis")
     static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
+
+    @Autowired
+    private DatabaseCleaner databaseCleaner;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -125,6 +129,11 @@ class FileIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Снимаем всю БД разом: ручная цепочка deleteAll() ломалась на каждой
+        // новой сид-миграции, которая заводила строки в таблицы, ссылающиеся на
+        // products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();
@@ -132,7 +141,6 @@ class FileIntegrationTest {
         fileRepository.deleteAll();
         productPriceRepository.deleteAll();
         priceListRepository.deleteAll();
-        // V9: остатки/движения ссылаются на products — чистим раньше них
         stockMovementRepository.deleteAll();
         stockBalanceRepository.deleteAll();
         productRepository.deleteAll();

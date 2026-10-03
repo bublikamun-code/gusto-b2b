@@ -92,6 +92,7 @@ export default function CabinetDashboardPage() {
 
       <Card
         title="Последние заказы"
+        titleAs="h2"
         actions={
           <Link to="/cabinet/orders" className={styles.cardLink}>
             Все заказы
@@ -125,7 +126,7 @@ export default function CabinetDashboardPage() {
       </Card>
 
       {data?.lastOrderNumber && (
-        <Card title="Последний заказ" bodyClassName={styles.lastOrder}>
+        <Card title="Последний заказ" titleAs="h2" bodyClassName={styles.lastOrder}>
           <div className={styles.lastOrderTop}>
             <span className={styles.orderNumber}>{data.lastOrderNumber}</span>
             {orderStatusBadge(data.lastOrderStatus as OrderStatus | undefined)}

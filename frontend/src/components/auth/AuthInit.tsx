@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { Outlet } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
-import { refresh, me } from "../../api/auth";
+import { refresh, me, hasSessionCookieHint } from "../../api/auth";
 
 interface AuthInitProps {
   children?: ReactNode;
@@ -12,6 +12,9 @@ interface AuthInitProps {
  * AuthInit выполняется один раз при старте приложения:
  * пробуем silent-refresh по httpOnly-куке, затем /auth/me по accessToken.
  * После попытки рендерим детей / Outlet.
+ *
+ * Гостю (ни входа, ни признака сессии) refresh не нужен: запрос всё равно
+ * вернул бы 401. Раньше он улетал на каждой публичной странице — см. S48.
  */
 export function AuthInit({ children }: AuthInitProps) {
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -24,13 +27,21 @@ export function AuthInit({ children }: AuthInitProps) {
     async function init() {
       try {
         let token = useAuthStore.getState().accessToken;
-        if (!token) {
+        if (!token && hasSessionCookieHint()) {
           const refreshed = await refresh();
           token = refreshed.accessToken;
           // me() читает токен из стора — сохраняем до вызова
           if (!cancelled) {
             useAuthStore.setState({ accessToken: token });
           }
+        }
+        if (!token) {
+          // анонимный вход: пользователя нет, но приложение готово к рендеру
+          if (!cancelled) {
+            clearAuth();
+            setLoading(false);
+          }
+          return;
         }
         const user = await me();
         if (!cancelled) {

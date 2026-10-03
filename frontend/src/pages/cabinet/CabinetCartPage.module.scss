@@ -52,6 +52,9 @@
   display: flex;
   gap: 0.6rem;
   align-items: center;
+  // «Оформить заказ» + «Очистить» в ряд не помещались в 375px и выдавливали
+  // правую кнопку за край экрана на 4px (WCAG 1.4.10 — reflow). Переносим.
+  flex-wrap: wrap;
 }
 
 .hint {

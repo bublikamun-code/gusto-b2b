@@ -1,5 +1,6 @@
 package by.gusto.cabinet;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -62,6 +63,9 @@ class CabinetCatalogIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -111,23 +115,24 @@ class CabinetCatalogIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Снимаем всю БД разом: ручная цепочка deleteAll() ломалась на каждой
+        // новой сид-миграции, которая заводила строки в таблицы, ссылающиеся на
+        // products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();
         customerDiscountRepository.deleteAll();
         productPriceRepository.deleteAll();
         priceListRepository.deleteAll();
-        // V9: остатки/движения ссылаются на products — чистим раньше них
         stockMovementRepository.deleteAll();
         stockBalanceRepository.deleteAll();
         productRepository.deleteAll();
         brandRepository.deleteAll();
         categoryRepository.deleteAll();
-        // Порядок обязателен: users ссылается на companies. Раньше компании чистились
-        // раньше пользователей, и подготовка падала на users_company_id_fkey, если
-        // предыдущий тест успел завести клиента с привязанной компанией.
-        userRepository.deleteAll();
         companyRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test

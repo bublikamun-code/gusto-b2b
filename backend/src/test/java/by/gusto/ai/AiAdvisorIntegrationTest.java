@@ -1,5 +1,6 @@
 package by.gusto.ai;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.ai.service.AiAdvisorService;
 import by.gusto.common.api.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,9 @@ class AiAdvisorIntegrationTest {
     static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -54,6 +58,7 @@ class AiAdvisorIntegrationTest {
 
     @BeforeEach
     void clearRateLimits() {
+        databaseCleaner.clean();
         // лимитер считает по IP, тесты ходят с одного — чистим окно между тестами
         Set<String> keys = redisTemplate.keys(AiAdvisorService.RATE_KEY + ":*");
         if (keys != null && !keys.isEmpty()) {
