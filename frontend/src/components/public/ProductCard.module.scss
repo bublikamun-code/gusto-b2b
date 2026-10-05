@@ -29,7 +29,8 @@
 .card__placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba($color-bordeaux, 0.08) 0%, rgba($color-yolk, 0.08) 100%);
+  // Плоская заливка: бренд-книга (1.7) запрещает градиенты
+  background: rgba($color-bordeaux, 0.08);
   display: grid;
   place-items: center;
 
@@ -88,4 +89,15 @@
   font-family: $font-display;
   font-size: 1.25rem;
   color: $color-bordeaux;
+}
+
+// Название товара — ссылка на карточку, но её строка 26px: на телефоне
+// до товара сложно попасть пальцем. Растягиваем область нажатия (WCAG 2.5.5),
+// размер шрифта не трогаем.
+@media (max-width: 768px) {
+  .card__name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }

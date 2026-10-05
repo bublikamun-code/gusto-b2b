@@ -1,6 +1,7 @@
 package by.gusto.invoice.repository;
 
 import by.gusto.invoice.entity.InvoiceEntity;
+import by.gusto.invoice.entity.InvoiceEntity.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,14 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID> {
     Optional<InvoiceEntity> findByOrderId(UUID orderId);
 
     Page<InvoiceEntity> findAllByCustomerCompanyIdOrderByCreatedAtDesc(UUID companyId, Pageable pageable);
+
+    /**
+     * Кабинет юрлица показывает только выданные счета. Черновик (DRAFT) — незавершённая
+     * работа бухгалтера: клиент не должен ни видеть её в списке, ни выкачивать PDF
+     * (аудит 2026-09-30, группа «Цифры»/документы).
+     */
+    Page<InvoiceEntity> findAllByCustomerCompanyIdAndStatusNotOrderByCreatedAtDesc(
+            UUID companyId, Status status, Pageable pageable);
 
     Page<InvoiceEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 

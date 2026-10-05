@@ -1,5 +1,6 @@
 package by.gusto.order;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.inventory.entity.StockBalance;
@@ -49,6 +50,9 @@ class OrderCreationIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -68,6 +72,7 @@ class OrderCreationIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         resetBalance("steyk-ribay", "40.000");
         resetBalance("bedro-kurinoye", "40.000");

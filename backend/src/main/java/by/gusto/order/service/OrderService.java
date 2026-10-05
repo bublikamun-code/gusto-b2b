@@ -1,10 +1,13 @@
 package by.gusto.order.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthorizationService;
 import by.gusto.auth.entity.User;
 import by.gusto.catalog.entity.Product;
 import by.gusto.catalog.repository.ProductRepository;
+import by.gusto.company.entity.Company;
+import by.gusto.company.repository.CompanyRepository;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
 import by.gusto.inventory.service.StockService;
@@ -47,6 +50,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final CompanyRepository companyRepository;
     private final CartService cartService;
     private final StockService stockService;
     private final OutboxService outboxService;
@@ -79,9 +83,16 @@ public class OrderService {
         BigDecimal totalVat = BigDecimal.ZERO;
 
         UUID locationId = stockService.defaultLocationId();
+        // 2.7: заказ компании закрепляется за её менеджером. Раньше manager_id не заполнялся
+        // вовсе, и любой заказ B2B попадал в пул «не назначено» вместе с розницей
+        // (аудит 2026-09-30, P0-1). Розничный заказ (companyId = null) идёт в пул — так и задумано.
+        UUID managerId = companyId == null
+                ? null
+                : companyRepository.findById(companyId).map(Company::getManagerId).orElse(null);
         OrderEntity order = OrderEntity.builder()
                 .customerCompanyId(companyId)
                 .customerUserId(user.getId())
+                .managerId(managerId)
                 .status(OrderEntity.Status.NEW)
                 .deliveryType(request.getDeliveryType())
                 .deliveryAddress(request.getDeliveryAddress())
@@ -165,17 +176,20 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<Response> listVisible(User user, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<OrderEntity> orders;
         if (user.getRole() == Role.CUSTOMER_LEGAL && user.getCompanyId() != null) {
             orders = orderRepository.findAllByCustomerCompanyIdOrderByCreatedAtDesc(user.getCompanyId(), pageable);
-        } else if (user.getRole() == Role.CUSTOMER_INDIVIDUAL) {
+        } else if (user.getRole() == Role.CUSTOMER_LEGAL || user.getRole() == Role.CUSTOMER_INDIVIDUAL) {
+            // Юрлицо без привязанной компании заказ создать не может (см. resolveCompanyId),
+            // поэтому показываем только собственные заказы. Раньше этот случай попадал в
+            // ветку ниже и видел общий пул менеджеров (аудит 2026-09-30, P0-1).
             orders = orderRepository.findAllByCustomerUserIdOrderByCreatedAtDesc(user.getId(), pageable);
-        } else if (user.getRole() == Role.ACCOUNTANT) {
-            // бухгалтер работает с документами по всем заказам (матрица 2.1, S27)
+        } else if (user.getRole() == Role.ACCOUNTANT || user.getRole() == Role.ADMIN) {
+            // администратор и бухгалтер видут все заказы (матрица 2.1, S27)
             orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
         } else {
-            // MANAGER/ADMIN: свои + пул (2.7); расширенные фильтры — S22
+            // MANAGER: свои + розничный пул (2.7); расширенные фильтры — S22
             orders = orderRepository.findAllVisibleTo(user.getId(), pageable);
         }
         return orders.map(o -> toResponse(o, orderItemRepository.findAllByOrderId(o.getId()))).getContent();
@@ -254,7 +268,11 @@ public class OrderService {
     /** Номер З-2026-00042 (2.2): sequence на год, max(number)+1 запрещён. */
     private String nextNumber() {
         int year = Year.now().getValue();
-        long next = jdbcTemplate.queryForObject("select nextval('order_seq_" + year + "')", Long.class);
+        // Создаём sequence до nextval: без этого смена года давала 500 на создании заказа
+        // (аудит 2026-09-30, P1-20).
+        String sequence = "order_seq_" + year;
+        jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
+        long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
         return String.format("З-%d-%05d", year, next);
     }
 

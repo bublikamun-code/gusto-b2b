@@ -15,13 +15,23 @@ import java.util.UUID;
 @Repository
 public interface CustomerDiscountRepository extends JpaRepository<CustomerDiscount, UUID> {
 
+    /**
+     * Максимальная применимая скидка клиента.
+     *
+     * <p>Ограничения строки соединяются через И, а не через ИЛИ. Раньше стояло
+     * {@code (brandId = :brandId OR categoryId = :categoryId)}, из-за чего скидка,
+     * заданная на пару «бренд X в категории Y», раздавалась на ВЕСЬ бренд X и на
+     * ВСЮ категорию Y — прямая потеря выручки (аудит 2026-09-30, группа «Цифры»).
+     *
+     * <p>NULL означает «без ограничения»: строка только с брендом действует на весь
+     * бренд, только с категорией — на всю категорию, без обоих — на весь каталог,
+     * с обоими — ровно на их пересечение.
+     */
     @Query("""
             SELECT MAX(cd.discountPercent) FROM CustomerDiscount cd
             WHERE cd.companyId = :companyId
-              AND (
-                cd.brandId = :brandId
-                OR cd.categoryId = :categoryId
-              )
+              AND (cd.brandId IS NULL OR cd.brandId = :brandId)
+              AND (cd.categoryId IS NULL OR cd.categoryId = :categoryId)
               AND cd.validFrom <= :date
               AND (cd.validTo IS NULL OR cd.validTo >= :date)
             """)

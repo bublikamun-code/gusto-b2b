@@ -1,5 +1,6 @@
 package by.gusto.crm.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.common.exception.ErrorCode;
@@ -63,7 +64,7 @@ public class CrmWorkService {
 
     @Transactional(readOnly = true)
     public Page<TaskResponse> listTasks(User actor, String scope, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         boolean manager = actor.getRole() == Role.MANAGER;
         String effective = scope == null || scope.isBlank() ? "mine" : scope;
         if (manager && "all".equals(effective)) {

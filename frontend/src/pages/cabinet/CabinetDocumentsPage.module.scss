@@ -30,3 +30,18 @@
   gap: 1rem;
   flex-wrap: wrap;
 }
+
+// Остаток к оплате — единственное, за чем клиент сюда и приходит, поэтому он
+// выделен цветом; «оплачено» приглушено, чтобы не спорило с суммой.
+.due {
+  color: $color-bordeaux;
+}
+
+.paidFull {
+  color: rgba($color-graphite, 0.55);
+  font-size: 0.85rem;
+}
+
+.muted {
+  color: rgba($color-graphite, 0.4);
+}

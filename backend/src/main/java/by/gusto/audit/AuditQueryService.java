@@ -67,7 +67,10 @@ public class AuditQueryService {
                 + " order by a.created_at desc limit ? offset ?";
         List<Object> pageArgs = new ArrayList<>(args);
         pageArgs.add(size);
-        pageArgs.add(page * size);
+        // Умножение в long: при page=30000000, size=100 произведение переполняло int,
+        // offset уходил в минус, PostgreSQL отвечал «OFFSET must not be negative» → 500
+        // в журнале аудита (аудит 2026-09-30, P2).
+        pageArgs.add(page * (long) size);
         List<AuditEntry> items = jdbcTemplate.query(sql, (rs, i) -> new AuditEntry(
                         rs.getObject("id", UUID.class),
                         rs.getObject("actor_id", UUID.class),

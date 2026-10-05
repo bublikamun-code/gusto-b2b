@@ -11,6 +11,12 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title">
    * иначе она молча ничего не делает (S44).
    */
   bodyClassName?: string;
+  /**
+   * Уровень заголовка карточки. По умолчанию h3 — карточка почти всегда вложена
+   * в секцию с h2. На дашбордах карточка идёт сразу за h1 страницы, и h1 → h3 —
+   * пропуск уровня (WCAG 1.3.1): там передаём titleAs="h2".
+   */
+  titleAs?: "h2" | "h3" | "h4";
 }
 
 export function Card({
@@ -19,6 +25,7 @@ export function Card({
   accent = false,
   className,
   bodyClassName,
+  titleAs: TitleTag = "h3",
   children,
   ...rest
 }: CardProps) {
@@ -29,7 +36,7 @@ export function Card({
     >
       {(title || actions) && (
         <header className={styles.header}>
-          {title && <h3 className={styles.title}>{title}</h3>}
+          {title && <TitleTag className={styles.title}>{title}</TitleTag>}
           {actions && <div className={styles.actions}>{actions}</div>}
         </header>
       )}

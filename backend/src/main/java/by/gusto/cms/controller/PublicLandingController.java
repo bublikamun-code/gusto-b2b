@@ -1,5 +1,6 @@
 package by.gusto.cms.controller;
 
+import by.gusto.common.api.ApiResponse;
 import by.gusto.common.settings.SettingsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,10 @@ import java.util.Map;
 /**
  * Публичные тексты лендинга (S38): правятся в админке, на витрине —
  * значения из настроек, при отсутствии клиент использует свои дефолты.
+ *
+ * <p>Конверт ApiResponse обязателен — фронт читает {@code envelope.data}; без него
+ * {@code resolveLanding} всегда получал undefined и показывал дефолты, то есть правки
+ * hero/delivery из админки не доходили до витрины (аудит 2026-09-30, P1-12).
  */
 @RestController
 @RequiredArgsConstructor
@@ -21,13 +26,13 @@ public class PublicLandingController {
     private final SettingsService settingsService;
 
     @GetMapping("/api/v1/cms/landing")
-    public ResponseEntity<Map<String, JsonNode>> landing() {
+    public ResponseEntity<ApiResponse<Map<String, JsonNode>>> landing() {
         Map<String, JsonNode> result = new LinkedHashMap<>();
         JsonNode hero = settingsService.getObject(SettingsService.LANDING_HERO);
         JsonNode delivery = settingsService.getObject(SettingsService.LANDING_DELIVERY);
         result.put("hero", hero == null ? objectMapperNullNode() : hero);
         result.put("delivery", delivery == null ? objectMapperNullNode() : delivery);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     private JsonNode objectMapperNullNode() {

@@ -1,5 +1,6 @@
 package by.gusto.notification;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -8,6 +9,7 @@ import by.gusto.notification.email.EmailNotificationChannel;
 import by.gusto.notification.entity.NotificationSubscription;
 import by.gusto.notification.repository.NotificationSubscriptionRepository;
 import by.gusto.outbox.entity.OutboxMessage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,6 +55,9 @@ class EmailIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -67,7 +72,14 @@ class EmailIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     void disabledSmtpSkipsEmailEvents() {
         assertThat(emailChannel.supports("EMAIL_CONFIRMATION")).isTrue();
         assertThat(emailChannel.supports("EMAIL_PASSWORD_RESET")).isTrue();

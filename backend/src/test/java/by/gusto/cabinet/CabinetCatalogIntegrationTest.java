@@ -1,5 +1,6 @@
 package by.gusto.cabinet;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -62,6 +63,9 @@ class CabinetCatalogIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -111,13 +115,17 @@ class CabinetCatalogIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Снимаем всю БД разом: ручная цепочка deleteAll() ломалась на каждой
+        // новой сид-миграции, которая заводила строки в таблицы, ссылающиеся на
+        // products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();
         customerDiscountRepository.deleteAll();
         productPriceRepository.deleteAll();
         priceListRepository.deleteAll();
-        // V9: остатки/движения ссылаются на products — чистим раньше них
         stockMovementRepository.deleteAll();
         stockBalanceRepository.deleteAll();
         productRepository.deleteAll();
@@ -175,6 +183,100 @@ class CabinetCatalogIntegrationTest {
         assertThat(item.get("retailPrice")).isEqualTo(100.00);
         assertThat(item.get("customerPrice")).isEqualTo(85.00);
         assertThat(item.get("sku")).isEqualTo("SKU-CABINET");
+    }
+
+    /**
+     * Скидка, заданная на пару «бренд + категория», не должна раздаваться на весь бренд
+     * и на всю категорию. Именно это ломалось: условие соединялось через ИЛИ, и товар
+     * того же бренда из другой категории получал чужую скидку (аудит 2026-09-30).
+     * Тест закрепляет именно пересечение, а не «хоть что-нибудь совпало».
+     */
+    @Test
+    void discountOnBrandAndCategoryAppliesOnlyToTheirIntersection() {
+        createCustomerAndLogin();
+
+        Category beef = categoryRepository.save(Category.builder().name("Говядина").slug("govyadina").active(true).build());
+        Category poultry = categoryRepository.save(Category.builder().name("Птица").slug("ptitsa").active(true).build());
+        Brand brand = brandRepository.save(Brand.builder().name("Густо").slug("gusto").build());
+
+        // Тот же бренд, но другая категория — скидка на пару его НЕ должна покрывать
+        Product other = productRepository.save(Product.builder()
+                .sku("SKU-OTHER")
+                .name("Курица")
+                .categoryId(poultry.getId())
+                .brandId(brand.getId())
+                .unit("кг")
+                .active(true)
+                .build());
+        Product target = productRepository.save(Product.builder()
+                .sku("SKU-TARGET")
+                .name("Говядина")
+                .categoryId(beef.getId())
+                .brandId(brand.getId())
+                .unit("кг")
+                .active(true)
+                .build());
+
+        PriceList priceList = priceListRepository.save(PriceList.builder()
+                .name("Розница")
+                .validFrom(LocalDate.now().minusDays(1))
+                .validTo(LocalDate.now().plusDays(30))
+                .active(true)
+                .build());
+        productPriceRepository.save(ProductPrice.builder()
+                .priceListId(priceList.getId()).productId(other.getId())
+                .price(BigDecimal.valueOf(100.00))
+                .validFrom(LocalDate.now().minusDays(1)).validTo(LocalDate.now().plusDays(30)).build());
+        productPriceRepository.save(ProductPrice.builder()
+                .priceListId(priceList.getId()).productId(target.getId())
+                .price(BigDecimal.valueOf(100.00))
+                .validFrom(LocalDate.now().minusDays(1)).validTo(LocalDate.now().plusDays(30)).build());
+
+        // 10% ровно на пару «бренд + категория Говядина»
+        customerDiscountRepository.save(CustomerDiscount.builder()
+                .companyId(companyId)
+                .brandId(brand.getId())
+                .categoryId(beef.getId())
+                .discountPercent(BigDecimal.valueOf(10.00))
+                .validFrom(LocalDate.now().minusDays(1))
+                .validTo(LocalDate.now().plusDays(30))
+                .build());
+
+        ResponseEntity<ApiResponse> response = get("/api/v1/cabinet/catalog", customerToken);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().getData();
+        assertThat(data).hasSize(2);
+
+        Map<String, Object> otherItem = data.stream().filter(i -> "SKU-OTHER".equals(i.get("sku"))).findFirst().orElseThrow();
+        Map<String, Object> targetItem = data.stream().filter(i -> "SKU-TARGET".equals(i.get("sku"))).findFirst().orElseThrow();
+
+        assertThat(otherItem.get("customerPrice")).isEqualTo(100.00);   // тот же бренд, чужая категория — без скидки
+        assertThat(targetItem.get("customerPrice")).isEqualTo(90.00);   // пересечение — скидка есть
+    }
+
+    /**
+     * Дашборд должен открываться клиенту, у которого ещё нет ни заказов, ни счетов.
+     *
+     * <p>Именно этот случай ломался: агрегаты брались через queryForMap, который на
+     * пустом результате бросает EmptyResultDataAccessException, и новый клиент вместо
+     * пустого дашборда получал 500 — то есть кабинет не открывался ровно тем, кому он
+     * нужнее всего. Проверено на стенде до исправления (аудит 2026-09-30).
+     */
+    @Test
+    void cabinetSummaryWorksForClientWithoutOrders() {
+        createCustomerAndLogin();
+
+        ResponseEntity<ApiResponse> response = get("/api/v1/cabinet/summary", customerToken);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) response.getBody().getData();
+        assertThat(data.get("activeOrdersCount")).isEqualTo(0);
+        assertThat(data.get("awaitingConfirmationCount")).isEqualTo(0);
+        assertThat(data.get("unpaidInvoicesCount")).isEqualTo(0);
+        assertThat(data.get("lastOrderNumber")).isNull();
     }
 
     private void createCustomerAndLogin() {

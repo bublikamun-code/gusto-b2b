@@ -106,10 +106,16 @@ public class SettingsService {
         }
     }
 
-    /** Правило уведомлений (2.6): false только если ключ notifications.rules явно выключает тип. */
+    /**
+     * Правило уведомлений (2.6): false только если ключ notifications.rules явно выключает тип.
+     * Раньше здесь стояло {@code !rules.get(eventType)}, из-за чего правило работало наоборот:
+     * админ включал событие — и оно выключалось, выключенное включалось. Инверсия противоречила
+     * и этому javadoc, и писателю (AdminSettingsService), и UI (checked={rules[event] ?? true}).
+     * Исправлено в аудите 2026-09-30, P1-1.
+     */
     @Transactional(readOnly = true)
     public boolean notificationEnabled(String eventType) {
         JsonNode rules = getObject(NOTIFICATION_RULES);
-        return rules == null || !rules.has(eventType) || !rules.get(eventType).asBoolean(true);
+        return rules == null || !rules.has(eventType) || rules.get(eventType).asBoolean(true);
     }
 }

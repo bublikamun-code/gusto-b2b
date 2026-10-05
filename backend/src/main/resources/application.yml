@@ -4,6 +4,15 @@ spring:
     port: ${SMTP_PORT:587}
     username: ${SMTP_USER:}
     password: ${SMTP_PASSWORD:}
+    # Таймауты SMTP. Без них Spring Boot отдаёт JavaMail бесконечные (-1), и зависший
+    # хост навсегда занимает единственный поток @Scheduled — вместе с ним встают outbox,
+    # очистка токенов и ротация sequence (аудит 2026-09-30, P1-16).
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: ${SMTP_CONNECTION_TIMEOUT_MS:10000}
+          timeout: ${SMTP_READ_TIMEOUT_MS:10000}
+          writetimeout: ${SMTP_WRITE_TIMEOUT_MS:10000}
 
   application:
     name: gusto-b2b-backend
@@ -86,4 +95,13 @@ telegram:
 
 
 email:
+  # Зеркалим spring.mail.* (аудит 2026-09-30, P1-15). Раньше здесь был только from,
+  # а EmailProperties биндил префикс email и читал host, которого не было нигде, —
+  # поэтому isEnabled() всегда false и email-канал был выключен навсегда: боевой SMTP
+  # нельзя было включить даже по инструкции S33. Теперь одни и те же SMTP_* переменные
+  # питают и JavaMailSender, и признак «канал включён».
+  host: ${SMTP_HOST:}
+  port: ${SMTP_PORT:587}
+  username: ${SMTP_USER:}
+  password: ${SMTP_PASSWORD:}
   from: ${EMAIL_FROM:no-reply@gustomeat.by}

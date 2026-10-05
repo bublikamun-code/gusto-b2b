@@ -1,5 +1,6 @@
 package by.gusto.request;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.outbox.channel.OutboxChannel;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import by.gusto.outbox.service.OutboxPoller;
 import by.gusto.request.repository.SiteRequestRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -72,6 +74,9 @@ class SiteRequestIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -138,7 +143,14 @@ class SiteRequestIntegrationTest {
 
     // ----- тесты ----------------------------------------------------------------
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     @SuppressWarnings("unchecked")
     void publicRequestCreatesLeadInUnassignedPoolAndOutboxEvent() {
         String manager = createStaffAndLogin(Role.MANAGER, "mgr-sr-" + UUID.randomUUID() + "@test.by");

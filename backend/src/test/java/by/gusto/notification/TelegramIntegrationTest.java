@@ -1,5 +1,6 @@
 package by.gusto.notification;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -7,6 +8,7 @@ import by.gusto.common.api.ApiResponse;
 import by.gusto.notification.repository.NotificationSubscriptionRepository;
 import by.gusto.notification.telegram.TelegramNotificationChannel;
 import by.gusto.outbox.entity.OutboxMessage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -54,6 +56,9 @@ class TelegramIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -101,7 +106,14 @@ class TelegramIntegrationTest {
         return "{\"message\":{\"chat\":{\"id\":\"424242\"},\"text\":\"" + text + "\"}}";
     }
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     @SuppressWarnings("unchecked")
     void linkByWebhookCodeAndUnsubscribe() {
         String manager = createStaffAndLogin(Role.MANAGER, "mgr-tg-" + UUID.randomUUID() + "@test.by");

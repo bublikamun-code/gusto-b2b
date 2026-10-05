@@ -1,5 +1,6 @@
 package by.gusto.inventory;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.inventory.entity.StockBalance;
@@ -50,6 +51,9 @@ class WarehouseDocumentIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -63,6 +67,7 @@ class WarehouseDocumentIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         // тесты класса независимы: возвращаем демо-остаток 25 перед каждым
         UUID productId = productRepository.findBySkuAndDeletedAtIsNull("steyk-na-kosti").orElseThrow().getId();

@@ -1,5 +1,6 @@
 package by.gusto.request.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.common.exception.ErrorCode;
@@ -12,6 +13,7 @@ import by.gusto.request.entity.SiteRequestEntity;
 import by.gusto.request.entity.SiteRequestEntity.Status;
 import by.gusto.request.repository.SiteRequestRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,6 +32,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SiteRequestService {
 
     private static final String RATE_KEY = "site-request";
@@ -73,19 +76,46 @@ public class SiteRequestService {
         return new Created(toResponse(entity), lead.getId());
     }
 
-    /** Rate limit публичной формы: не более 10 заявок в час с одного IP (1.6). */
-    @Transactional(readOnly = true)
+    /**
+     * Rate limit публичной формы: не более 10 заявок в час с одного IP (1.6).
+     *
+     * <p>Fail-open: при недоступном Redis раньше летел RedisConnectionFailureException,
+     * generic-обработчик отдавал 500 и публичная форма «Стать клиентом» не работала вовсе —
+     * хотя принять заявку можно было и нужно (аудит 2026-09-30, P1-19). ИИ-лимитер в S45
+     * сделали fail-open, а этот остался fail-closed. Счётчик также разбирается безопасно:
+     * битое значение больше не даёт 500.
+     */
     public boolean isAllowed(String clientIp) {
-        String key = "rate:site-request:" + (clientIp == null ? "unknown" : clientIp);
-        String value = redisTemplate.opsForValue().get(key);
-        return value == null || Integer.parseInt(value) < RATE_LIMIT;
+        try {
+            String value = redisTemplate.opsForValue().get(rateKey(clientIp));
+            return value == null || parseCount(value) < RATE_LIMIT;
+        } catch (Exception e) {
+            log.warn("RATE LIMIT: Redis недоступен, заявка пропущена ({}): {}", rateKey(clientIp), e.toString());
+            return true;
+        }
     }
 
     public void recordAttempt(String clientIp) {
-        String key = "rate:site-request:" + (clientIp == null ? "unknown" : clientIp);
-        Long current = redisTemplate.opsForValue().increment(key);
-        if (current != null && current == 1) {
-            redisTemplate.opsForValue().set(key, "1", Duration.ofHours(1));
+        String key = rateKey(clientIp);
+        try {
+            Long current = redisTemplate.opsForValue().increment(key);
+            if (current != null && current == 1) {
+                redisTemplate.opsForValue().set(key, "1", Duration.ofHours(1));
+            }
+        } catch (Exception e) {
+            log.warn("RATE LIMIT: не удалось учесть попытку ({}): {}", key, e.toString());
+        }
+    }
+
+    private String rateKey(String clientIp) {
+        return "rate:site-request:" + (clientIp == null ? "unknown" : clientIp);
+    }
+
+    private int parseCount(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
@@ -93,7 +123,7 @@ public class SiteRequestService {
 
     @Transactional(readOnly = true)
     public Page<SiteRequestResponse> list(User actor, Status status, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<SiteRequestEntity> requests = status == null
                 ? siteRequestRepository.findAllByOrderByCreatedAtDesc(pageable)
                 : siteRequestRepository.findAllByStatusOrderByCreatedAtDesc(status, pageable);

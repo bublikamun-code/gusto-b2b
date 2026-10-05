@@ -21,6 +21,10 @@ export interface Invoice {
   customerCompanyId?: string | null;
   totalAmount: number;
   totalVat: number;
+  /** Σ зарегистрированных оплат по счёту, BYN. */
+  paidAmount: number;
+  /** Остаток к оплате: totalAmount − paidAmount, не меньше нуля. */
+  balanceDue: number;
   status: InvoiceStatus;
   createdAt: string;
   items: Array<{
@@ -78,6 +82,15 @@ export function createInvoice(orderId: string) {
 
 export function issueInvoice(id: string) {
   return apiRequest<Invoice>(`/invoices/${encodeURIComponent(id)}/issue`, { method: "POST" });
+}
+
+/**
+ * Отмена счёта. Раньше ручка существовала в API, но была недоступна из UI: бухгалтер,
+ * ошибшийся с заказом, получал 409 «по заказу уже есть счёт» и не мог освободить
+ * заказ — тупиковая ситуация (аудит 2026-09-30, P1-7).
+ */
+export function cancelInvoice(id: string) {
+  return apiRequest<Invoice>(`/invoices/${encodeURIComponent(id)}/cancel`, { method: "POST" });
 }
 
 export function listWaybills(page = 0, size = 50) {

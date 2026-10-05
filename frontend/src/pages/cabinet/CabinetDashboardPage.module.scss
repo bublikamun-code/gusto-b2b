@@ -1,0 +1,175 @@
+@use "../../styles/tokens" as *;
+
+/* Дашборд кабинета клиента. */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.title {
+  font-family: $font-heading;
+  font-size: 1.75rem;
+  margin: 0;
+  color: $color-graphite;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: rgba($color-graphite, 0.7);
+  font-size: 0.9rem;
+}
+
+/* Сетка карточек-показателей: на 320px одна колонка, дальше — до трёх. */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba($color-graphite, 0.6);
+}
+
+.statValue {
+  font-family: $font-heading;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  color: $color-graphite;
+}
+
+.statValueWarning {
+  composes: statValue;
+  color: $color-bordeaux;
+}
+
+.statHint {
+  font-size: 0.82rem;
+  color: rgba($color-graphite, 0.6);
+}
+
+.muted {
+  color: rgba($color-graphite, 0.65);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.error {
+  margin: 0;
+  color: $color-bordeaux;
+}
+
+.retry {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.listBody {
+  display: block;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba($color-graphite, 0.12);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  /* На узком экране сумма и статус переносятся под номер заказа,
+     иначе строка сжимается в нечитаемую кашу. */
+  @media (max-width: 560px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+}
+
+.listMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.listAside {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+}
+
+.orderNumber {
+  font-family: $font-heading;
+  color: $color-graphite;
+}
+
+.amount {
+  font-family: $font-heading;
+  white-space: nowrap;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 0;
+
+  p {
+    margin: 0;
+    color: rgba($color-graphite, 0.7);
+  }
+}
+
+.cardLink {
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+.lastOrderTop {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}

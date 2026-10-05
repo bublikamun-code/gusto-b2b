@@ -348,8 +348,18 @@ function LandingSection({
   });
 
   useEffect(() => {
+    // Настройки приходят из БД как есть, и steps там может быть null (так его записал
+    // прежний обработчик, и так он приходит из дефолта). Раньше setDelivery(landing.delivery)
+    // клал в состояние объект с steps === null, и первый же рендер падал на
+    // delivery.steps.map — страница «Настройки» становилась белым экраном без ErrorBoundary,
+    // а починить можно было только руками в базе (аудит 2026-09-30, группа «Админка»).
     if (landing?.hero) setHero(landing.hero);
-    if (landing?.delivery) setDelivery(landing.delivery);
+    if (landing?.delivery) {
+      setDelivery({
+        title: landing.delivery.title ?? "",
+        steps: Array.isArray(landing.delivery.steps) ? landing.delivery.steps : [],
+      });
+    }
   }, [landing]);
 
   const updateStep = (

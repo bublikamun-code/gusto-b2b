@@ -24,8 +24,15 @@
 .nav {
   font-family: $font-heading;
   font-size: 0.85rem;
-  min-width: 2.1rem;
-  padding: 0.35rem 0.5rem;
+  // WCAG 2.5.8 (AA, минимум 24px) и 2.5.5 (AAA, 44px): тап-таргет должен быть
+  // достаточно крупным. Здесь было ~25px по высоте — на телефоне номер страницы
+  // почти не попасть (аудит 2026-09-30, группа «Витрина»).
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 2px;

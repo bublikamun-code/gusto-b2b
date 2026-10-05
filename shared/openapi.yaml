@@ -1374,6 +1374,42 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "429": { $ref: "#/components/responses/RateLimited" }
 
+  /cabinet/summary:
+    get:
+      tags: [cabinet]
+      summary: Сводка дашборда клиента — заказы в работе, неоплаченные счета, долг
+      responses:
+        "200":
+          description: конверт ApiResponse со сводкой
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/CabinetSummary" }
+
+  /cabinet/pricing/discounts:
+    get:
+      tags: [cabinet]
+      summary: Правила скидок компании клиента (матрица 2.1 — «Прайс/скидки в кабинете»)
+      responses:
+        "200":
+          description: конверт ApiResponse со списком правил
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/ClientDiscount" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /cabinet/company:
     get:
       tags: [cabinet]
@@ -3247,10 +3283,58 @@ paths:
       security: []
       responses:
         "200":
-          description: hero и delivery (могут быть пустыми объектами)
+          description: конверт ApiResponse; hero и delivery (могут быть пустыми объектами)
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PublicLanding" }
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/PublicLanding" }
+
+  /cms/pages/{slug}:
+    get:
+      tags: [cms]
+      summary: Публичная CMS-страница по slug; только PUBLISHED, иначе 404
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: конверт ApiResponse со статьёй
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/PublicArticle" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /cms/pages:
+    get:
+      tags: [cms]
+      summary: Все опубликованные CMS-страницы (для меню и поиска)
+      security: []
+      responses:
+        "200":
+          description: конверт ApiResponse со списком статей
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/PublicArticleSummary" }
 
 components:
   securitySchemes:
@@ -3429,6 +3513,12 @@ components:
         isActive: { type: boolean }
         totpEnabled: { type: boolean }
         emailConfirmed: { type: boolean, description: "Подтверждён ли email; требование — только для саморегистрации физлиц (S08.1)" }
+        temporaryPassword:
+          type: string
+          nullable: true
+          description: >-
+            Заполняется только в ответе POST /admin/users, когда пароль не задан в запросе
+            и был сгенерирован сервером. Показывается один раз; в списках всегда null.
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     LoginRequest:
@@ -3561,6 +3651,14 @@ components:
         phone: { type: string, nullable: true }
         role: { $ref: "#/components/schemas/Role" }
         companyId: { type: string, format: uuid, nullable: true, description: "Обязательна для CUSTOMER_LEGAL" }
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: >-
+            Необязательный. Если не задан, сервер сгенерирует временный пароль и вернёт
+            его в User.temporaryPassword. Поле присутствует в UI, но раньше сервер его
+            игнорировал, из-за чего созданную учётку было невозможно разблокировать.
     UpdateUserRequest:
       type: object
       properties:
@@ -4088,6 +4186,12 @@ components:
           additionalProperties: true
         totalAmount: { type: number, description: "Σ позиций; цены НДС-включённые (2.3)" }
         totalVat: { type: number, description: "НДС выделен расчётно: Σ total × rate / (100 + rate)" }
+        paidAmount:
+          type: number
+          description: "Σ зарегистрированных оплат по счёту, BYN. Клиенту нужен, чтобы видеть остаток по частично оплаченному счёту"
+        balanceDue:
+          type: number
+          description: "Остаток к оплате: totalAmount − paidAmount, не меньше нуля"
         status: { $ref: "#/components/schemas/InvoiceStatus" }
         createdAt: { type: string, format: date-time }
         items:
@@ -4732,12 +4836,56 @@ components:
               number: { type: string }
               title: { type: string }
               text: { type: string }
+    ClientDiscount:
+      type: object
+      required: [id, discountPercent, validFrom, active]
+      properties:
+        id: { type: string, format: uuid }
+        brandName: { type: string, nullable: true, description: "null — правило действует на весь каталог" }
+        categoryName: { type: string, nullable: true, description: "null — правило действует на весь каталог" }
+        discountPercent: { type: number, format: double }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+        active: { type: boolean, description: "Срок покрывает сегодняшний день" }
+
+    CabinetSummary:
+      type: object
+      required: [activeOrdersCount, activeOrdersTotal, awaitingConfirmationCount, unpaidInvoicesCount, outstandingDebt]
+      properties:
+        companyName: { type: string, nullable: true }
+        activeOrdersCount: { type: integer, format: int64 }
+        activeOrdersTotal: { type: number, format: double }
+        awaitingConfirmationCount: { type: integer, format: int64 }
+        unpaidInvoicesCount: { type: integer, format: int64 }
+        outstandingDebt: { type: number, format: double, description: "Счета минус зарегистрированные оплаты, BYN" }
+        lastOrderNumber: { type: string, nullable: true }
+        lastOrderStatus: { type: string, nullable: true }
+        lastOrderAt: { type: string, format: date-time, nullable: true }
+
+    PublicArticle:
+      type: object
+      required: [slug, title, body, publishedAt]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        body: { type: string }
+        publishedAt: { type: string, format: date-time, nullable: true }
+
+    PublicArticleSummary:
+      type: object
+      required: [slug, title]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        publishedAt: { type: string, format: date-time, nullable: true }
+
     PublicLanding:
       type: object
       description: Значения настроек; пустой объект — показать дефолт витрины
       properties:
         hero: { type: object, additionalProperties: true }
         delivery: { type: object, additionalProperties: true }
+
     AuditEntry:
       type: object
       required: [id, action, createdAt]

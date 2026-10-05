@@ -1,5 +1,6 @@
 package by.gusto.invoice.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthorizationService;
@@ -207,7 +208,7 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Page<InvoiceResponse> list(User actor, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<InvoiceEntity> invoices;
         if (actor.getRole() == Role.MANAGER) {
             invoices = invoiceRepository.findAllVisibleTo(actor.getId(), pageable);
@@ -218,11 +219,12 @@ public class InvoiceService {
                 invoiceItemRepository.findAllByInvoiceId(invoice.getId())));
     }
 
-    /** Кабинет юрлица: только счета своей компании (2.1). */
+    /** Кабинет юрлица: только выданные счета своей компании (2.1); черновики скрыты. */
     @Transactional(readOnly = true)
     public Page<InvoiceResponse> listForCompany(UUID companyId, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
-        return invoiceRepository.findAllByCustomerCompanyIdOrderByCreatedAtDesc(companyId, pageable)
+        PageRequest pageable = Pages.of(page, size);
+        return invoiceRepository
+                .findAllByCustomerCompanyIdAndStatusNotOrderByCreatedAtDesc(companyId, Status.DRAFT, pageable)
                 .map(invoice -> toResponse(invoice,
                         invoiceItemRepository.findAllByInvoiceId(invoice.getId())));
     }
@@ -238,6 +240,16 @@ public class InvoiceService {
         // Раньше для staff проверка была безусловной — менеджер читал счёт любой
         // компании по id; теперь та же матрица, что и в списках (S44).
         authz.requireCompanyAccess(invoice.getCustomerCompanyId(), actor);
+
+        // Черновик клиенту не показываем: это незавершённая работа бухгалтера. Раньше
+        // клиент получал счёт и по прямой ссылке на id, и PDF (ensurePdf сгенерировал
+        // его на лету, а отличать черновик от выданного в самом PDF нечем)
+        // — аудит 2026-09-30, группа «Цифры»/документы.
+        if (invoice.getStatus() == Status.DRAFT
+                && (actor.getRole() == Role.CUSTOMER_LEGAL
+                    || actor.getRole() == Role.CUSTOMER_INDIVIDUAL)) {
+            throw new GustoException(ErrorCode.NOT_FOUND, "Счёт не найден");
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -259,17 +271,40 @@ public class InvoiceService {
         if (company.getShortName() != null) buyer.put("shortName", company.getShortName());
         if (company.getUnp() != null) buyer.put("unp", company.getUnp());
         if (company.getLegalAddress() != null) buyer.put("address", company.getLegalAddress());
-        if (company.getBankAccount() != null) buyer.put("bankAccount", company.getBankAccount());
-        if (company.getBankName() != null) buyer.put("bankName", company.getBankName());
-        if (company.getBankBic() != null) buyer.put("bankBic", company.getBankBic());
+        // Ключи — как у продавца (seller.requisites, snake_case): рендерер читает именно
+        // bank_account/bank_name/bank_bic. Раньше здесь были camelCase-ключи, множества ключей
+        // не пересекались, и банковские реквизиты покупателя не попадали в PDF счёта вообще
+        // (аудит 2026-09-30, P1-4).
+        if (company.getBankAccount() != null) buyer.put("bank_account", company.getBankAccount());
+        if (company.getBankName() != null) buyer.put("bank_name", company.getBankName());
+        if (company.getBankBic() != null) buyer.put("bank_bic", company.getBankBic());
         return buyer;
     }
 
     /** СЧ-<N> (2.2): sequence на год, max(number)+1 запрещён; ротация — S31. */
     private String nextNumber() {
         int year = Year.now().getValue();
-        long next = jdbcTemplate.queryForObject("select nextval('doc_seq_invoice_" + year + "')", Long.class);
+        // Как и в накладных (аудит 2026-09-30, P1): сначала создаём sequence, затем nextval.
+        // Раньше fallback'а не было вовсе — смена года/сбой планировщика в 00:05 давали 500
+        // на оформлении счёта.
+        String sequence = "doc_seq_invoice_" + year;
+        jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
+        long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
         return String.format("СЧ-%d", next);
+    }
+
+    /** Сумма зарегистрированных оплат по счёту. Отменённые платежи не учитываются. */
+    private BigDecimal paidAmountOf(UUID invoiceId) {
+        BigDecimal paid = jdbcTemplate.queryForObject(
+                "select coalesce(sum(amount), 0) from payments where invoice_id = ?", BigDecimal.class, invoiceId);
+        return paid == null ? BigDecimal.ZERO.setScale(2) : paid.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** Остаток к оплате; не уходит в минус при переплате. */
+    private BigDecimal balanceDue(InvoiceEntity invoice) {
+        BigDecimal total = invoice.getTotalAmount() == null ? BigDecimal.ZERO : invoice.getTotalAmount();
+        BigDecimal due = total.subtract(paidAmountOf(invoice.getId()));
+        return due.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
     }
 
     private InvoiceResponse toResponse(InvoiceEntity invoice, List<InvoiceItem> items) {
@@ -284,6 +319,8 @@ public class InvoiceService {
         response.setBuyerSnapshot(invoice.getBuyerSnapshot());
         response.setTotalAmount(invoice.getTotalAmount());
         response.setTotalVat(invoice.getTotalVat());
+        response.setPaidAmount(paidAmountOf(invoice.getId()));
+        response.setBalanceDue(balanceDue(invoice));
         response.setStatus(invoice.getStatus());
         response.setCreatedAt(invoice.getCreatedAt());
         response.setItems(items.stream().map(item -> {

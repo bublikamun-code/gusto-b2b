@@ -1,5 +1,6 @@
 package by.gusto.cabinet.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.catalog.dto.CabinetProductResponse;
 import by.gusto.catalog.dto.ProductFilterRequest;
 import by.gusto.catalog.entity.Brand;
@@ -17,6 +18,9 @@ import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
 import by.gusto.file.service.ProductImageUrlResolver;
 import by.gusto.inventory.dto.StockStatus;
+import by.gusto.cabinet.dto.ClientDiscountResponse;
+import by.gusto.catalog.entity.CustomerDiscount;
+import by.gusto.catalog.repository.CustomerDiscountRepository;
 import by.gusto.inventory.service.StockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,13 +49,15 @@ public class CabinetCatalogService {
     private final BrandMapper brandMapper;
     private final ProductImageUrlResolver imageUrlResolver;
     private final StockService stockService;
+    private final CustomerDiscountRepository customerDiscountRepository;
 
     @Transactional(readOnly = true)
     public Page<CabinetProductResponse> getProducts(ProductFilterRequest filter, UUID companyId) {
-        PageRequest pageable = PageRequest.of(
+        // Клампим обе границы: раньше page не клампился вовсе, а size — только сверху,
+        // поэтому ?page=-1 и ?size=0 давали 500 (в т.ч. на публичной permitAll-ручке).
+        PageRequest pageable = Pages.of(
                 filter.getPage() == null ? 0 : filter.getPage(),
-                // size приходит от клиента без верхней границы (S44)
-                Math.min(filter.getSize() == null ? 20 : filter.getSize(), 100),
+                filter.getSize() == null ? 20 : filter.getSize(),
                 Sort.by("name").ascending());
 
         Page<Product> page = productRepository.findAll(
@@ -119,5 +126,37 @@ public class CabinetCatalogService {
                 .weightStep(product.getWeightPerUnit())
                 .imageUrls(imageUrls)
                 .build();
+    }
+    /**
+     * Скидки клиента для экрана «Прайс и скидки» (матрица 2.1 требует такую функцию
+     * для юрлица; UI не было вовсе — был только экспорт .xlsx для 1С).
+     *
+     * <p>Правила ограничены самой компанией: чужие скидки не отдаются в принципе,
+     * id чужой компании подставить нельзя — берём companyId из токена.
+     */
+    @Transactional(readOnly = true)
+    public List<ClientDiscountResponse> getClientDiscounts(UUID companyId) {
+        if (companyId == null) {
+            return List.of();
+        }
+        LocalDate today = LocalDate.now();
+        List<Brand> brands = brandRepository.findAll();
+        Map<UUID, String> brandNames = brands.stream()
+                .collect(Collectors.toMap(Brand::getId, Brand::getName));
+        Map<UUID, String> categoryNames = categoryRepository.findAll().stream()
+                .collect(Collectors.toMap(Category::getId, Category::getName));
+
+        return customerDiscountRepository.findAllByCompanyIdOrderByValidFromDesc(companyId).stream()
+                .map(cd -> ClientDiscountResponse.builder()
+                        .id(cd.getId())
+                        .brandName(cd.getBrandId() == null ? null : brandNames.get(cd.getBrandId()))
+                        .categoryName(cd.getCategoryId() == null ? null : categoryNames.get(cd.getCategoryId()))
+                        .discountPercent(cd.getDiscountPercent())
+                        .validFrom(cd.getValidFrom())
+                        .validTo(cd.getValidTo())
+                        .active(!cd.getValidFrom().isAfter(today)
+                                && (cd.getValidTo() == null || !cd.getValidTo().isBefore(today)))
+                        .build())
+                .toList();
     }
 }

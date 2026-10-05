@@ -44,8 +44,11 @@ export default function RegisterPage() {
       // Гейт подтверждения email по умолчанию выключен — сразу входим
       const payload = await login({ email: values.email, password: values.password });
       setAuth(payload.accessToken, payload.user);
-      useCartStore.getState().setOwner(payload.user.id);
+      // Переносим локальную корзину ДО смены владельца: setOwner() при смене ownerId очищает
+      // items, и при прежнем порядке migrateLocalCart всегда видел пустой список — перенос
+      // в серверную корзину не выполнялся никогда (аудит 2026-09-30, P1-11).
       await migrateLocalCart();
+      useCartStore.getState().setOwner(payload.user.id);
       push("Добро пожаловать в Густо!", "success");
       navigate("/cabinet/cart", { replace: true });
     } catch (err) {

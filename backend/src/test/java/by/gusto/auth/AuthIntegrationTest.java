@@ -1,5 +1,6 @@
 package by.gusto.auth;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.dto.PasswordResetConfirmRequest;
 import by.gusto.auth.dto.PasswordResetRequest;
@@ -46,6 +47,9 @@ class AuthIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -65,6 +69,7 @@ class AuthIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
     }
 

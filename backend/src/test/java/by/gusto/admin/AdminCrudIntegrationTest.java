@@ -1,5 +1,6 @@
 package by.gusto.admin;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.CreateUserRequest;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.dto.UpdateUserRequest;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -49,6 +51,9 @@ class AdminCrudIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -61,6 +66,9 @@ class AdminCrudIntegrationTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private RecoveryCodeRepository recoveryCodeRepository;
 
     @Autowired
@@ -71,6 +79,12 @@ class AdminCrudIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Снимаем рабочие данные разом: ручная цепочка deleteAll() ломалась на
+        // каждой новой сид-миграции, которая заводила строки в таблицы, ссылающиеся
+        // на products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+        // поверх — собственные пользователи этого класса
+        jdbcTemplate.update("delete from audit_log");
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();

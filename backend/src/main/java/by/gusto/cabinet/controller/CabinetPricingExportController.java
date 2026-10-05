@@ -1,6 +1,8 @@
 package by.gusto.cabinet.controller;
 
 import by.gusto.auth.service.AuthContext;
+import by.gusto.cabinet.dto.ClientDiscountResponse;
+import by.gusto.cabinet.service.CabinetCatalogService;
 import by.gusto.common.api.ApiResponse;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -18,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
- * Кабинет юрлица: выгрузка прайса со своими ценами в .xlsx (S36, матрица 2.1).
+ * Кабинет юрлица: прайс со своими ценами (S36, матрица 2.1) — список правил скидок
+ * и выгрузка .xlsx для 1С.
  */
 @RestController
 @RequestMapping("/api/v1/cabinet/pricing")
@@ -30,6 +34,21 @@ public class CabinetPricingExportController {
 
     private final XlsxExportService exportService;
     private final AuthContext authContext;
+    private final CabinetCatalogService cabinetCatalogService;
+
+    /**
+     * Скидки, действующие на компанию клиента. Сами цены клиент берёт из
+     * {@code GET /cabinet/catalog} — там уже считается customerPrice по 2.5.
+     */
+    @GetMapping("/discounts")
+    public ResponseEntity<ApiResponse<List<ClientDiscountResponse>>> discounts() {
+        var user = authContext.getCurrentUser();
+        if (user.getCompanyId() == null) {
+            throw new GustoException(ErrorCode.VALIDATION_FAILED, "К пользователю не привязана компания");
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+                cabinetCatalogService.getClientDiscounts(user.getCompanyId())));
+    }
 
     @GetMapping("/export")
     public ResponseEntity<InputStreamResource> export() {

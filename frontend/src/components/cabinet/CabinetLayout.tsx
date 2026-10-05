@@ -24,7 +24,12 @@ export function CabinetLayout() {
     { to: "/cabinet/catalog", label: "Каталог" },
     { to: "/cabinet/cart", label: `Корзина${cartCount > 0 ? ` (${cartCount})` : ""}` },
     { to: "/cabinet/orders", label: "Заказы" },
-    ...(user?.role === "CUSTOMER_LEGAL" ? [{ to: "/cabinet/documents", label: "Документы" }] : []),
+    ...(user?.role === "CUSTOMER_LEGAL"
+      ? [
+          { to: "/cabinet/documents", label: "Документы" },
+          { to: "/cabinet/pricing", label: "Прайс и скидки" },
+        ]
+      : []),
     { to: "/cabinet/profile", label: "Профиль" },
   ];
 

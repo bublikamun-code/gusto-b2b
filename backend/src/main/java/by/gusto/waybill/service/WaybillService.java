@@ -1,5 +1,6 @@
 package by.gusto.waybill.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.service.AuthorizationService;
@@ -167,7 +168,7 @@ public class WaybillService {
 
     @Transactional(readOnly = true)
     public Page<WaybillResponse> list(User actor, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         Page<WaybillEntity> waybills = actor.getRole() == Role.MANAGER
                 ? waybillRepository.findAllVisibleTo(actor.getId(), pageable)
                 : waybillRepository.findAllByOrderByCreatedAtDesc(pageable);
@@ -177,7 +178,7 @@ public class WaybillService {
     /** Кабинет юрлица: накладные заказов своей компании (2.1). */
     @Transactional(readOnly = true)
     public Page<WaybillResponse> listForCompany(UUID companyId, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         return waybillRepository.findAllByCompanyOrderByCreatedAtDesc(companyId, pageable)
                 .map(w -> toResponse(w, waybillItemRepository.findAllByWaybillId(w.getId())));
     }
@@ -309,15 +310,15 @@ public class WaybillService {
         String prefix = type == WaybillEntity.Type.TTN ? "ttn" : "tn";
         String cyrillicPrefix = type == WaybillEntity.Type.TTN ? "ТТН" : "ТН";
         String sequence = "doc_seq_" + prefix + "_" + series + "_" + year;
-        try {
-            Long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
-            return String.format("%s-%s-%d", cyrillicPrefix, series, next);
-        } catch (Exception e) {
-            // смена серии/года до ротации планировщиком (S31) — создаём sequence на месте
-            jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
-            Long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
-            return String.format("%s-%s-%d", cyrillicPrefix, series, next);
-        }
+        // СНАЧАЛА создаём sequence, потом берём nextval. Раньше было наоборот: на отсутствующей
+        // sequence nextval кидал ошибку, PostgreSQL помечал транзакцию прерванной (25P02), и
+        // последующий create sequence в той же транзакции тоже падал — то есть fallback не лечил,
+        // а маскировал причину под 500. Смена серии в админке («Настройки документов») выбивала
+        // оформление накладных на весь рабочий день (аудит 2026-09-30, P1-1 вебиллов).
+        // Имя проходит проверку series.matches выше, поэтому интерполяция безопасна.
+        jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
+        Long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
+        return String.format("%s-%s-%d", cyrillicPrefix, series, next);
     }
 
     private WaybillResponse toResponse(WaybillEntity waybill, List<WaybillItem> items) {

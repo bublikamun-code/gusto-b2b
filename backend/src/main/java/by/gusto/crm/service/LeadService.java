@@ -1,5 +1,6 @@
 package by.gusto.crm.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -66,7 +67,7 @@ public class LeadService {
 
     @Transactional(readOnly = true)
     public Page<LeadResponse> list(User actor, String scope, Status status, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         UUID actorId = actor.getId();
         boolean manager = actor.getRole() == Role.MANAGER;
         String effective = scope == null || scope.isBlank()

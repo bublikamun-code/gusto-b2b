@@ -5,6 +5,7 @@ import by.gusto.order.entity.OrderItem;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import lombok.Data;
@@ -117,8 +118,13 @@ public final class OrderDtos {
     @Data
     public static class CartItemPutRequest {
 
+        /**
+         * 0 удаляет позицию — так объявлено в shared/openapi.yaml и этого ждёт фронт
+         * (CabinetCartPage шлёт quantity: 0 по кнопке «Убрать»). Раньше стоял @Positive,
+         * и удаление позиции всегда возвращало 400 (аудит 2026-09-30, P1-6).
+         */
         @NotNull
-        @Positive
+        @PositiveOrZero
         private BigDecimal quantity;
     }
 

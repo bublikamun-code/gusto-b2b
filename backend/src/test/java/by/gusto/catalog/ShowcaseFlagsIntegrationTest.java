@@ -1,7 +1,9 @@
 package by.gusto.catalog;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.api.ApiResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,6 +43,9 @@ class ShowcaseFlagsIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -58,7 +63,14 @@ class ShowcaseFlagsIntegrationTest {
         return (String) ((Map<String, Object>) response.getBody().getData()).get("accessToken");
     }
 
-    @Test
+        @BeforeEach
+    void cleanDatabase() {
+        // Снимаем всю БД разом: сид-миграции заливают демо-данные, а каждый
+        // тест считает агрегаты по «своим» строкам (см. DatabaseCleaner).
+        databaseCleaner.clean();
+    }
+
+@Test
     @SuppressWarnings("unchecked")
     void seedFlagsAreExposedInPublicCatalog() {
         ResponseEntity<ApiResponse> response =

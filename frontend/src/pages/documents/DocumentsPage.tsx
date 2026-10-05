@@ -14,6 +14,7 @@ import {
   createInvoice,
   createWaybill,
   downloadPdf,
+  cancelInvoice,
   issueInvoice,
   listInvoices,
   listWaybills,
@@ -59,6 +60,7 @@ export default function DocumentsPage() {
   const [driver, setDriver] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [issuing, setIssuing] = useState<Invoice | null>(null);
+  const [cancelling, setCancelling] = useState<Invoice | null>(null);
   const [acting, setActing] = useState(false);
   // plan-03: одна PDF-загрузка за раз — повторный клик по кнопке до ответа невозможен
   const [pdfBusyId, setPdfBusyId] = useState<string | null>(null);
@@ -127,6 +129,24 @@ export default function DocumentsPage() {
     }
   };
 
+  // Отмена счёта (аудит 2026-09-30, P1-7): без неё бухгалтер не мог освободить заказ
+  // после ошибки — повторный POST /invoices давал 409, а отменить было нечем.
+  const cancel = async () => {
+    if (!cancelling) return;
+    const invoice = cancelling;
+    setActing(true);
+    try {
+      await cancelInvoice(invoice.id);
+      push(`Счёт ${invoice.displayNumber} отменён`, 'success');
+      setCancelling(null);
+      load();
+    } catch (err) {
+      push((err as Error).message, 'error');
+    } finally {
+      setActing(false);
+    }
+  };
+
   const downloadPdfFor = async (id: string, path: string, filename: string) => {
     if (pdfBusyId) return;
     setPdfBusyId(id);
@@ -176,6 +196,9 @@ export default function DocumentsPage() {
             onClick={() => downloadPdfFor(i.id, `/invoices/${i.id}/pdf`, `${i.number}.pdf`)}
           >
             PDF
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setCancelling(i)}>
+            Отменить
           </Button>
         </div>
       ),
@@ -351,6 +374,20 @@ export default function DocumentsPage() {
           Выпустить счёт {issuing?.displayNumber} на сумму{' '}
           {issuing ? formatMoney(issuing.totalAmount) : ''}? Счёт станет неизменяемым: снапшоты
           реквизитов и позиций зафиксируются, PDF сформируется автоматически.
+        </p>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={cancelling !== null}
+        title="Отменить счёт"
+        confirmLabel="Отменить счёт"
+        loading={acting}
+        onClose={() => setCancelling(null)}
+        onConfirm={cancel}
+      >
+        <p>
+          Отменить счёт {cancelling?.displayNumber}? Заказ снова можно будет оплатить: по нему
+          удастся выставить новый счёт.
         </p>
       </ConfirmModal>
     </div>

@@ -180,7 +180,10 @@ public class AdminSettingsService {
             }
             Map<String, Object> delivery = new LinkedHashMap<>();
             delivery.put("title", blankToEmpty(request.delivery().title()));
-            delivery.put("steps", steps);
+            // steps пишем всегда массивом. Раньше сюда клался null, и «Настройки»
+            // падали в белый экран на delivery.steps.map — чинить приходилось руками
+            // в базе (аудит 2026-09-30, группа «Админка»).
+            delivery.put("steps", steps == null ? objectMapper.createArrayNode() : steps);
             writeObject(actor, SettingsService.LANDING_DELIVERY, delivery, "landing.delivery");
         }
     }

@@ -4,6 +4,7 @@ import by.gusto.common.api.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
@@ -47,6 +48,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ErrorCode.ACCESS_DENIED.getCode(), "Доступ запрещён"));
+    }
+
+    /**
+     * Нарушение целостности на уникальном индексе — почти всегда гонка двух запросов,
+     * прошедших предварительную проверку: два параллельных «выставить счёт по заказу»
+     * оба видели, что счёта нет, оба вставили, и второй упал на unique.
+     *
+     * <p>Клиенту это не «внутренняя ошибка», а понятный конфликт: он повторит ту же
+     * операцию и получит тот же отказ. Раньше такой запрос отдавал 500, и бухгалтер
+     * не понимал, что делать (аудит 2026-09-30, группа «Цифры»/документы).
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIntegrity(DataIntegrityViolationException e) {
+        log.warn("Нарушение целостности данных: {}", e.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ErrorCode.CONFLICT.getCode(),
+                        "Операция конфликтует с уже созданной записью. Обновите список и повторите."));
     }
 
     @ExceptionHandler(Exception.class)

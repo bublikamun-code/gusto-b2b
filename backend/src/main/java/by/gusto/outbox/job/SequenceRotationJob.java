@@ -29,6 +29,16 @@ public class SequenceRotationJob {
     public void rotate() {
         int year = Year.now().getValue();
 
+        // Раньше ротировались только invoice/tn/ttn, а заказы (order_seq_<year>),
+        // закупки (doc_seq_purchase_<year>) и пять складских (doc_seq_warehouse_*_<year>)
+        // создавались миграциями строго на 2026 год — с 01.01.2027 их не существовало,
+        // и создание заказа/закупки/приёмки падало в 500 (аудит 2026-09-30, P1-20).
+        ensureSequence("order_seq_" + year);
+        ensureSequence("doc_seq_purchase_" + year);
+        for (String kind : List.of("incoming", "outgoing", "write_off", "transfer", "inventory")) {
+            ensureSequence("doc_seq_warehouse_" + kind + "_" + year);
+        }
+
         ensureSequence("doc_seq_invoice_" + year);
 
         for (String prefix : List.of("tn", "ttn")) {
@@ -38,8 +48,6 @@ public class SequenceRotationJob {
                 ensureSequence("doc_seq_" + prefix + "_" + series + "_" + year);
             }
         }
-        // warehouse-sequences создаются миграциями (V10/V11) на текущий год;
-        // ротация остальных типов — по мере появления новых серий в settings
     }
 
     private String seriesOf(String key) {

@@ -1,5 +1,6 @@
 package by.gusto.order.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.audit.AuditService;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
@@ -67,13 +68,16 @@ public class OrderLifecycleService {
 
         if (target == Status.CANCELLED) {
             releaseReserve(order, actor);
+        } else if (target == Status.SHIPPED) {
+            shipOrder(order, actor);
         }
 
         auditService.append(actor.getId(), "ORDER_STATUS_CHANGED", "order", orderId,
                 Map.of("status", current.name()),
                 Map.of("status", target.name(),
                        "number", order.getNumber(),
-                       "released", target == Status.CANCELLED));
+                       "released", target == Status.CANCELLED,
+                       "shipped", target == Status.SHIPPED));
 
         outboxService.append("order", orderId, "ORDER_STATUS_CHANGED", Map.of(
                 "orderId", orderId.toString(),
@@ -115,7 +119,7 @@ public class OrderLifecycleService {
      */
     @Transactional(readOnly = true)
     public Page<Response> managerList(User actor, String scope, Status status, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = Pages.of(page, size);
         boolean isManager = actor.getRole() == Role.MANAGER;
         UUID actorId = actor.getId();
 
@@ -130,8 +134,10 @@ public class OrderLifecycleService {
                     ? orderRepository.findAllByManagerIdOrderByCreatedAtDesc(actorId, pageable)
                     : orderRepository.findAllByManagerIdAndStatusOrderByCreatedAtDesc(actorId, status, pageable);
             case "unassigned" -> status == null
-                    ? orderRepository.findAllByManagerIdIsNullOrderByCreatedAtDesc(pageable)
-                    : orderRepository.findAllByManagerIdIsNullAndStatusOrderByCreatedAtDesc(status, pageable);
+                    ? orderRepository.findAllByManagerIdIsNullAndCustomerCompanyIdIsNullOrderByCreatedAtDesc(pageable)
+                    : orderRepository
+                            .findAllByManagerIdIsNullAndCustomerCompanyIdIsNullAndStatusOrderByCreatedAtDesc(
+                                    status, pageable);
             case "all" -> status == null
                     ? orderRepository.findAllByOrderByCreatedAtDesc(pageable)
                     : orderRepository.findAllByStatusOrderByCreatedAtDesc(status, pageable);
@@ -164,6 +170,17 @@ public class OrderLifecycleService {
     private void releaseReserve(OrderEntity order, User actor) {
         orderItemRepository.findAllByOrderId(order.getId()).forEach(item ->
                 stockService.release(item.getProductId(), order.getStockLocationId(), item.getQuantity(),
+                        "ORDER", order.getId(), actor.getId()));
+    }
+
+    /**
+     * Отгрузка (аудит 2026-09-30, P0-2): товар уходит со склада, поэтому списываем остаток
+     * движением OUTGOING и снимаем резерв одним действием под блокировкой строки баланса.
+     * До этого резерв снимался только при отмене — после SHIPPED он оставался навсегда.
+     */
+    private void shipOrder(OrderEntity order, User actor) {
+        orderItemRepository.findAllByOrderId(order.getId()).forEach(item ->
+                stockService.ship(item.getProductId(), order.getStockLocationId(), item.getQuantity(),
                         "ORDER", order.getId(), actor.getId()));
     }
 }

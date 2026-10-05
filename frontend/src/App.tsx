@@ -15,6 +15,7 @@ import ConfirmEmailPage from "./pages/ConfirmEmailPage";
 import RegisterPage from "./pages/RegisterPage";
 import CabinetCartPage from "./pages/cabinet/CabinetCartPage";
 import CabinetProfilePage from "./pages/cabinet/CabinetProfilePage";
+import CabinetPricingPage from "./pages/cabinet/CabinetPricingPage";
 import CabinetDocumentsPage from "./pages/cabinet/CabinetDocumentsPage";
 import DocumentsPage from "./pages/documents/DocumentsPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -104,6 +105,8 @@ export default function App() {
               {/* Документы юрлица (S27): счета и накладные; физлицо документов не имеет (2.1) */}
               <Route element={<RoleGuard allowed={["CUSTOMER_LEGAL"]} />}>
                 <Route path="/cabinet/documents" element={<CabinetDocumentsPage />} />
+                {/* Прайс и скидки (матрица 2.1): только юрлицо, физлицу не показываем */}
+                <Route path="/cabinet/pricing" element={<CabinetPricingPage />} />
               </Route>
             </Route>
           </Route>

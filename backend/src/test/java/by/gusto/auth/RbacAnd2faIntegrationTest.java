@@ -1,5 +1,6 @@
 package by.gusto.auth;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.dto.LoginRequest;
 import by.gusto.auth.dto.TotpVerifyRequest;
 import by.gusto.auth.entity.Role;
@@ -47,6 +48,9 @@ class RbacAnd2faIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -69,11 +73,18 @@ class RbacAnd2faIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Снимаем всю БД разом: ручная цепочка deleteAll() ломалась на каждой
+        // новой сид-миграции, которая заводила строки в таблицы, ссылающиеся на
+        // products/users/companies (см. DatabaseCleaner).
+        databaseCleaner.clean();
+
         recoveryCodeRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();
-        userRepository.deleteAll();
+        // companies.manager_id ссылается на users — компании чистим первыми,
+        // иначе удаление пользователя упирается в FK
         companyRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test

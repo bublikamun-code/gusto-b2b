@@ -1,5 +1,6 @@
 package by.gusto.order;
 
+import by.gusto.support.DatabaseCleaner;
 import by.gusto.auth.entity.Role;
 import by.gusto.auth.entity.User;
 import by.gusto.auth.repository.UserRepository;
@@ -54,6 +55,9 @@ class OrderLifecycleIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+@Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -79,6 +83,7 @@ class OrderLifecycleIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.clean();
         redisTemplate.getConnectionFactory().getConnection().flushAll();
         StockBalance balance = balanceRepository
                 .findById(new StockBalance.StockBalanceId(productId("steyk-ribay"), LOCATION))
@@ -154,6 +159,12 @@ class OrderLifecycleIntegrationTest {
                 .orElseThrow().getReserved();
     }
 
+    private BigDecimal onHand() {
+        return balanceRepository
+                .findById(new StockBalance.StockBalanceId(productId("steyk-ribay"), LOCATION))
+                .orElseThrow().getQuantity();
+    }
+
     private int auditRows(UUID orderId) {
         Integer count = jdbcTemplate.queryForObject(
                 "select count(*) from audit_log where target_type = 'order' and target_id = ?",
@@ -220,8 +231,17 @@ class OrderLifecycleIntegrationTest {
         assertThat(terminal.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(terminal.getBody().getError().getCode()).isEqualTo("ORDER_STATUS_TRANSITION");
 
-        // резерв при COMPLETED не тронут, аудит записан
-        assertThat(reserved()).isEqualByComparingTo("2.000");
+        // Отгрузка (SHIPPED) списывает товар: резерв снят, остаток уменьшен на количество позиции
+        // (аудит 2026-09-30, P0-2). Раньше резерв снимался только при отмене — здесь стояло
+        // «резерв при COMPLETED не тронут», то есть тест закреплял дефект.
+        assertThat(reserved()).isEqualByComparingTo("0.000");
+        assertThat(onHand()).isEqualByComparingTo("38.000");
+        // отгрузка записана в журнал движений (3.1: движения создаются и по заказу)
+        Integer outgoing = jdbcTemplate.queryForObject(
+                "select count(*) from stock_movements where reference_id = ? and type = 'OUTGOING'",
+                Integer.class, UUID.fromString(orderId));
+        assertThat(outgoing).isNotNull();
+        assertThat(outgoing).isGreaterThanOrEqualTo(1);
         assertThat(auditRows(UUID.fromString(orderId))).isGreaterThanOrEqualTo(6);
     }
 

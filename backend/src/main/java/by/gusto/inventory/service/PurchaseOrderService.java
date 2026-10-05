@@ -1,5 +1,6 @@
 package by.gusto.inventory.service;
 
+import by.gusto.common.api.Pages;
 import by.gusto.catalog.repository.ProductRepository;
 import by.gusto.common.exception.ErrorCode;
 import by.gusto.common.exception.GustoException;
@@ -104,7 +105,7 @@ public class PurchaseOrderService {
 
     @Transactional(readOnly = true)
     public Page<Response> search(PurchaseOrder.Status status, UUID supplierId, int page, int size) {
-        return orderRepository.search(status, supplierId, PageRequest.of(page, Math.min(size, 100)))
+        return orderRepository.search(status, supplierId, Pages.of(page, size))
                 .map(o -> toResponse(o, itemRepository.findAllByPurchaseOrderId(o.getId())));
     }
 
@@ -160,6 +161,9 @@ public class PurchaseOrderService {
     /** Номер вида ЗП-17 (2.2): sequence на год. */
     private String nextNumber() {
         String sequence = "doc_seq_purchase_" + Year.now().getValue();
+        // Создаём sequence до nextval (аудит 2026-09-30, P1-20) — иначе 01.01.2027
+        // оформление заказа поставщику падало бы в 500.
+        jdbcTemplate.execute("create sequence if not exists \"" + sequence + "\"");
         Long next = jdbcTemplate.queryForObject("select nextval('" + sequence + "')", Long.class);
         return "ЗП-" + next;
     }
